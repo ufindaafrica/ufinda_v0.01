@@ -1,0 +1,13 @@
+*.env
+test/
+*.dump
+*.exe
+*.o
+*.so
+*.dll
+bin/
+
+*.rdb
+# Temporary files
+*.tmp
+*.log
