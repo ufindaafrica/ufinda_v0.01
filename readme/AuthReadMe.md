@@ -22,6 +22,7 @@ The request body must be a JSON object containing the user's registration detail
   "email": "user@example.com",
   "password": "yourpassword123",
   "firstName": "John",
+  "role": "user/vendor",
   "lastName": "Doe",
   "phone": "+15551234567"
 }

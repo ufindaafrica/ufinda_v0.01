@@ -1,4 +1,4 @@
-package clientauth
+package auth
 
 import (
 	"net/http"
@@ -7,13 +7,14 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/go-redis/redis/v8"
-	"uFinda/internal/db"
+	"github.com/oladev/ufinda_v0.01/internal/db"
 	"golang.org/x/crypto/bcrypt"
 	"strings"
-	"uFinda/internal/token/client"
-	"uFinda/internal/logs/auth"
-	"uFinda/internal/routes/auth"
+	"github.com/oladev/ufinda_v0.01/internal/token/client"
+	"github.com/oladev/ufinda_v0.01/internal/logs/auth"
+	"github.com/oladev/ufinda_v0.01/internal/db/auth"
 )
 
 
@@ -26,7 +27,7 @@ func EmailSignUpHandler(c *gin.Context) {
 	}
 
 	// check if user is already created and email already verified
-	isCreatedUser, err := FindCreatedUser(req.Email)
+	isCreatedUser, err := authdb.FindCreatedUserByEmail(req.Email)
 	if err != nil && errors.Is(err, ErrorGettingUser) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
@@ -38,7 +39,7 @@ func EmailSignUpHandler(c *gin.Context) {
 	}
 
 	// check if the user exists as a pending user
-	isPendingUser, err := FindPendingUser(req.Email)
+	isPendingUser, err := authdb.FindPendingUser(req.Email)
 	if err != nil && errors.Is(err, ErrorGettingPendingUser) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
@@ -67,6 +68,7 @@ func EmailSignUpHandler(c *gin.Context) {
 		Email: req.Email,
 		Password: string(hashedPwd),
 		OTP: otp,
+		Role: req.Role,
 		FirstName: req.FirstName,
 		LastName: req.LastName,
 		Phone: req.Phone,
@@ -75,7 +77,7 @@ func EmailSignUpHandler(c *gin.Context) {
 	}
 
 	// create as a pending user
-	if err := InsertPendingUser(&pendinguser); err != nil {
+	if err := authdb.InsertPendingUser(&pendinguser); err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
@@ -98,7 +100,7 @@ func VerifyOtpHandler(c *gin.Context) {
 	}
 
 	// check if user is already created and verified
-	isCreatedUser, err := FindCreatedUser(req.Email)
+	isCreatedUser, err := authdb.FindCreatedUserByEmail(req.Email)
 	if err != nil && errors.Is(err, ErrorGettingUser){
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
@@ -110,7 +112,7 @@ func VerifyOtpHandler(c *gin.Context) {
 	}
 
 	// check if the user exists as a pending user
-	pendinguser, err := FindPendingUser(req.Email)
+	pendinguser, err := authdb.FindPendingUser(req.Email)
 	if err != nil && errors.Is(err, ErrorGettingPendingUser) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
@@ -135,6 +137,7 @@ func VerifyOtpHandler(c *gin.Context) {
 	user := db.User {
 		Email: pendinguser.Email,
 		Password: pendinguser.Password,
+		Role: pendinguser.Role,
 		FirstName: pendinguser.FirstName,
 		LastName: pendinguser.LastName,
 		Phone: pendinguser.Phone,
@@ -142,13 +145,13 @@ func VerifyOtpHandler(c *gin.Context) {
 	}
 
 	// create user after verifying their email
-	if err := CreateUser(user); err != nil {
+	if err := authdb.CreateUser(user); err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 	
 	// delete pending user record
-	if err := DeletePendingUser(req.Email); err != nil {
+	if err := authdb.DeletePendingUser(req.Email); err != nil {
 		log.Printf("Failed to delete pending user for %s: %v", req.Email, err)
 	}
 	
@@ -164,7 +167,7 @@ func EmailLoginHandler(c *gin.Context) {
         return
     }
 
-    user, err := FindCreatedUser(loginObj.Email)
+    user, err := authdb.FindCreatedUserByEmail(loginObj.Email)
 	if err != nil && errors.Is(err, ErrorGettingUser) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
@@ -187,7 +190,7 @@ func EmailLoginHandler(c *gin.Context) {
 		log := authlog.Logs["3"]
 		fmtMessage := fmt.Sprintf(log.Message, "login attempt exceeded")
 		newLog := db.SecurityLog {
-			UserID: user.ID,
+			UserID: &user.ID,
 			Log: fmtMessage,
 			Level: log.Level,
 		}
@@ -243,7 +246,7 @@ func ResendOTPHandler(c *gin.Context) {
 	}
 
 	// check if user is already created and verified
-	createduser, err := FindCreatedUser(otpRequest.Email)
+	createduser, err := authdb.FindCreatedUserByEmail(otpRequest.Email)
 	if err != nil && errors.Is(err, ErrorGettingUser) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
@@ -255,7 +258,7 @@ func ResendOTPHandler(c *gin.Context) {
 	}
 
 	// check if the user exists as a pending user
-	pendinguser, err := FindPendingUser(otpRequest.Email)
+	pendinguser, err := authdb.FindPendingUser(otpRequest.Email)
 	if err != nil && errors.Is(err, ErrorGettingPendingUser) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
@@ -278,7 +281,7 @@ func ResendOTPHandler(c *gin.Context) {
 	}
 
 	// update the pending data with the new otp
-	if err := UpdatePendingUser(pendinguser.Email, data); err != nil {
+	if err := authdb.UpdatePendingUser(pendinguser.Email, data); err != nil {
 		c.JSON(500, err.Error())
 		return
 	}
@@ -315,13 +318,16 @@ func LogoutHandler(c *gin.Context) {
 
 	refreshclaims, err := token.ValidateToken(refreshtoken)
 	if err != nil {
-		user, _ := auth.GetUser(c)
-
 		log := authlog.Logs["4"]
-		fmtMessage := fmt.Sprint(log.Message, refreshtoken)
+		id, _ := c.Get("id")
+		userid, ok := id.(uuid.UUID)
+		if !ok {
+			c.JSON(500, gin.H{"error": "invalid user ID type in context"})
+			return
+		}
 		newLog := db.SecurityLog {
-			UserID: user.UserID,
-			Log: fmtMessage,
+			UserID: &userid,
+			Log: log.Message,
 			Level: log.Level,
 		}
 		if err := authlog.CreateLog(newLog); err != nil {
@@ -346,7 +352,7 @@ func LogoutHandler(c *gin.Context) {
 		log  := authlog.Logs["1"]
 		fmtMessage := fmt.Sprintf(log.Message, refreshtoken)
 		newLog := db.SecurityLog{
-			UserID: refreshclaims.UserID,
+			UserID: &refreshclaims.UserID,
 			Log: fmtMessage,
 			Level: log.Level,
 		}
@@ -389,9 +395,8 @@ func RefreshTokenHandler(c *gin.Context) {
 	refreshclaims, err := token.ValidateToken(refreshToken)
 	if err != nil {
 		log := authlog.Logs["4"]
-		fmtMessage := fmt.Sprint(log.Message, refreshToken)
 		newLog := db.SecurityLog {
-			Log: fmtMessage,
+			Log: log.Message,
 			Level: log.Level,
 		}
 		if err := authlog.CreateLog(newLog); err != nil {
@@ -416,7 +421,7 @@ func RefreshTokenHandler(c *gin.Context) {
 		log  := authlog.Logs["1"]
 		fmtMessage := fmt.Sprintf(log.Message, refreshToken)
 		newLog := db.SecurityLog{
-			UserID: refreshclaims.UserID,
+			UserID: &refreshclaims.UserID,
 			Log: fmtMessage,
 			Level: log.Level,
 		}

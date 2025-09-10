@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"time"
 	"os"
-	"uFinda/internal/db"
+	"crypto/rand"
+	"math/big"
+	"github.com/oladev/ufinda_v0.01/internal/db"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
@@ -16,13 +18,13 @@ import (
 var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
 type Claims struct {
-	UserID         string `json:"id"`
+	UserID         uuid.UUID `json:"id"`
 	Email          string `json:"email"`
 	jwt.RegisteredClaims
 }
 
 func GenerateTokens(
-	userID string,
+	userID uuid.UUID,
 	email string,
 ) (string, string, error) {
 
@@ -36,7 +38,7 @@ func GenerateTokens(
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Subject:   userID,
+			Subject:   userID.String(),
 			ID:        jwtID, // <-- Correctly using a unique ID
 		},
 	}
@@ -111,7 +113,7 @@ func IsTokenBlacklisted(ctx context.Context, tokenjti string) (bool, error) {
 	return true, nil
 }
 
-func RefreshToken(userID string, email string) (string, string, error) {
+func RefreshToken(userID uuid.UUID, email string) (string, string, error) {
 	return GenerateTokens(userID, email)
 }
 
@@ -129,8 +131,14 @@ func SendOTP(email string, otp string) error {
 	from := mail.NewEmail("uFinda", "ufinda.app@gmail.com")
 	subject := "Your One-Time Password"
 	to := mail.NewEmail("User", email)
+
+	// Plain text version (for email clients that don't support HTML)
 	plainTextContent := fmt.Sprintf("Your one-time password is %s. This code will expire in 15 minutes.", otp)
-	message := mail.NewSingleEmail(from, subject, to, plainTextContent, "")
+
+	// HTML version with the OTP in bold
+	htmlContent := fmt.Sprintf("<strong>Your one-time password is <b>%s</b>.</strong> This code will expire in 15 minutes.", otp)
+
+	message := mail.NewSingleEmail(from, subject, to, plainTextContent, htmlContent)
 
 	apiKey := os.Getenv("SENDGRID_KEY")
 	if apiKey == "" {

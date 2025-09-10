@@ -16,12 +16,11 @@ var APIKey string
 var ServiceRoleKey string
 var RedisClient *redis.Client
 
-
 func InitDB() {
 	supabaseURL := os.Getenv("SUPABASE_URL")
 	supabaseKey := os.Getenv("SUPABASE_ANON_KEY")
 	serviceKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
-	
+
 	if supabaseURL == "" || supabaseKey == "" {
 		panic("❌ SUPABASE_URL and SUPABASE_ANON_KEY required")
 	}
@@ -29,18 +28,18 @@ func InitDB() {
 	BaseURL = supabaseURL
 	APIKey = supabaseKey
 	ServiceRoleKey = serviceKey
-	
+
 	// Test database connection
 	req, _ := http.NewRequest("GET", BaseURL+"/rest/v1/", nil)
 	req.Header.Set("apikey", APIKey)
-	
+
 	client := &http.Client{Timeout: 20 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode != 200 {
 		panic("❌ Cannot connect to Supabase")
 	}
 	resp.Body.Close()
-	
+
 	fmt.Println("✅ Connected to Supabase REST API")
 }
 

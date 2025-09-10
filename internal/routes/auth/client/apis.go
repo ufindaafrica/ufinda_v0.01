@@ -1,8 +1,8 @@
-package clientauth
+package auth
 
 import (
 	"github.com/gin-gonic/gin"
-	"uFinda/internal/routes/auth"
+	"github.com/oladev/ufinda_v0.01/internal/routes/auth"
 )
 
 func RegisterAuth(r *gin.Engine) {
@@ -12,7 +12,7 @@ func RegisterAuth(r *gin.Engine) {
 		authRoutes.POST("/verify-otp", VerifyOtpHandler)
 		authRoutes.POST("email/login", EmailLoginHandler)
 		authRoutes.POST("/otp/resend", ResendOTPHandler)
-		authRoutes.GET("/logout", auth.AuthMiddleware(), LogoutHandler)
+		authRoutes.GET("/logout", authmiddleware.AuthMiddleware(), LogoutHandler)
 		authRoutes.GET("/token/refresh", RefreshTokenHandler)
 	}
 }
