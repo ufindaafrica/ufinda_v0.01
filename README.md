@@ -1,4 +1,4 @@
-# Ufinda - Airbnb-style Rental App
+# Ufinda - Hostel Rental App
 
 A beautiful, demo-ready MVP mobile app built with React Native and Go, featuring an Airbnb-inspired UI/UX for rental property bookings.
 
@@ -104,7 +104,7 @@ npm start
 ## 📁 Project Structure
 
 ```
-rentiz/
+ufinda/
 ├── app/                          # React Native app screens
 │   ├── _layout.tsx              # Main app layout
 │   ├── index.tsx                # Landing/redirect screen

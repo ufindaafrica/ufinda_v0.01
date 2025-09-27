@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "rentiz",
-    "slug": "rentiz",
+    "name": "ufinda",
+    "slug": "ufinda",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "rentiz",
+    "scheme": "ufinda",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.rentiz"
+      "bundleIdentifier": "com.anonymous.ufinda"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +21,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.rentiz"
+      "package": "com.anonymous.ufinda"
     },
     "web": {
       "output": "static",
