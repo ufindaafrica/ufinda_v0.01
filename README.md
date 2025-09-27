@@ -1,4 +1,4 @@
-# Rentiz - Airbnb-style Rental App
+# Ufinda - Airbnb-style Rental App
 
 A beautiful, demo-ready MVP mobile app built with React Native and Go, featuring an Airbnb-inspired UI/UX for rental property bookings.
 
