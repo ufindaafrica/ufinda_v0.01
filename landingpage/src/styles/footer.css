@@ -1,0 +1,142 @@
+@import './main.css';
+.footerSection{
+    background-color: var(--color-background);
+    display: flex;
+    flex-direction: column;
+    justify-content: center !important;
+    align=align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 100px;
+}
+.Footernav {
+    margin: 0 auto;
+}
+.Footernav ul {
+    display: flex;
+    gap: 200px;
+    list-style-type: none;
+}
+.FooterLogo {
+    margin: 40px auto 0;
+}
+.logolink {
+    margin: 0 auto !important;
+}
+.footerlogo {
+  width: 190px;
+  height: 80px;
+  object-fit: contain;
+  margin: 0 !important;
+}
+.footerLinks, .servicesLinks span {
+    text-decoration: none;
+    display: flex;
+    color: var(--color-grey);
+    font-size: var(--paragraph-small)
+}
+.sub-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 16px !important;
+    margin-top: 16px;
+    padding: 0;
+}
+.sub-menu li {
+    text-decoration: none;
+}
+.socialLinks {
+    color: var(--color-grey);
+    display: flex;
+    gap: 56px;
+    font-size: 18px;
+    font-weight: 400;
+
+}
+.otherlinks {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    margin-bottom: 40px;
+    color: var(--color-grey);
+}
+.divider {
+    border: var(--border-footer);
+    width: 718px;
+    margin: 32px auto;
+}
+/* Responsive Styles */
+@media (max-width: 1024px) {
+  .footerSection {
+    padding: 0 50px;
+    width: 100%;
+  }
+  .logo {
+    width: 150px;
+  }
+  .nav-list {
+    gap: 32px;
+  }
+  .Footernav {
+    margin: 0 auto;
+}
+.Footernav ul {
+    gap: 120px;
+}
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0 16px;
+    height: 48px;
+  }
+  .logo {
+    width: 150px;
+  }
+  .Footernav ul {
+    flex-direction: column;
+    gap: 32px;
+  }
+  .divider {
+    width: 300px;
+    margin: 24px auto;
+}
+.Lang{
+    display: none;
+}
+.socialLinks {
+    font-size: 16px;
+    gap: 8px;
+}
+.socialLink {
+    padding: 16px;
+}
+.otherlinks{ 
+    gap: 8px;
+    margin: 8px auto 24px;
+    flex-direction: column;
+}
+.btn {
+    border: none;
+    color: var(--color-black);
+}
+}
+  
+
+@media (max-width: 480px) {
+  .divider {
+    width: 100%;
+    margin: 16px auto;
+}
+.footerlogo {
+    width: 110px !important;
+  }
+.Footernav ul {
+    flex-direction: column;
+    gap: 24px;
+  }
+  .footerLinks, .servicesLinks span {
+    font-size: var(--label-text);
+}
+}

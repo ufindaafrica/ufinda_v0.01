@@ -1,0 +1,57 @@
+/* ====== BASE ======*/
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    border-radius: 8px;
+    font-size: var(--label-text);
+    font-weight: var(--label);
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    border: none;
+    height: 44px;
+    padding: 0 16px 0 24px;
+}
+
+/* ====== VARIANTS ====== */
+.btn-default {
+    background-color: var(--color-primary);
+    color: var(--color-white) !important;
+    padding: 24px;
+}
+.btn-default:hover {
+    box-shadow: 0 4px 8px 4px rgba(0, 0, 0, 0.18);
+    color: var(--color-white);
+    border: none;
+}
+
+.btn-icon {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+}
+.btn-icon:hover {
+    background-color: var(--color-primary-hover);
+}
+.btn-stroke {
+    height: 40px;
+    color: var(--color-grey);
+    padding: 8px 8px 8px 16px;
+    border: var(--border-footer);
+    border-radius: 4px;
+    display: flex;
+    gap: 8px;
+    background-color: transparent;
+}
+.btn-text {
+    height: 40px;
+    color: var(--color-grey);
+    padding: 8px 8px 8px 16px;
+    border-radius: 4px;
+    display: flex;
+    gap: 8px;
+    background-color: transparent;
+}
+.divider {
+    border: var(--border-footer);
+}

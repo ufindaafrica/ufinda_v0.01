@@ -1,0 +1,176 @@
+@import './main.css';
+
+.navbar {
+  height: 80px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 0 100px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #fff; /* Assuming white background; adjust as needed */
+  z-index: 1000; /* Ensure it's above other content */
+}
+
+.logo {
+  width: 190px;
+  height: 80px;
+  object-fit: contain;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+}
+
+.nav-list {
+  list-style-type: none;
+  display: flex;
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+}
+
+.link {
+  font-size: var(--label-text);
+  color: var(--color-grey);
+  text-decoration: none;
+  font-weight: 400;
+}
+
+.link:hover {
+  color: var(--color-primary-hover);
+}
+
+.link:active {
+  color: var(--color-primary);
+}
+
+.services-link {
+  position: relative;
+}
+
+.services-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  list-style-type: none;
+  padding: 10px 0;
+  margin: 0;
+  min-width: 150px;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 1001;
+}
+
+.services-link:hover .dropdown-menu,
+.services-link:focus-within .dropdown-menu {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.dropdown-menu li {
+  padding: 8px 16px;
+}
+
+.dropdown-menu .link {
+  display: block;
+}
+
+.mobile-toggle {
+  display: none;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+/* Responsive Styles */
+@media (max-width: 1024px) {
+  .navbar {
+    padding: 0 50px;
+  }
+  .logo {
+    width: 150px;
+  }
+
+  .nav-list {
+    gap: 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0 16px;
+    height: 48px;
+  }
+  .logo {
+    width: 150px;
+  }
+
+  .mobile-toggle {
+    display: block;
+  }
+
+  .nav-list {
+    display: none; /* Hidden by default on mobile */
+    flex-direction: column;
+    position: absolute;
+    top: 80px;
+    right: 0;
+    width: 100%;
+    background-color: var(--color-background);
+    padding: 20px 0;
+    gap: 8px;
+    text-align: right;
+    border-top: 1px solid #ddd;
+    filter: var(--drop-shadow-color);
+
+  }
+
+  .nav-list.mobile-view {
+    display: flex;
+  }
+
+  .dropdown-menu {
+    position: static;
+    border: none;
+    transform: none;
+    opacity: 1;
+    padding: 0;
+  }
+  .link {
+    margin: 0;
+  }
+  .services-link:hover .dropdown-menu,
+  .services-link:focus-within .dropdown-menu {
+    transform: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo {
+    width: 150px;
+    height: 60px;
+  }
+
+  .navbar {
+    height: 60px;
+  }
+
+  .nav-list {
+    top: 60px;
+  }
+}
