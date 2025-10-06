@@ -41,7 +41,7 @@ const howItWorks = () => {
             <h3 className="cardtitle">Purchase with the App</h3>
             <p className="cardtext">As a buyer using our app is intuitive and user0friendly. Follow the steps to make your first purchase</p>
           </div>
-          <div className="Bsteps">
+          <div className="Bsteps .reverse">
             <div className="step">
               <h1 className="stroketext">1</h1>
               <div className="box"></div>
@@ -61,7 +61,7 @@ const howItWorks = () => {
         </div>
       </div>
       <div className="videodemo">
-        <h3 className="cardtitle">
+        <h3 className="cardtitle" id="video">
           Watch the video tutorial
         </h3>
         <video className='demovideo' controls>

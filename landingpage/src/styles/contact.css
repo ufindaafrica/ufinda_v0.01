@@ -2,7 +2,7 @@
 
 .contactsection {
     /* height: 652px; */
-    background-color: var(--color-background2);
+    background-color: var(--color-black);
     color: var(--color-white);
     box-sizing: border-box;
     display: flex;
@@ -30,7 +30,7 @@
 }
 .formsection {
     padding: 64px;
-    background-color: var(--color-background);
+    background-color: var(--color-white);
     border-radius: 16px;
     display: flex;
     gap: 48px;
@@ -104,12 +104,14 @@ input {
     padding: 16px 8px;
     border-radius: 8px;
     border: var(--border);
+    background-color: var(--color-background);
 }
 #message {
     min-height: 116px;
     border-radius: 8px;
     border: var(--border);
     padding: 16px 8px;
+    background-color: var(--color-background);
 }
 input::placeholder{
     font-size: var(--paragraph-small);
@@ -182,7 +184,8 @@ input::placeholder{
     }
     .para {
         font-size: var(--paragraph-small);
-        width: 90%;
+        width: 100%;
+        text-align: left;
     }
     .heading{
         font-size: var(--heading-medium);
@@ -229,6 +232,7 @@ input::placeholder{
     
     .label {
         font-size: 10px;
+        text-align: left;
     }
     .value {
         font-size: 12px;
@@ -240,9 +244,11 @@ input::placeholder{
     }
     .heading{
         font-size: var(--heading-small);
+        text-align: left;
     }
     .title {
         font-size: 11px;
+        text-align: left;
     }
     input {
     padding: 8px;

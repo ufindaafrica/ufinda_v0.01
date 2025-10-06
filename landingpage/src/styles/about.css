@@ -21,6 +21,7 @@
     .splash {
         width: 430px;
         height: 564px;
+        margin-left: 0;
     }
 }
 @media (max-width: 768px) {

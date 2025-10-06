@@ -70,9 +70,10 @@
     }
     .herotext {
         width: 100%;
+        text-align: left;
     }
     .heroimage {
-        width: 70%;
+        width: 100%;
         height: auto;
     }
     .herobtns {
@@ -80,17 +81,24 @@
     grid-template-columns: 1fr 1fr;
     gap: 8px;
     }
+    .herosection {
+        margin-top: 80px;
+        background: linear-gradient(to bottom, var(--color-white) 0%, var(--color-gradient1) 60%, var(--color-gradient2) 90%)
+    }
 }
 @media (max-width: 480px) {
     .herosection {
         margin-top: 60px;
         text-align: left;
+        background: var(--color-white) !important;
     }
     .herotext {
         font-size: var(--paragraph-x-small);
+        margin: 8px
     }
     .bannerheading {
-        font-size: 25px;
+        font-size: 28px;
+        font-weight: bold;
     }
     .banner{
         display: none;
@@ -98,6 +106,7 @@
     .heroimage {
         width: 100%;
         height: auto;
+        margin-top: 32px;
     }
     .herobtns {
         grid-template-columns: 1fr;

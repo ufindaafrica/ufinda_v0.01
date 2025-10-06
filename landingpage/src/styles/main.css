@@ -11,18 +11,18 @@ body {
     --color-text: #8c8a8a;
     --color-primary-container: #D9ECD9;
     --color-on-primary-container: #002D00;
-    --color-primary: #006000;
-    --color-primary-hover: #008000;
-    --color-white: #FFFFFF;
-    --color-grey: #6c6c6c;
+    --color-primary: #008000;
+    --color-primary-hover: #006000;
+    --color-white: #FCFCFC;
+    --color-grey: #8c8a8a;
     --color-secondary: #FFA500;
-    --color-background: #FCFCFC;
+    --color-background: #f9f9f3;
     --color-background2: #002d00ff;
     --color-gradient1: #C4FFDE;
-    --color-gradient2: #97DA83;
-    --border: 1px solid #B2BBC6;
+    --color-gradient2: #97da83cc;
+    --border: 1px solid #dedede;
     --border-input: 1px solid #1D242D;
-    --border-footer: 1px solid #6c6c6c62;
+    --border-footer: 1px solid #f9f9f3;
     --border-toast: 8px solid #006000;
 
     /* ====== FONTS ======*/
@@ -73,7 +73,6 @@ body {
     text-align: center;
     margin: 8px auto 0;
     color: var(--color-grey);
-    letter-spacing: .5px;
 }
 
 /* ====== RESPONSIVE ====== */
@@ -95,7 +94,8 @@ body {
 
 @media (max-width: 768px) {
     .section {
-        padding: 32px 16px;
+        padding: 48px 16px;
+        margin: 0;
     }
     .pagepara {
         font-size: var(--paragraph-small);
@@ -106,6 +106,7 @@ body {
         font-size: var(--heading-medium);
         margin-top: -4px !important;
         margin-bottom: 8px !important;
+        font-weight: 500;
     }
     .pagetitle {
         font-size: 12px;
@@ -114,16 +115,16 @@ body {
 
 @media (max-width: 480px) {
     .section{
-        padding: 32px 16px;
+        padding: 40px 16px;
     }
     .pagepara {
-        font-size: var(--paragraph-x-small);
+        font-size: var(--paragraph-small);
         width: 100%;
     }
     .pageheading{
         font-size: var(--heading-small);
         text-align: left;
-        font-weight: 500;
+        font-weight: 600;
     }
     .pagetitle {
         font-size: 10px;
