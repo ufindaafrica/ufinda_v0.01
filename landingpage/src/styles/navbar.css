@@ -11,8 +11,8 @@
   top: 0;
   left: 0;
   width: 100%;
-  background-color: #fff; /* Assuming white background; adjust as needed */
-  z-index: 1000; /* Ensure it's above other content */
+  background-color: var(--color-white); 
+  z-index: 1000; 
 }
 
 .logo {
@@ -65,12 +65,11 @@
   position: absolute;
   top: 100%;
   left: 0;
-  background-color: #fff;
-  border: 1px solid #ddd;
+  background-color: transparent;
   list-style-type: none;
   padding: 10px 0;
   margin: 0;
-  min-width: 150px;
+  width: 100%;
   opacity: 0;
   transform: translateY(-10px);
   transition: opacity 0.2s ease, transform 0.2s ease;
@@ -117,7 +116,8 @@
     height: 48px;
   }
   .logo {
-    width: 150px;
+    object-fit: contain;
+    height: 48px;
   }
 
   .mobile-toggle {

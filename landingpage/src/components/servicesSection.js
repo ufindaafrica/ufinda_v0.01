@@ -8,8 +8,8 @@ const servicesSection = () => {
     <section id="services" className="servicesection section">
       <div>
         <h3 className="pagetitle">What we do?</h3>
-        <h1 className="pageheading">We connect students to reliable and trusted Vendors</h1>
-        <p className="pagepara">At uFinda we connect students looking for hostels/products with reliable and trusted Agents/ vendors. Our platform bridges the gap between students and verified vendors, ensuring safe and convenient transactions for all your daily needs from hostels to everday essentials.</p>
+        <h1 className="pageheading">We connect students to <span className="higlightedText">reliable</span> and trusted Vendors</h1>
+        <p className="pagepara">At uFinda we connect students looking for hostels/products with reliable and trusted Agents/vendors. Our platform bridges the gap between students and verified vendors, ensuring safe and convenient transactions for all your daily needs from hostels to everday essentials.</p>
         <Button variant="default" className="serviceBtn">Get the App</Button>
       </div>
       

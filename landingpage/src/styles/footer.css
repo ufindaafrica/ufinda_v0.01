@@ -4,7 +4,7 @@
     display: flex;
     flex-direction: column;
     justify-content: center !important;
-    align=align-items: center;
+    align-items: center;
     width: 100%;
     box-sizing: border-box;
     padding: 0 100px;
@@ -133,10 +133,14 @@
     width: 110px !important;
   }
 .Footernav ul {
+  margin-left: auto;
+margin-right: auto; 
     flex-direction: column;
+    text-align: center;
     gap: 24px;
   }
   .footerLinks, .servicesLinks span {
     font-size: var(--label-text);
+    text-align: center;
 }
 }

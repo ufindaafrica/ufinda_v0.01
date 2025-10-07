@@ -85,7 +85,7 @@
     padding: 0;
 }
 .step p{
-   font-size: var(--paragraph-x-small);
+   font-size: var(--paragraph-small);
    color: var(--color-grey);
    height: auto;
 }
@@ -138,6 +138,7 @@
     width: 702px;
     height: 658px;
     margin-top: 80px;
+    object-fit: contain;
 }
 .left {
     display: flex;
@@ -170,7 +171,7 @@
     margin: 0;
 }
 .servicebox p {
-    font-size: var(--paragraph-small);
+    font-size: var(--paragraph);
     color: var(--color-grey);
     margin: 0;
 }
@@ -204,7 +205,7 @@
         width: 100%;
     }
     .servicebox p {
-        font-size: var(--paragraph-x-small);
+        font-size: var(--paragraph-small);
         margin-bottom: 0;
         width: 100%;
     }
@@ -275,7 +276,7 @@
         margin-top: 16px;
     }
     .servicebox h2 {
-        font-size: var(--paragraph-small);
+        font-size: var(--paragraph);
         font-weight: 600;
     }
     .demovideo {
@@ -375,10 +376,10 @@
         margin-top: 8px;
     }
     .servicebox {
-        padding: 16px 8px;
+        padding: 12px;
     }
     .servicebox h2 {
-        font-size: 14px;
+        font-size: var(--paragraph);
         font-weight: bold;
     }
     .cardtitle {

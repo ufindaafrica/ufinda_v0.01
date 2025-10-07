@@ -7,6 +7,13 @@ const ContactSection = () => {
   const [showToast, setShowToast] = useState(false);
 
   const handleSubmit = (event) => {
+    event.preventDefault();
+    const subject = document.getElementById('subject').ariaValue;
+    const message = document.getElementById('message').valueOf.replace(/\n/g, '%0D%0a');
+    const recipient = process.env.RECIPIENT_EMAIL;
+    const emailLink =  `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent(subject)} &body=${encodeURIComponent(message)}`;
+    window.location.href = emailLink;
+
     setShowToast(true);
     setTimeout(() => {
       setShowToast(false);
@@ -16,7 +23,7 @@ const ContactSection = () => {
     <section id="contact" className="contactsection section">
       <h3 className="title">Contact Us</h3>
       <h1 className="heading">Need help? Reach out to us</h1>
-      <p className="para">If you have any questions, feedback, or need assistance with our service , feel free to reach.our team is here to help you with everything from technicalto general inquiries. we're committed to providing the best possible experience and will respond as quickly as possible.</p>
+      <p className="para">If you have any questions, feedback, or need assistance with our service, feel free to reach out to us. Our team is here to help you with everything from technicalto general inquiries. we're committed to providing the best possible experience and will respond as quickly as possible.</p>
       <div className="formsection">
         <div className="form " >
           <div className='socialDivider'></div>
@@ -39,8 +46,8 @@ const ContactSection = () => {
               </div>
             </div>
         </div>
-        <form action="mailto:sarobaridoo@gmail.com" method="post" enctype="text/plain" onSubmit={handleSubmit}>
-          <input type="text" id="subject" name="subject" placeholder="Email" />
+        <form action="mailto:sarobaridoo@gmail.com" method="post" onSubmit={handleSubmit}>
+          <input type="text" id="subject" name="subject" placeholder="subject" />
           <textarea type="text" id="message" name="message" placeholder="Message" />
           <Button type="submit" className="sendmail">Send</Button>
         </form>

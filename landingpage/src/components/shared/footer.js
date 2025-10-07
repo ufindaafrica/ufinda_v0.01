@@ -18,7 +18,7 @@ const footer = () => {
             <span>Services</span>
             <ul className='sub-menu'>
               <li><Link to="/#services" className="footerLinks">What we do</Link></li>
-              <li><Link to="/works" className="footerLinks">How it Works</Link></li>
+              <li><Link to="/#works" className="footerLinks">How it Works</Link></li>
             </ul>
           </li>
           <li><Link to="/#about" className="footerLinks" >About</Link></li>

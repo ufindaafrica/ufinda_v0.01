@@ -8,14 +8,14 @@ const howItWorks = () => {
     <section id="works" className="worksection section">
       <div>
         <h3 className="pagetitle">How it works?</h3>
-        <h1 className="pageheading">Step by step guide to using the App</h1>
-        <p className="pagepara">Follow our simple step-by-step guide to get the most out of our app. Whether yo an agent looking to post ads or a student ready to make purchases, we've broken it down to 3 easy steps to help you get started quickly.</p>
+        <h1 className="pageheading">Step by step <span className="highlightedText">guide</span> to using the App</h1>
+        <p className="pagepara">Follow our simple step-by-step guide to get the most out of our app. Whether you are an agent looking to post ads, or a student ready to make purchases, we've broken it down to 3 easy steps to help you get started quickly.</p>
       </div>
       <div className="stepsec">
         <div className="steps">
           <div className="stepL">
             <h3 className="cardtitle">As Agent/Vendor</h3>
-            <p className="cardtext">Posting an ad as an agent is easy and is designed to help you connect with potential buyers. just follow the three steps to create and publish your ad.</p>
+            <p className="cardtext">Posting an ad as an agent is easy and it's designed to help you connect with potential buyers. Just follow the three steps to create and publish your ad.</p>
           </div>
           <div className="d-steps">
             <div className="step">
@@ -39,7 +39,7 @@ const howItWorks = () => {
         <div className="steps margin-top">
           <div className="stepR">
             <h3 className="cardtitle">Purchase with the App</h3>
-            <p className="cardtext">As a buyer using our app is intuitive and user0friendly. Follow the steps to make your first purchase</p>
+            <p className="cardtext">As a buyer using our app is intuitive and userfriendly. Follow the steps to make your first purchase</p>
           </div>
           <div className="Bsteps .reverse">
             <div className="step">

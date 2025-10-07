@@ -9,14 +9,14 @@ const heroSection = () => {
     <section id="hero" className="herosection section">
       <div>
         <div className="banner">
-          Finding verified agents is a lot easier, avoid the hassle with uFinda
+          Finding verified agents is a lot easier
         </div>
         <h1 className="bannerheading">
-          Get hostels from trusted agents without breaking a sweat
+          Get hostels from <span className="highlightedText">trusted agents</span> without breaking a sweat
         </h1>
         <p className="herotext">
-          As a student,easily find the best hostels through our reliable work of agents, avoid scams and unreliable reviews. 
-          share your preferences for location and style and get vetted, affordable options and smooth bookings.Even as a Agent/vendor post your ad and get request from students, totally safe.
+          As a student, easily find the best hostels through our reliable work of agents, avoid scams and unreliable reviews. 
+          share your preferences for location and style and get vetted, affordable options and smooth bookings. Even as a Agent/vendor post your ad and get request from students, it's 100% safe.
         </p>
       </div>
       <div className="heroimage">

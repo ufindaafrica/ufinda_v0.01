@@ -54,7 +54,7 @@ function Navbar() {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/works" onClick={handleServiceClick} className="link">
+                  <Link to="/#works" onClick={handleServiceClick} className="link">
                     How it Works
                   </Link>
                 </li>

@@ -25,12 +25,19 @@
     }
 }
 @media (max-width: 768px) {
+    
     .splash {
         width: 300px;
         height: 398px;
     }
+    .aboutsection h3, .aboutsection h1 {
+            text-align: left !important;
+        }
 }
 @media (max-width: 480px) {
+    .aboutsection h3, .aboutsection h1 {
+            text-align: left !important;
+        }
     .splash {
         width: 300px;
         height: 398px;

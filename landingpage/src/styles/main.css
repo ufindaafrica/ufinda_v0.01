@@ -13,7 +13,7 @@ body {
     --color-on-primary-container: #002D00;
     --color-primary: #008000;
     --color-primary-hover: #006000;
-    --color-white: #FCFCFC;
+    --color-white: #FEFEFE;
     --color-grey: #8c8a8a;
     --color-secondary: #FFA500;
     --color-background: #f9f9f3;
@@ -26,7 +26,7 @@ body {
     --border-toast: 8px solid #006000;
 
     /* ====== FONTS ======*/
-    --hero-heading: 48px;
+    --hero-heading: 80px;
     --paragraph: 16px;
     --paragraph-small: 14px;
     --paragraph-x-small: 12px;
@@ -62,13 +62,13 @@ body {
     font-weight: 600;
 }
 .pageheading {
-    font-size: 28px;
+    font-size: 32px;
     font-weight: 600;
     margin-top: 8px;
     color: var(--color-black)
 }
 .pagepara {
-    font-size: var(--paragraph-small);
+    font-size: var(--paragraph);
     width: 818px;
     text-align: center;
     margin: 8px auto 0;
@@ -79,10 +79,11 @@ body {
 @media (max-width: 1024px) {
     .pageheading {
         margin-top: 1px;
+        font-size: 64px;
     }
     .pagepara {
         margin-top: 4px;
-        font-size: var(--paragraph-small);
+        font-size: var(--paragraph);
         text-wrap: wrap;
         width: 100%;
         text-align: left;
@@ -98,7 +99,7 @@ body {
         margin: 0;
     }
     .pagepara {
-        font-size: var(--paragraph-small);
+        font-size: var(--paragraph);
         width: 100%;
         text-align: left;
     }
@@ -117,17 +118,20 @@ body {
     .section{
         padding: 40px 16px;
     }
+    .highligtedText {
+        color: #800080;
+    }
     .pagepara {
         font-size: var(--paragraph-small);
         width: 100%;
     }
     .pageheading{
-        font-size: var(--heading-small);
+        font-size: var(--heading-medium);
         text-align: left;
         font-weight: 600;
     }
     .pagetitle {
-        font-size: 10px;
+        font-size: 12px;
         text-align: left;
         font-weight: 500;
     }
