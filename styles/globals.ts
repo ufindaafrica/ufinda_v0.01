@@ -1,9 +1,9 @@
 import { StyleSheet } from "react-native";
 
 export const fonts = {
-    regular: "Roboto_400Regular",
-    bold: "Roboto_700Bold",
-    light: "Roboto_300Light"
+    regular: "Inter_400Regular",
+    bold: "Inter_700Bold",
+    light: "Inter_300Light"
 }
 
 export const globals = StyleSheet.create({
