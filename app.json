@@ -1,11 +1,11 @@
 {
   "expo": {
     "name": "ufinda",
-    "slug": "ufinda_v0.01",
+    "slug": "ufinda",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "ufindav",
+    "scheme": "ufinda",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -43,6 +43,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "4343e535-1c6b-4e93-b959-ea30ad52f0d6"
+      }
+    },
+    "owner": "ellangoziagu"
   }
 }
