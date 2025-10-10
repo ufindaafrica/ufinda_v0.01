@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import Splash from "./splash";
-import Home from "./(tabs)/home";
 import * as SecureStore from "expo-secure-store";
 import Onboarding from "./onboarding";
 import { Inter_300Light, Inter_400Regular, Inter_700Bold, useFonts } from "@expo-google-fonts/inter";
+import { router } from "expo-router";
 
 export default function Index() {
 
@@ -38,9 +38,18 @@ export default function Index() {
 
   }, []);
 
+  useEffect(() => {
+    if (!splashScreen && firstOpen === false) {
+      router.replace("/(tabs)/home")
+    }
+  }, [splashScreen, firstOpen]);
+
+  
   if (!fontsLoaded || firstOpen === null) return null
 
-  return (
-    (splashScreen) ? <Splash /> : (firstOpen) ? <Onboarding /> : <Home />
-  );
+  
+  if (splashScreen) return <Splash />
+  if (firstOpen) return <Onboarding />
+  return null
+
 }
