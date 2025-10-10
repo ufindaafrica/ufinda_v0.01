@@ -3,9 +3,7 @@ import Splash from "./splash";
 import Home from "./(tabs)/home";
 import * as SecureStore from "expo-secure-store";
 import Onboarding from "./onboarding";
-// import { Roboto_300Light, Roboto_400Regular, Roboto_700Bold } from "@expo-google-fonts/roboto"
 import { Inter_300Light, Inter_400Regular, Inter_700Bold, useFonts } from "@expo-google-fonts/inter";
-// import { Poppins_300Light, Poppins_400Regular, Poppins_700Bold, useFonts } from "@expo-google-fonts/poppins";
 
 export default function Index() {
 
@@ -43,8 +41,6 @@ export default function Index() {
   if (!fontsLoaded || firstOpen === null) return null
 
   return (
-    // (splashScreen) ? <Splash /> : (firstOpen) ? <Onboarding /> : <Home />
-
-    <Onboarding />
+    (splashScreen) ? <Splash /> : (firstOpen) ? <Onboarding /> : <Home />
   );
 }
