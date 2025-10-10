@@ -12,6 +12,13 @@ export default function _Layout () {
             />
 
             <Tabs.Screen 
+            name="saved"
+            options={{
+                title: "Saved"
+            }}
+            />
+
+            <Tabs.Screen 
             name="add"
             options={{
                 title: "Add"
@@ -29,13 +36,6 @@ export default function _Layout () {
             name="profile"
             options={{
                 title: "Profile"
-            }}
-            />
-
-            <Tabs.Screen 
-            name="saved"
-            options={{
-                title: "Saved"
             }}
             />
         </Tabs>
