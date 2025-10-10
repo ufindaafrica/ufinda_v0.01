@@ -1,12 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wgh@0,wght@400;0,700;0,800;1,400&display=swap');
+
+p {
+    font-family: 'Open Sans', sans-serif !important;
+}
 
 body {
     width: 100%;
     font-family: 'Roboto', sans-serif;
 }
-/* ====== VARIABLES ======*/
+/* ====== VARIABLES ====== */
 :root {
-    /* ====== COLORS ======*/
+    /* ====== COLORS ====== */
     --color-black: #1D242D;
     --color-text: #8c8a8a;
     --color-primary-container: #D9ECD9;
@@ -25,8 +30,8 @@ body {
     --border-footer: 1px solid #f9f9f3;
     --border-toast: 8px solid #006000;
 
-    /* ====== FONTS ======*/
-    --hero-heading: 80px;
+    /* ====== FONTS ====== */
+    --hero-heading: 58px;
     --paragraph: 16px;
     --paragraph-small: 14px;
     --paragraph-x-small: 12px;
@@ -38,7 +43,7 @@ body {
     --heading-medium: 22px;
     --heading-small: 18px;
 
-    /* ====== WEIGHTS ======*/
+    /* ====== WEIGHTS ====== */
     --heading: bold;
     --title: 500;
     --label: 500;
@@ -61,6 +66,9 @@ body {
     font-size: var(--sec-title);
     font-weight: 600;
 }
+.highlightedText {
+    color: var(--color-secondary);
+}
 .pageheading {
     font-size: 32px;
     font-weight: 600;
@@ -79,7 +87,7 @@ body {
 @media (max-width: 1024px) {
     .pageheading {
         margin-top: 1px;
-        font-size: 64px;
+        font-size: 36px;
     }
     .pagepara {
         margin-top: 4px;
@@ -108,9 +116,12 @@ body {
         margin-top: -4px !important;
         margin-bottom: 8px !important;
         font-weight: 500;
+        text-align: left;
+        width: 100%;
     }
     .pagetitle {
         font-size: 12px;
+        text-align: left;
     }
 }
 
@@ -118,17 +129,15 @@ body {
     .section{
         padding: 40px 16px;
     }
-    .highligtedText {
-        color: #800080;
-    }
     .pagepara {
         font-size: var(--paragraph-small);
         width: 100%;
     }
     .pageheading{
         font-size: var(--heading-medium);
-        text-align: left;
+        text-align: left !important;
         font-weight: 600;
+        width: 100%;
     }
     .pagetitle {
         font-size: 12px;

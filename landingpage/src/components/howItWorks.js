@@ -18,18 +18,18 @@ const howItWorks = () => {
             <p className="cardtext">Posting an ad as an agent is easy and it's designed to help you connect with potential buyers. Just follow the three steps to create and publish your ad.</p>
           </div>
           <div className="d-steps">
-            <div className="step">
+            <div className="step l">
               <h1 className="stroketext">1</h1>
               <div className="box">
               </div>
               <p>Download the App</p>
             </div>
-            <div className="step">
+            <div className="step m">
               <h1 className="stroketext">2</h1>
               <div className="box"></div>
               <p>Sign up as an Agent</p>
             </div>
-            <div className="step">
+            <div className="step r">
               <h1 className="stroketext">3</h1>
               <div className="box"></div>
               <p>Post an Ad</p>
@@ -42,17 +42,17 @@ const howItWorks = () => {
             <p className="cardtext">As a buyer using our app is intuitive and userfriendly. Follow the steps to make your first purchase</p>
           </div>
           <div className="Bsteps .reverse">
-            <div className="step">
+            <div className="step l">
               <h1 className="stroketext">1</h1>
               <div className="box"></div>
               <p>Download the App</p>
             </div>
-            <div className="step">
+            <div className="step m">
               <h1 className="stroketext">2</h1>
               <div className="box"></div>
               <p>Sign up as Student</p>
             </div>
-            <div className="step">
+            <div className="step r">
               <h1 className="stroketext">3</h1>
               <div className="box"></div>
               <p>Start purchasing</p>

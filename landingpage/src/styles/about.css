@@ -30,7 +30,7 @@
         width: 300px;
         height: 398px;
     }
-    .aboutsection h3, .aboutsection h1 {
+    .about-title {
             text-align: left !important;
         }
 }

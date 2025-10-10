@@ -12,7 +12,7 @@ const footer = () => {
         <Link to="/#"><img src={Logo} alt="footer logo"  className="footerlogo"/></Link>
       </div>
       <div className="Footernav">
-        <ul className="footerlinks">
+        <ul className="footerlink">
           <li><Link to="/#home" className="footerLinks">Home</Link></li>
           <li className="servicesLinks">
             <span>Services</span>
@@ -30,7 +30,7 @@ const footer = () => {
         <div className="Lang">
           <Button variant="stroke">
             English
-            <FaChevronDown style={{ fontSize: '12px', color: '#6c6c6c' }} />
+            <FaChevronDown style={{ fontSize: '14px', color: '#6c6c6c' }} />
           </Button>
         </div>
         <div className="socialLinks">

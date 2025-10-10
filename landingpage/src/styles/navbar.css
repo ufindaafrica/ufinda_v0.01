@@ -41,11 +41,6 @@
   text-decoration: none;
   font-weight: 400;
 }
-
-.link:hover {
-  color: var(--color-primary-hover);
-}
-
 .link:active {
   color: var(--color-primary);
 }
@@ -174,4 +169,10 @@
   .nav-list {
     top: 60px;
   }
+}
+@media (hover: hover){
+  .link:hover {
+      color: var(--color-black);
+      text-decoration: underline;
+    }
 }

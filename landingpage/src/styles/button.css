@@ -20,12 +20,6 @@
     color: var(--color-white) !important;
     padding: 24px;
 }
-.btn-default:hover {
-    box-shadow: 0 4px 8px 4px rgba(0, 0, 0, 0.18);
-    color: var(--color-white);
-    border: none;
-}
-
 .btn-icon {
     background-color: var(--color-primary);
     color: var(--color-white);
@@ -35,13 +29,13 @@
 }
 .btn-stroke {
     height: 40px;
-    color: var(--color-grey);
+    color: #999 !important;
     padding: 8px 8px 8px 16px;
-    border: var(--border-footer);
+    border: 1px solid #999;
     border-radius: 4px;
     display: flex;
     gap: 8px;
-    background-color: transparent;
+    background-color: transparent !important;
 }
 .btn-text {
     height: 40px;
@@ -54,4 +48,12 @@
 }
 .divider {
     border: var(--border-footer);
+}
+
+@media (hover: hover) {
+    .btn-default:hover {
+            box-shadow: 0 4px 8px 4px rgba(0, 0, 0, 0.18);
+            color: var(--color-white);
+            border: none;
+        }
 }
