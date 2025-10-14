@@ -4,6 +4,10 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"context"
 	"github.com/go-redis/redis/v8"
+	"net/url"
+	"net/http"
+	"io"
+	"encoding/json"
 	"github.com/google/uuid"
 	"fmt"
 	"time"
@@ -18,13 +22,13 @@ import (
 var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
 type Claims struct {
-	UserID         uuid.UUID `json:"id"`
+	UserID         string `json:"id"`
 	Email          string `json:"email"`
 	jwt.RegisteredClaims
 }
 
 func GenerateTokens(
-	userID uuid.UUID,
+	userID string,
 	email string,
 ) (string, string, error) {
 
@@ -38,7 +42,7 @@ func GenerateTokens(
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Subject:   userID.String(),
+			Subject:   userID,
 			ID:        jwtID, // <-- Correctly using a unique ID
 		},
 	}
@@ -113,7 +117,7 @@ func IsTokenBlacklisted(ctx context.Context, tokenjti string) (bool, error) {
 	return true, nil
 }
 
-func RefreshToken(userID uuid.UUID, email string) (string, string, error) {
+func RefreshToken(userID string, email string) (string, string, error) {
 	return GenerateTokens(userID, email)
 }
 
@@ -154,3 +158,95 @@ func SendOTP(email string, otp string) error {
 	return nil
 }
 // <-------------------------------> End OTP Tools <-------------------------------------->
+
+// <-------------------------------> Begin ID Tools <-------------------------------------->
+
+// The character set: 62 possible characters (A-Z, a-z, 0-9)
+const charSet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+const idLength = 6
+
+// generateRandomID generates a 6-character alphanumeric string.
+func generateRandomID() (string, error) {
+	bytes := make([]byte, idLength)
+	_, err := rand.Read(bytes)
+	if err != nil {
+		return "", fmt.Errorf("error reading random bytes: %w", err)
+	}
+	
+	for i, b := range bytes {
+		// Map the random byte to an index in the charSet
+		bytes[i] = charSet[b%byte(len(charSet))]
+	}
+	
+	return string(bytes), nil
+}
+
+// GetUniqueID generates a 7-character ID (1-char prefix + 6-char random ID)
+// that is guaranteed to be unique in the specified table.
+func GetUniqueID(prefix string, checkUniquenessFunc func(string) (bool, error)) (string, error) {
+	const maxAttempts = 10 
+	
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		// Generate the random 6-character base ID
+		baseID, err := generateRandomID()
+		if err != nil {
+			return "", err
+		}
+		
+		// Create the final 7-character ID
+		finalID := prefix + baseID
+		
+		// Check the database for collisions
+		isUnique, err := checkUniquenessFunc(finalID)
+		if err != nil {
+			// Handle database error during check
+			return "", fmt.Errorf("database error during uniqueness check for ID %s: %w", finalID, err)
+		}
+		
+		if isUnique {
+			return finalID, nil // Success!
+		}
+		// If not unique, the loop continues to the next attempt
+	}
+	
+	// If maxAttempts is reached without success, something is seriously wrong (high collision rate).
+	return "", fmt.Errorf("failed to generate unique ID after %d attempts. Collision rate is too high", maxAttempts)
+}
+
+func IsIDUnique(id string, endpoint string) (bool, error) {
+	if id == "" {
+		return false, fmt.Errorf("ID cannot be empty")
+	}
+	if endpoint == "" {
+		return false, fmt.Errorf("endpoint cannot be empty")
+	}
+
+
+	queryURL := fmt.Sprintf("%s?id=eq.%s", endpoint, url.QueryEscape(id))
+
+	resp, err := db.MakeDBRequest("GET", queryURL, nil, nil)
+	if err != nil {
+		return false, fmt.Errorf("error making DB request to check uniqueness on %s: %w", endpoint, err)
+	}
+	defer resp.Body.Close()
+
+	// 2. Handle Non-200 Status Codes
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			return false, fmt.Errorf("failed to check uniqueness (Status: %d). Failed to read body: %w", resp.StatusCode, readErr)
+		}
+		bodyString := string(bodyBytes)
+		return false, fmt.Errorf("uniqueness check failed on %s. Status: %d, Response Body: %s", endpoint, resp.StatusCode, bodyString)
+	}
+
+	var responseArray []interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&responseArray); err != nil {
+		// Log the error but treat it as a potential collision risk if decoding fails
+		return false, fmt.Errorf("error decoding response for uniqueness check on %s: %w", endpoint, err)
+	}
+
+	isUnique := len(responseArray) == 0
+
+	return isUnique, nil
+}

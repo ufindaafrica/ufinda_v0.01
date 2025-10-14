@@ -4,16 +4,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strings"
-	"log"
-	"github.com/oladev/ufinda_v0.01/internal/token/client"
+	"github.com/oladev/ufinda_v0.01/internal/token"
 	"github.com/oladev/ufinda_v0.01/internal/logs/auth"
 	"github.com/oladev/ufinda_v0.01/internal/db"
+    "github.com/google/uuid"
 )
 
 func handleAuthError(c *gin.Context, status int, message string, logEntry db.SecurityLog) {
-    if err := authlog.CreateLog(logEntry); err != nil {
-		log.Printf("%v", err)
-    }
+    authlog.SecurityLog(logEntry)
 
     c.JSON(status, gin.H{"error": message})
     c.Abort()
@@ -28,12 +26,14 @@ func AuthMiddleware() gin.HandlerFunc {
             return
         }
 
+
         // Validate token
         tokenString := strings.TrimPrefix(authHeader, "Bearer ")
         claims, err := token.ValidateToken(tokenString)
         if err != nil {
             logData := authlog.Logs["4"]
             logEntry := db.SecurityLog{
+                ID: uuid.New(),
                 Log:   logData.Message,
                 Level: logData.Level,
             }
@@ -56,7 +56,7 @@ func AuthMiddleware() gin.HandlerFunc {
 
         // Set the user ID from the token payload, this is the trusted source
         c.Set("id", claims.UserID)
-
         c.Next()
     }
 }
+

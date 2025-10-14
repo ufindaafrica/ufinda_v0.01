@@ -1,5 +1,3 @@
-# AUTH APIs: *USER*
-
 ## Email SignUp API
 ### POST `/auth/email/signup`
 
@@ -39,7 +37,7 @@ No special headers are required.
 1.  **Validation**: The endpoint first validates the request body.
 2.  **Existing User Check**: It checks if an account with the provided email already exists, either as a fully created user or a pending user.
 3.  **Password Hashing**: The provided password is securely hashed using `bcrypt`.
-4.  **OTP Generation**: A unique One-Time Password (OTP) is generated for email verification. This OTP is valid for **15 minutes**.
+4.  **OTP Generation**: A unique six digits One-Time Password (OTP) is generated for email verification. This OTP is valid for **15 minutes**.
 5.  **Pending Account Creation**: The new user's details, including the hashed password and OTP, are stored as a pending account in the database.
 6.  **Email Delivery**: The OTP is sent to the user's email address.
 
@@ -136,7 +134,7 @@ No special headers are required.
 ## Verify OTP API
 ### POST `/auth/verify-otp`
 
-This endpoint verifies a user's email address using a one-time password (OTP). A pending user account is converted into a fully active user account upon successful verification.
+This endpoint verifies a user's email address using a one-time password (OTP). A pending user account is converted into a fully active user account upon successful verification, and the user is immediately logged in.
 
 -----
 
@@ -166,10 +164,11 @@ No special headers are required.
 ### Workflow
 
 1.  **Input Validation**: The endpoint validates the request body.
-2.  **User Status Check**: It first checks to ensure the user is not already a fully verified user. It then verifies that a pending account exists for the provided email.
-3.  **OTP Validation**: The provided OTP is matched against the one stored in the pending user record. If the OTP is incorrect or has expired (**15-minute validity**), the request is denied.
-4.  **Account Creation**: Upon successful OTP verification, a new active user account is created in the database with the details from the pending account.
-5.  **Cleanup**: The pending user record is then deleted from the database to maintain data integrity.
+2.  **User Status Check**: It checks if a **fully created and verified user** with the email exists, returning an error if true. It then verifies that a **pending account** exists for the provided email, returning an error if not found.
+3.  **OTP Validation**: The provided OTP is matched against the one stored in the pending user record. If the OTP is incorrect or has expired, the request is denied.
+4.  **Account Creation**: Upon successful OTP verification, a new unique `UserID` is generated, and an active user account is created in the database using the details from the pending account.
+5.  **Token Generation**: Access and Refresh JWTs are generated for the newly created user.
+6.  **Cleanup**: The pending user record is deleted from the database.
 
 -----
 
@@ -179,13 +178,15 @@ No special headers are required.
 
 | Status Code | Description |
 | :--- | :--- |
-| `200 OK` | The email verification was successful, and the user's account is now active. |
+| `200 OK` | The email verification was successful. The user's account is now active, and login tokens are provided. |
 
 **Body**
 
 ```json
 {
-  "message": "verification successful"
+  "message": "verification successful",
+  "access_token": "eyJhbGciOiJIUzI1Ni...",
+  "refresh_token": "eyJhbGciOiJIUzI1Ni..."
 }
 ```
 
@@ -193,10 +194,9 @@ No special headers are required.
 
 | Status Code | Description |
 | :--- | :--- |
-| `400 Bad Request` | The request body is invalid, the user is already verified, or a pending account with the provided email does not exist. |
-| `401 Unauthorized` | The provided OTP is invalid or has expired. |
-| `500 Internal Server Error` | An unexpected server error occurred (e.g., database issues, failure to create a new user record). |
-
+| `400 Bad Request` | The request body is invalid, the user is **already created/verified**, or a pending account with the provided email **does not exist** (`ErrorPendingUserNotFound`). |
+| `403 Forbidden` | The provided OTP is **invalid** or has **expired**. |
+| `500 Internal Server Error` | An unexpected server error occurred (e.g., database issues, failure to generate a unique ID, or failure to create a new user record). |
 -----
 
 ## Email Login API
@@ -394,10 +394,11 @@ No request body is required.
 
 -----
 
-# KYC APIs: *USER*
-### POST `/kyc/user`
 
-This endpoint handles the submission of user KYC (Know Your Customer) information, including personal details and an identification document. The process verifies the user's identity and prevents duplicate submissions.
+## DELETE ACCOUNT API
+### DELETE `/auth/account/delete`
+
+This endpoint allows an authenticated user to permanently delete their own account. It handles the deletion of associated assets (like profile images) before confirming account deletion in the database.
 
 -----
 
@@ -405,40 +406,29 @@ This endpoint handles the submission of user KYC (Know Your Customer) informatio
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `POST` | `/kyc/user` | Submits KYC information and an identification document. |
+| `DELETE` | `/auth/account/delete` | Permanently deletes the authenticated user's account and associated assets. |
 
 #### Body
 
-The request body must be sent as `multipart/form-data`.
-
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| `email` | `string` | The user's email address (passed as a URL query parameter). |
-| `level` | `string` | The user's academic level. |
-| `dept` | `string` | The user's academic department. |
-| `nin` | `string` | The user's National Identification Number (NIN). |
-| `faculty` | `string` | The user's academic faculty. |
-| `matric` | `string` | The user's matriculation number. |
-| `file` | `file` | The user's NIN document (image or PDF). |
+No request body is required.
 
 #### Headers
 
-This endpoint requires an `Authorization` header with a valid access token.
-
-| Header | Example Value | Description |
+| Header | Value | Description |
 | :--- | :--- | :--- |
-| `Authorization` | `Bearer <access_token>` | The user's current access token. |
+| `Authorization` | `Bearer <access_token>` | **Required** for user authentication. |
 
 -----
 
 ### Workflow
 
-1.  **Authorization**: The endpoint first verifies that the user is authenticated and that the email provided in the query parameter matches the email in the JWT claims of the access token. Any mismatch is logged as a security event.
-2.  **User Status Check**: It checks if a user account exists for the provided email.
-3.  **KYC Status Check**: It checks the user's current KYC status.
-      * If KYC is already `pending`, `verified`, or `failed` (and a new submission is not allowed), an error is returned.
-4.  **Document Upload**: The NIN document (`file`) is extracted from the form data and uploaded to the server's storage system.
-5.  **KYC Record Creation**: A new KYC record is created in the database with the provided details and the URL of the uploaded document.
+1.  **Authentication & ID Retrieval**: The endpoint retrieves the user's ID from the request context, which is set by the authentication middleware.
+2.  **User Verification**: The full user record is fetched to verify existence and check the user's role.
+3.  **Asset Cleanup**:
+      * If the user's `Role` is `"user"`, the system attempts to find their KYC record.
+      * If a KYC record exists and contains a **Profile Image Public ID**, the corresponding image asset is deleted from Cloudinary (including forced CDN cache invalidation). Errors during KYC fetch (excluding `ErrorKYCNotFound`) or asset deletion are logged and cause a `500` error return.
+4.  **Account Deletion**: The final authenticated user record is deleted from the primary database (based on commented code logic).
+5.  **Confirmation**: A success message is returned to the client.
 
 -----
 
@@ -448,13 +438,13 @@ This endpoint requires an `Authorization` header with a valid access token.
 
 | Status Code | Description |
 | :--- | :--- |
-| `200 OK` | The KYC information was successfully uploaded and is now awaiting verification. |
+| `200 OK` | The user account and all associated data/assets were successfully deleted. |
 
 **Body**
 
 ```json
 {
-  "message": "Kyc uploaded successfully"
+  "message": "account deleted successfully"
 }
 ```
 
@@ -462,6 +452,12 @@ This endpoint requires an `Authorization` header with a valid access token.
 
 | Status Code | Description |
 | :--- | :--- |
-| `400 Bad Request` | The request is invalid due to a missing query parameter, invalid form data, a non-existent user, or an attempt to resubmit KYC when it's already pending, verified, or has failed (and requires a different action). |
-| `401 Unauthorized` | The access token is invalid or the email in the token does not match the email in the request. |
-| `500 Internal Server Error` | An unexpected server error occurred (e.g., database connection issues, file upload failures). |
+| `400 Bad Request` | An invalid user ID type was found in the context (middleware error). |
+| `404 Not Found` | The authenticated user's account could not be found in the database. |
+| `500 Internal Server Error` | An unexpected server error occurred during critical steps, such as: |
+| | - User ID missing from context (critical middleware failure). |
+| | - Database error retrieving user or KYC record. |
+| | - Failure to delete the Cloudinary asset. |
+| | - Failure to delete the final account record (assuming uncommented). |
+
+----

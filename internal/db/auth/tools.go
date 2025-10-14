@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"errors"
 	"net/http"
-	"github.com/google/uuid"
+	"io"
 	"github.com/oladev/ufinda_v0.01/internal/db"
 	"net/url"
 	"encoding/json"
@@ -14,112 +14,162 @@ var ErrorGettingPendingUser = errors.New("Failed to get pending user")
 var ErrorGettingUser = errors.New("Failed to get user")
 var ErrorUserNotFound = errors.New("no user found")
 var ErrorPendingUserNotFound = errors.New("no pending user found")
+var ErrorAssetNotFound = errors.New("no asset found")
 // <-------------------------> End Error Tools <---------------------------->
 
 // <-------------------------------> Begin User Creation, Search, Update and Delete Tools <-------------------------------------->
-func InsertPendingUser(pendinguser *db.PendingUser) error {
 
+func InsertPendingUser(pendinguser *db.PendingUser) error {
+	// Construct the API endpoint string.
 	endpoint := fmt.Sprintf("/rest/v1/pending_users")
-	
+
+	// Make the database request.
 	resp, err := db.MakeDBRequest("POST", endpoint, pendinguser, nil)
 	if err != nil {
-		return err
+		// Return the error directly if there was a problem making the request (e.g., network error).
+		return fmt.Errorf("error making DB request to insert pending user: %w", err)
 	}
 	defer resp.Body.Close()
+
+	// Check if the status code is what we expect for a successful creation (201 Created).
 	if resp.StatusCode != http.StatusCreated {
-		return fmt.Errorf("failed to create pending user")
+		// --- Error Handling for Non-201 Status Code ---
+
+		// 1. Read the entire response body.
+		// This body often contains the detailed error message from the backend.
+		bodyBytes, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			// If reading the body fails, return an error that includes the status code and the read error.
+			return fmt.Errorf("failed to create pending user (Status: %d). Additionally, failed to read response body: %w", resp.StatusCode, readErr)
+		}
+
+		// 2. Convert the body bytes to a string for inclusion in the final error.
+		bodyString := string(bodyBytes)
+		
+		// 3. Construct a detailed error.
+		// This error now includes the non-success status code and the response body 
+		// which should contain the detailed reason for the failure.
+		return fmt.Errorf("failed to create pending user. Status: %d, Response Body: %s", resp.StatusCode, bodyString)
 	}
+
+	// Request was successful (Status 201).
 	return nil
 }
 
 // update pending user record
 func UpdatePendingUser(email string, data interface{}) error {
-	if email == "" {
-		return fmt.Errorf("email cannot be empty")
-	}
+    endpoint := "/rest/v1/pending_users?email=eq." + url.QueryEscape(email)
+    
+    headers := map[string]string{
+        "Prefer": "return=representation",
+    }
 
-	// Correct endpoint for a PATCH request to a specific user.
-	// We'll use a URL query parameter for filtering and add headers.
-	endpoint := "/rest/v1/pending_users?email=eq." + url.QueryEscape(email)
-	headers := map[string]string{
-		"Prefer": "return=representation", // Some APIs require this for PATCH
-	}
+    resp, err := db.MakeDBRequest("PATCH", endpoint, data, headers)
+    if err != nil {
+        return fmt.Errorf("error making DB request to update pending user: %w", err)
+    }
+    defer resp.Body.Close()
 
-	resp, err := db.MakeDBRequest("PATCH", endpoint, data, headers)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
+    if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+        bodyBytes, readErr := io.ReadAll(resp.Body)
+        if readErr != nil {
+            return fmt.Errorf("failed to update pending user (Status: %d). Additionally, failed to read response body: %w", resp.StatusCode, readErr)
+        }
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("failed to update data with status code: %d", resp.StatusCode)
-	}
+        // 2. Convert the body bytes to a string.
+        bodyString := string(bodyBytes)
+        
+        return fmt.Errorf("failed to update pending user. Status: %d, Response Body: %s", resp.StatusCode, bodyString)
+    }
 
-	return nil
+    return nil
 }
 
 // find user during sign up
 func FindPendingUser(email string) (*db.PendingUser, error) {
-	url := fmt.Sprintf("/rest/v1/pending_users?email=eq.%s", url.QueryEscape(email))
+    url := fmt.Sprintf("/rest/v1/pending_users?email=eq.%s", url.QueryEscape(email))
 
-	resp, err := db.MakeDBRequest("GET", url, nil, nil)
-	if err != nil {
-		return nil, ErrorGettingPendingUser
-	}
-	defer resp.Body.Close()
+    resp, err := db.MakeDBRequest("GET", url, nil, nil)
+    if err != nil {
+        return nil, fmt.Errorf("error making DB request to find pending user: %w: %w", err, ErrorGettingPendingUser)
+    }
+    defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, ErrorGettingPendingUser
-	}
+    if resp.StatusCode != http.StatusOK {
+        bodyBytes, readErr := io.ReadAll(resp.Body)
+        if readErr != nil {
+            return nil, fmt.Errorf("failed to find pending user (Status: %d). Additionally, failed to read response body: %w: %w", resp.StatusCode, readErr, ErrorGettingPendingUser)
+        }
 
-	var pendinguser []db.PendingUser
-	if err := json.NewDecoder(resp.Body).Decode(&pendinguser); err != nil {
-		return nil, err
-	}
+        // 2. Convert the body bytes to a string.
+        bodyString := string(bodyBytes)
 
-	if len(pendinguser) == 0 {
-		return nil, ErrorPendingUserNotFound
-	}
+        return nil, fmt.Errorf("failed to find pending user by email. Status: %d, Response Body: %s: %w", resp.StatusCode, bodyString, ErrorGettingPendingUser)
+    }
 
-	return &pendinguser[0], nil
+
+    var pendinguser []db.PendingUser
+    if err := json.NewDecoder(resp.Body).Decode(&pendinguser); err != nil {
+        return nil, fmt.Errorf("error decoding response for pending user: %w", err)
+    }
+
+    if len(pendinguser) == 0 {
+        return nil, ErrorPendingUserNotFound
+    }
+
+    return &pendinguser[0], nil
 }
 
 // create the user in user table after verification
 func CreateUser(user db.User) error {
-	url := fmt.Sprintf("/rest/v1/users")
+    url := fmt.Sprintf("/rest/v1/users")
 
-	resp, err := db.MakeDBRequest("POST", url, user, nil)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	
-	if resp.StatusCode != http.StatusCreated {
-		return fmt.Errorf("failed to create user")
-	}
+    resp, err := db.MakeDBRequest("POST", url, user, nil)
+    if err != nil {
+        return fmt.Errorf("error making DB request to create user: %w", err)
+    }
+    defer resp.Body.Close()
+    
+    if resp.StatusCode != http.StatusCreated {
+        bodyBytes, readErr := io.ReadAll(resp.Body)
+        if readErr != nil {
+            return fmt.Errorf("failed to create user (Status: %d). Additionally, failed to read response body: %w", resp.StatusCode, readErr)
+        }
 
-	return nil
+        bodyString := string(bodyBytes)
+        
+        return fmt.Errorf("failed to create user. Status: %d, Response Body: %s", resp.StatusCode, bodyString)
+    }
+
+    return nil
 }
 
 // update created user
-func UpdateCreatedUser(id uuid.UUID, data interface{}) error {
-	endpoint := fmt.Sprintf("/rest/v1/users?id=eq.%s", id)
-	
-	headers := map[string]string {
-		"Prefer": "return=representation",
-	}
+func UpdateCreatedUser(id string, data interface{}) error {
+    endpoint := fmt.Sprintf("/rest/v1/users?id=eq.%s", url.QueryEscape(id))
+    
+    headers := map[string]string {
+        "Prefer": "return=representation",
+    }
 
-	resp, err := db.MakeDBRequest("PATCH", endpoint, data, headers)
-	if err != nil {
-		return fmt.Errorf("database request failed: %w", err)
-	}
-	defer resp.Body.Close()
+    resp, err := db.MakeDBRequest("PATCH", endpoint, data, headers)
+    if err != nil {
+        return fmt.Errorf("database request failed: %w", err)
+    }
+    defer resp.Body.Close()
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("failed to update data with status code: %d", resp.StatusCode)
-	}
+    if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+        bodyBytes, readErr := io.ReadAll(resp.Body)
+        if readErr != nil {
+            return fmt.Errorf("failed to update user (Status: %d). Additionally, failed to read response body: %w", resp.StatusCode, readErr)
+        }
 
-	return nil
+        bodyString := string(bodyBytes)
+        
+        return fmt.Errorf("failed to update user. Status: %d, Response Body: %s", resp.StatusCode, bodyString)
+    }
+
+    return nil
 }
 
 // delete the pending user afer successful verification and creation of the user
@@ -162,27 +212,119 @@ func FindCreatedUserByEmail(email string) (*db.User, error) {
 	return &user[0], nil
 }
 
-func FindCreatedUserByID(id uuid.UUID) (*db.User, error) {
-	var user []db.User
+func FindCreatedUserByID(id string) (*db.User, error) {
+    var user []db.User
 
-	url := fmt.Sprintf("/rest/v1/users?id=eq.%s", id)
+    url := fmt.Sprintf("/rest/v1/users?id=eq.%s", url.QueryEscape(id))
 
-	resp, err := db.MakeDBRequest("GET", url, nil, nil)
+    resp, err := db.MakeDBRequest("GET", url, nil, nil)
+    if err != nil {
+        return nil, fmt.Errorf("error making DB request to find user: %w: %w", err, ErrorGettingUser)
+    }
+    defer resp.Body.Close()
+
+    if resp.StatusCode != http.StatusOK {
+        bodyBytes, readErr := io.ReadAll(resp.Body)
+        if readErr != nil {
+            return nil, fmt.Errorf("failed to find user by ID (Status: %d). Additionally, failed to read response body: %w: %w", resp.StatusCode, readErr, ErrorGettingUser)
+        }
+
+        bodyString := string(bodyBytes)
+        
+        return nil, fmt.Errorf("failed to find user. Status: %d, Response Body: %s: %w", resp.StatusCode, bodyString, ErrorGettingUser)
+    }
+
+    if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
+        return nil, fmt.Errorf("error decoding response for user: %w", err)
+    }
+    
+    if len(user) == 0 {
+        return nil, ErrorUserNotFound
+    }
+    
+    return &user[0], nil
+}
+// <-------------------------------> End User Creation, Search, Update and Delete Tools <-------------------------------------->
+
+// AssetsResponse represents the data we expect back, containing only the nested tables.
+type AssetsResponse struct {
+	// Embedded 'user_kyc' fields (expected as a slice with one element)
+	UserKYC []struct {
+		ProfileImg string `json:"profile_img"`
+	} `json:"user_kyc"`
+
+	// Embedded 'hostel' fields (expected as a slice with one element)
+	Hostel []struct {
+		HostelImages  []string `json:"hostel_images"`
+		HostelVideos  []string `json:"hostel_videos"`
+	} `json:"hostel"`
+}
+
+// FindAssetsByID retrieves specific asset fields from related tables based on user ID.
+func FindUserAssetsByID(id string) (*AssetsResponse, error) {
+	selectParam := url.QueryEscape(",user_kyc(profile_img)")
+
+	// The complete endpoint URL
+	// We still filter by ID on the 'users' table, but only select the related fields.
+	endpoint := fmt.Sprintf("/rest/v1/users?id=eq.%s&select=%s", url.QueryEscape(id), selectParam)
+
+	// NOTE: Assuming db.MakeDBRequest exists and returns *http.Response and error.
+	resp, err := db.MakeDBRequest("GET", endpoint, nil, nil)
 	if err != nil {
-		return nil, ErrorGettingUser
+		return nil, fmt.Errorf("error making DB request to find assets: %w", err)
 	}
 	defer resp.Body.Close()
 
+	// 2. Elaborate Error Handling (reading body on non-200 status)
 	if resp.StatusCode != http.StatusOK {
-		return nil, ErrorGettingUser
+		bodyBytes, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			return nil, fmt.Errorf("failed to find assets (Status: %d). Failed to read body: %w", resp.StatusCode, readErr)
+		}
+		bodyString := string(bodyBytes)
+		return nil, fmt.Errorf("failed to find assets for user ID '%s'. Status: %d, Response Body: %s", id, resp.StatusCode, bodyString)
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
-		return nil, err
+	// 3. Decode the response
+	var responseArray []AssetsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&responseArray); err != nil {
+		return nil, fmt.Errorf("error decoding response for assets: %w", err)
 	}
-	if len(user) == 0 {
-		return nil, ErrorUserNotFound
+
+	// Check for existence
+	if len(responseArray) == 0 {
+		return nil, ErrorAssetNotFound
 	}
-	return &user[0], nil
+
+	// Return the single result, which contains only the nested asset data
+	return &responseArray[0], nil
 }
-// <-------------------------------> End User Creation, Search, Update and Delete Tools <-------------------------------------->
+
+
+func DeleteCreatedUserByID(userID string) error {
+	url := fmt.Sprintf("/rest/v1/users?id=eq.%s", url.QueryEscape(userID)) 
+
+	resp, err := db.MakeDBRequest("DELETE", url, nil, nil)
+	if err != nil {
+		// Return the error encountered during the HTTP request itself (e.g., network issues)
+		return fmt.Errorf("error making DB request to delete user %s: %w", userID, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent {
+		// Read the entire response body for detailed error information
+		bodyBytes, readErr := io.ReadAll(resp.Body)
+		bodyString := string(bodyBytes)
+
+		// Check if there was an error reading the body
+		if readErr != nil {
+			return fmt.Errorf("failed to delete user: received status code %d. Also, failed to read response body: %w", resp.StatusCode, readErr)
+		}
+
+		// Return a detailed error including the status code and the response body
+		return fmt.Errorf("failed to delete user: received unexpected status code %d. Response body: %s", resp.StatusCode, bodyString)
+	}
+
+	// Deletion was successful (StatusNoContent)
+	return nil
+}

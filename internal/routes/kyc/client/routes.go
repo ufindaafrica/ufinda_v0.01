@@ -2,99 +2,203 @@ package userkyc
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/oladev/ufinda_v0.01/internal/routes/auth/client"
 	"errors"
 	"net/http"
-    "github.com/google/uuid"
+    "fmt"
 	"github.com/oladev/ufinda_v0.01/internal/db"
-    "log"
+    "github.com/cloudinary/cloudinary-go/v2"
 	// "github.com/oladev/ufinda_v0.01/internal/logs/auth"
     "github.com/oladev/ufinda_v0.01/internal/db/auth"
+    "github.com/oladev/ufinda_v0.01/internal/token"
+    "github.com/oladev/ufinda_v0.01/internal/logs/kyc"
     "github.com/oladev/ufinda_v0.01/internal/db/kyc"
 )
 
-var InvalidRequest = "invalid request"
+func UserKYCHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
+    return func(c *gin.Context) {
+        // 1. Get the trusted user ID from the context
+        id, exists := c.Get("id")
+        if !exists {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "user ID not found in context"})
+            return
+        }
 
-func UserKYCHandler(c *gin.Context) {
-    // 1. Get the trusted user ID from the context
-    id, exists := c.Get("id")
-    if !exists {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "user ID not found in context"})
-        return
-    }
-    userID, ok := id.(uuid.UUID)
-    if !ok {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user ID type in context"})
-        return
-    }
+        userID, ok := id.(string)
+        if !ok {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid id type"})
+            return
+        }
 
-    // 2. Find the user based on the trusted ID
-    createdUser, err := authdb.FindCreatedUserByID(userID)
-    if err != nil {
-        if errors.Is(err, auth.ErrorUserNotFound) {
-            c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+        // 2. Find the user based on the trusted ID
+        createdUser, err := authdb.FindCreatedUserByID(userID)
+        if err != nil {
+            if errors.Is(err, authdb.ErrorUserNotFound) {
+                c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+            } else {
+                // Log the user retrieval failure
+                kyclog.LogKYC(userID, fmt.Errorf("error getting user: %w", err))
+                c.JSON(http.StatusInternalServerError, gin.H{"error": "error getting user"})
+            }
+            return
+        }
+
+        if createdUser.Role != "user" {
+            c.JSON(http.StatusForbidden, gin.H{"error": "access not granted"})
+            return
+        }
+
+        // 3. Get form data and upload file
+        level := c.PostForm("level")
+        dept := c.PostForm("dept")
+        faculty := c.PostForm("faculty")
+        matric := c.PostForm("matric")
+        aboutMe := c.PostForm("about_me")
+        fmt.Sprintf("this is the aboutme: %s", aboutMe)
+        profilePic, err := c.FormFile("profile_pic")
+        
+        // Initialized to an empty struct (zero value), representing no uploaded file yet.
+        var uploadedFile db.UploadedFile 
+        
+        // Variable to track file upload status
+        var imageUploadError error 
+        
+        // --- File Upload Logic (Modified to track error instead of returning) ---
+        if err == nil {
+            // A file was present, attempt to open and upload it
+            file, openErr := profilePic.Open()
+            if openErr != nil {
+                imageUploadError = fmt.Errorf("failed to open profile image: %w", openErr)
+            } else {
+                defer file.Close() // Ensure the file is closed
+
+                url, publicID, uploadErr := kycdb.UploadProfileImage(cld, file, profilePic.Filename)
+                if uploadErr != nil {
+                    imageUploadError = fmt.Errorf("failed to save profile image to cloud: %w", uploadErr)
+                } else {
+                    // Only populate the struct if the upload was successful
+                    uploadedFile = db.UploadedFile{
+                        URL: url,
+                        PublicID: publicID,
+                    }
+                }
+            }
+        } else if err != http.ErrMissingFile {
+            // This handles cases where file upload *failed* for reasons other than 
+            // the user just not providing a file (e.g., parsing errors).
+            imageUploadError = fmt.Errorf("error parsing profile image from form: %w", err)
+        }
+        
+        if imageUploadError != nil {
+            // Log the image upload error
+            kyclog.LogKYC(userID, imageUploadError)
+        }
+
+        // 4. Check if KYC exists
+        _, err = kycdb.FindUserKYC(userID)
+        isKYCFound := err == nil
+        
+        if err != nil && !errors.Is(err, kycdb.ErrorKYCNotFound) {
+            // Log database/fetching issue
+            kyclog.LogKYC(userID, fmt.Errorf("database error fetching existing KYC: %w", err))
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "database error fetching kyc"})
+            return
+        }
+
+        // 5. Prepare the data for update/create
+        // Use a map to dynamically include only non-empty fields, which is ideal for a PATCH/Update.
+        updateData := make(map[string]interface{})
+        
+        // Only include non-empty strings
+        if level != "" {
+            updateData["level"] = level
+        }
+        if dept != "" {
+            updateData["dept"] = dept
+        }
+        if faculty != "" {
+            updateData["faculty"] = faculty
+        }
+        if matric != "" {
+            updateData["matric"] = matric
+        }
+        if aboutMe != "" {
+            updateData["about_me"] = aboutMe
+        }
+        
+        // Include profile picture if uploaded successfully
+        // Check if the uploadedFile struct is populated (e.g., by checking the URL field)
+        if uploadedFile.URL != "" {
+            updateData["profile_img"] = uploadedFile
+        }
+
+        var opErr error
+        var message string
+
+        if isKYCFound {
+            // --- UPDATE Existing KYC (PATCH) ---
+            // Pass the map as the update data to UpdateUserKYC
+            opErr = kycdb.UpdateUserKYC(userID, updateData) 
+            message = "KYC updated successfully"
         } else {
-            c.JSON(http.StatusInternalServerError, gin.H{"error": "error getting user"})
-        }
-        return
-    }
+            // --- CREATE New KYC (POST) ---
+            // For creation, we need the full struct, so we merge the map into a new struct
+            newKYC := db.UserKYC{
+                UserID: createdUser.ID,
+            }
+            if level != "" && dept != "" && faculty != "" && matric != "" {
+                newKYC.IsStudent = true
+            }
+            
+            // Merge map data into the struct fields
+            if val, ok := updateData["level"]; ok { newKYC.Level = val.(string) }
+            if val, ok := updateData["dept"]; ok { newKYC.Dept = val.(string) }
+            if val, ok := updateData["faculty"]; ok { newKYC.Faculty = val.(string) }
+            if val, ok := updateData["matric"]; ok { newKYC.Matric = val.(string) }
+            if val, ok := updateData["about_me"]; ok { newKYC.AboutMe = val.(string) }
+            
+            // Handle profile picture for creation
+            // Check if the uploadedFile struct is populated
+            if uploadedFile.URL != "" {
+                newKYC.ProfileImg = uploadedFile
+            }
 
-    // 3. Check for existing KYC
-    userKyc, err := kycdb.FindUserKYC(createdUser.ID)
-    if err == nil {
-        // KYC already exists, check status
-        if userKyc.Status == "pending" {
-            c.JSON(http.StatusBadRequest, gin.H{"error": "kyc already uploaded, wait for it to be confirmed"})
-            return
-        }
-        if userKyc.Status == "verified" {
-            c.JSON(http.StatusBadRequest, gin.H{"error": "kyc already uploaded and verified"})
-            return
-        }
-        if userKyc.Status == "failed" {
-            reason, err := kycdb.CheckUserKYCFailReason(userKyc.ID)
+            // Fix 1: Corrected spelling from checkUniqunessFunc to checkUniquenessFunc
+            checkUniquenessFunc := func(id string) (bool, error) {
+                return token.IsIDUnique(id, "/rest/v1/user_kyc")
+            }
+
+            // Fix 2: Using the correctly spelled function variable
+            newKYCID, err := token.GetUniqueID("K", checkUniquenessFunc)
             if err != nil {
-                c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                kyclog.LogKYC(userID, fmt.Errorf("failed to generate id: %w", err))
+                c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate id"})
                 return
             }
-            c.JSON(http.StatusBadRequest, gin.H{"error": reason})
+            newKYC.ID = newKYCID
+
+            opErr = kycdb.CreateUserKYC(newKYC)
+            message = "KYC created successfully"
+        }
+
+        // 6. Handle the result of the update/create operation
+        if opErr != nil {
+            kyclog.LogKYC(userID, fmt.Errorf("kyc %s operation failed: %w", ternary(isKYCFound, "update", "create"), opErr))
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save KYC data"})
             return
         }
-    } else if !errors.Is(err, kycdb.ErrorKYCNotFound) {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-        return
+
+        // update verification as successful
+        data := make(map[string]interface{})
+        data["is_verified"] = true
+        if err := authdb.UpdateCreatedUser(userID, data); err != nil {
+            fmt.Sprintf("CRITICAL: failed to update user data: %w", err)
+        }
+
+        c.JSON(http.StatusOK, gin.H{"message": message})
     }
+}
 
-    // 4. Get form data and upload file
-    level := c.PostForm("level")
-    dept := c.PostForm("dept")
-    nin := c.PostForm("nin")
-    faculty := c.PostForm("faculty")
-    matric := c.PostForm("matric")
-
-    // 5. Create the new KYC entry
-    newKYC := db.UserKYC{
-        Level:   level,
-        Dept:    dept,
-        NIN:     nin,
-        Faculty: faculty,
-        Matric:  matric,
-        UserID:  createdUser.ID,
-        Status:  "verified", // set status to pending by default
-    }
-
-    if err := kycdb.CreateUserKYC(newKYC); err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-        return
-    }
-
-    // 6. Update user's KYC status
-    if err := authdb.UpdateCreatedUser(createdUser.ID, map[string]interface{}{"is_user_kyc_verified": true}); err != nil {
-        log.Println("error updating user kyc status:", err)
-    }
-	if err := kycdb.DeleteKycFailReason(createdUser.ID); err != nil {
-		log.Println("error deleting user kyc status:", err)
-	}
-
-    c.JSON(http.StatusOK, gin.H{"message": "KYC uploaded successfully"})
+func ternary(isKYCFound bool, update string, create string) string {
+    if isKYCFound { return update }
+    return create
 }

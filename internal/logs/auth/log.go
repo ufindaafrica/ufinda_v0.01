@@ -2,9 +2,10 @@ package authlog
 
 import (
 	"fmt"
-	"net/http"
-	"io"
+	"os"
+	"github.com/google/uuid"
 	"github.com/oladev/ufinda_v0.01/internal/db"
+	"github.com/oladev/ufinda_v0.01/internal/logs"
 )
 
 type LogEntry struct {
@@ -31,29 +32,24 @@ var Logs = map[string]LogEntry{
 	},
 }
 
-func CreateLog(log db.SecurityLog) error {
-	url := fmt.Sprintf("/rest/v1/security_logs")
+func SecurityLog(securitylog db.SecurityLog) {
+	url := fmt.Sprintf("/rest/v1/security_log")
 
-	resp, err := db.MakeDBRequest("POST", url, log, nil)
-	if err != nil {
-		return err
+	if err := log.CreateLog(securitylog, url); err != nil {
+		fmt.Fprintf(os.Stderr, "CRITICAL: Failed to create Security failure log: %v.", err)
 	}
-	defer resp.Body.Close()
+}
 
-	if resp.StatusCode != http.StatusCreated {
-		// Read the body to get the server's specific error
-		bodyBytes, readErr := io.ReadAll(resp.Body)
-		if readErr != nil {
-			// If we can't even read the body, return a more informative error
-			return fmt.Errorf("failed to create log with status %d, and couldn't read response body: %w", resp.StatusCode, readErr)
-		}
-
-		// Convert the body to a string for the error message
-		bodyString := string(bodyBytes)
-		
-		// Return a comprehensive error that includes the status code and the server's message
-		return fmt.Errorf("failed to create log: server responded with status %d and body: %s", resp.StatusCode, bodyString)
+func LogAuth(userID string, reason error) {
+	url := fmt.Sprintf("/rest/v1/auth_log")
+	newLog := db.AuthLog{
+		ID: uuid.New(),
+		UserID: userID,
+		Reason: reason.Error(),
 	}
 
-	return nil
+	
+	if err := log.CreateLog(newLog, url); err != nil {
+		fmt.Fprintf(os.Stderr, "CRITICAL: Failed to create Auth failure log for user %s: %v. Original reason: %s\n", userID, err, reason.Error())
+	}
 }

@@ -7,10 +7,10 @@ import (
 	"context"
 	"io"
 	"log"
-	"github.com/google/uuid"
 	"errors"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 	"github.com/oladev/ufinda_v0.01/internal/db"
 )
@@ -19,11 +19,11 @@ var ErrorGettingHostel = errors.New("failed to get hostel")
 var ErrorHostelNotFound = errors.New("hostel not found")
 
 type hostelImageResponse struct {
-    HostelImages []db.UploadedImage `json:"hostel_images"`
+    HostelImages []db.UploadedFile `json:"hostel_images"`
 }
 
 type hostelVideoResponse struct {
-    HostelVideos []db.UploadedVideo `json:"hostel_videos"`
+    HostelVideos []db.UploadedFile `json:"hostel_videos"`
 }
 
 func UploadHostelImages(cld *cloudinary.Cloudinary, reader io.Reader, filename string) (string, string, error) {
@@ -62,48 +62,31 @@ func UploadHostelVideos(cld *cloudinary.Cloudinary, reader io.Reader, filename s
 	return resp.SecureURL, resp.PublicID, nil
 }
 
-func CreateHostelAndReturnID(data db.Hostel) (uuid.UUID, error) {
+func CreateHostel(data db.Hostel) error {
 	url := fmt.Sprintf("/rest/v1/hostels")
 
-	header := map[string]string{
-		"Prefer": "return=representation",
-	}
-
-	resp, err := db.MakeDBRequest("POST", url, data, header)
+	resp, err := db.MakeDBRequest("POST", url, data, nil)
 	if err != nil {
-		return uuid.Nil, err
+		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
 		bodyBytes, readErr := io.ReadAll(resp.Body)
 		if readErr != nil {
-			return uuid.Nil, fmt.Errorf("failed to create log with status %d, and couldn't read response body: %w", resp.StatusCode, readErr)
+			return fmt.Errorf("failed to create log with status %d, and couldn't read response body: %w", resp.StatusCode, readErr)
 		}
 
 		bodyString := string(bodyBytes)
-		return uuid.Nil, fmt.Errorf("failed to create hostel: server responded with status %d and body: %s", resp.StatusCode, bodyString)
+		return fmt.Errorf("failed to create hostel: server responded with status %d and body: %s", resp.StatusCode, bodyString)
 	}
-
-	var responseData []db.Hostel
-	decoder := json.NewDecoder(resp.Body)
-	if err := decoder.Decode(&responseData); err != nil {
-		return uuid.Nil, fmt.Errorf("failed to decode successful response body: %w", err)
-	}
-
-	if len(responseData) == 0 || responseData[0].ID == uuid.Nil {
-		return uuid.Nil, errors.New("successful response did not contain a valid hostel ID")
-	}
-
-	// Extract the ID of the newly created hostel
-	createdHostelID := responseData[0].ID
-
-	return createdHostelID, nil
+	
+	return nil
 }
 
 // update hostel
-func UpdateHostel(id uuid.UUID, data interface{}) error {
-	url := fmt.Sprintf("/rest/v1/hostels?id=eq.%s", id)
+func UpdateHostel(id string, data interface{}) error {
+	url := fmt.Sprintf("/rest/v1/hostels?id=eq.%s", url.QueryEscape(id))
 
 	header := map[string]string {
 		"Prefer": "return=representation",
@@ -125,8 +108,8 @@ func UpdateHostel(id uuid.UUID, data interface{}) error {
 }
 
 // find hostel
-func FindHostelByID(id uuid.UUID) (*db.Hostel, error) {
-	url := fmt.Sprintf("/rest/v1/hostels?id=eq.%s", id)
+func FindHostelByID(id string) (*db.Hostel, error) {
+	url := fmt.Sprintf("/rest/v1/hostels?id=eq.%s", url.QueryEscape(id))
 
 	resp, err := db.MakeDBRequest("GET", url, nil, nil)
 	if err != nil {
@@ -152,8 +135,8 @@ func FindHostelByID(id uuid.UUID) (*db.Hostel, error) {
 	return &hostel[0], nil
 }
 
-func GetHostelImagesPublicIDAndUrl(id uuid.UUID) ([]db.UploadedImage, error) {
-	url := fmt.Sprintf("/rest/v1/hostels?id=eq.%s&select=hostel_images", id)
+func GetHostelImagesPublicIDAndUrl(id string) ([]db.UploadedFile, error) {
+	url := fmt.Sprintf("/rest/v1/hostels?id=eq.%s&select=hostel_images", url.QueryEscape(id))
 
 	resp, err := db.MakeDBRequest("GET", url, nil, nil)
 
@@ -174,8 +157,8 @@ func GetHostelImagesPublicIDAndUrl(id uuid.UUID) ([]db.UploadedImage, error) {
 	return rows[0].HostelImages, nil
 }
 
-func GetHostelVideosPublicIDAndUrl(id uuid.UUID) ([]db.UploadedVideo, error) {
-	url := fmt.Sprintf("/rest/v1/hostels?id=eq.%s&select=hostel_videos", id)
+func GetHostelVideosPublicIDAndUrl(id string) ([]db.UploadedFile, error) {
+	url := fmt.Sprintf("/rest/v1/hostels?id=eq.%s&select=hostel_videos", url.QueryEscape(id))
 
 	resp, err := db.MakeDBRequest("GET", url, nil, nil)
 
@@ -196,8 +179,8 @@ func GetHostelVideosPublicIDAndUrl(id uuid.UUID) ([]db.UploadedVideo, error) {
 	return rows[0].HostelVideos, nil
 }
 
-func DeleteHostel(id uuid.UUID) error {
-	url := fmt.Sprintf("/rest/v1/hostels?id=eq.%s", id)
+func DeleteHostel(id string) error {
+	url := fmt.Sprintf("/rest/v1/hostels?id=eq.%s", url.QueryEscape(id))
 
 	resp, err := db.MakeDBRequest("DELETE", url, nil, nil)
 

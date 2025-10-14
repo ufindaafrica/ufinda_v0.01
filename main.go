@@ -57,8 +57,8 @@ func main() {
 	r := gin.Default()
 
 	// Public endpoints
-	auth.RegisterAuth(r)
-	userkyc.RegisterKYC(r)
+	auth.RegisterAuth(r, cld)
+	userkyc.RegisterKYC(r, cld)
 	
 	// Pass the Cloudinary client and the Asynq client to the hostel registration
 	hostel.RegisterHostel(r, asynqClient, cld)

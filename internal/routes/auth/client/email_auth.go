@@ -5,14 +5,18 @@ import (
 	"log"
 	"time"
 	"errors"
+	"os"
+	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/go-redis/redis/v8"
 	"github.com/oladev/ufinda_v0.01/internal/db"
+	"github.com/oladev/ufinda_v0.01/internal/db/kyc"
+	"github.com/cloudinary/cloudinary-go/v2"
 	"golang.org/x/crypto/bcrypt"
 	"strings"
-	"github.com/oladev/ufinda_v0.01/internal/token/client"
+	"github.com/oladev/ufinda_v0.01/internal/token"
 	"github.com/oladev/ufinda_v0.01/internal/logs/auth"
 	"github.com/oladev/ufinda_v0.01/internal/db/auth"
 )
@@ -22,49 +26,50 @@ import (
 func EmailSignUpHandler(c *gin.Context) {
 	var req SignupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": InvalidRequest})
+		c.JSON(http.StatusBadRequest, gin.H{"error": InvalidRequest})
 		return
 	}
 
 	// check if user is already created and email already verified
 	isCreatedUser, err := authdb.FindCreatedUserByEmail(req.Email)
 	if err != nil && errors.Is(err, ErrorGettingUser) {
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	if isCreatedUser != nil {
-		c.JSON(400, gin.H{"error": "user already created, please login"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user already created, please login"})
 		return		
 	}
 
 	// check if the user exists as a pending user
 	isPendingUser, err := authdb.FindPendingUser(req.Email)
 	if err != nil && errors.Is(err, ErrorGettingPendingUser) {
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	if isPendingUser != nil {
-		c.JSON(400, gin.H{"error": "user already created, verify your email"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user already created, verify your email"})
 		return
 	}
 
 	// hash the user password
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to hash password"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash password"})
 		return
 	}
 
 	// generate otp
 	otp, err := token.GenerateOTP()
 	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to generate otp"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate otp"})
 		return
 	}
 
 	pendinguser := db.PendingUser {
+		ID: uuid.New(),
 		Email: req.Email,
 		Password: string(hashedPwd),
 		OTP: otp,
@@ -78,13 +83,13 @@ func EmailSignUpHandler(c *gin.Context) {
 
 	// create as a pending user
 	if err := authdb.InsertPendingUser(&pendinguser); err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	// send the otp tp email
 	if err := token.SendOTP(req.Email, otp); err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -95,46 +100,58 @@ func EmailSignUpHandler(c *gin.Context) {
 func VerifyOtpHandler(c *gin.Context) {
 	var req VerifyOtp
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": InvalidRequest})
+		c.JSON(http.StatusBadRequest, gin.H{"error": InvalidRequest})
 		return
 	}
 
 	// check if user is already created and verified
 	isCreatedUser, err := authdb.FindCreatedUserByEmail(req.Email)
 	if err != nil && errors.Is(err, ErrorGettingUser){
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	if isCreatedUser != nil {
-		c.JSON(400, gin.H{"error": "user already created, please login"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user already created, please login"})
 		return		
 	}
 
 	// check if the user exists as a pending user
 	pendinguser, err := authdb.FindPendingUser(req.Email)
 	if err != nil && errors.Is(err, ErrorGettingPendingUser) {
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	if errors.Is(err, ErrorPendingUserNotFound) {
-		c.JSON(400, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	if pendinguser.OTP != req.OTP {
-		c.JSON(401, gin.H{"error": "otp is invalid"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "otp is invalid"})
 		return
 	}
 
 	// check if otp is expired
 	if time.Now().After(pendinguser.ExpiresAt) {
-		c.JSON(401, gin.H{"error": "otp has expired"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "otp has expired"})
+		return
+	}
+
+	checkUniqueness := func(id string) (bool, error) {
+		return token.IsIDUnique(id, "/rest/v1/users")
+	}
+
+	userID, err := token.GetUniqueID("U", checkUniqueness)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error generating id"})
+		fmt.Fprintf(os.Stderr, "CRITICAL: Failed to generate ID for user '%s': %w", req.Email, err)
 		return
 	}
 
 	user := db.User {
+		ID: userID,
 		Email: pendinguser.Email,
 		Password: pendinguser.Password,
 		Role: pendinguser.Role,
@@ -146,7 +163,7 @@ func VerifyOtpHandler(c *gin.Context) {
 
 	// create user after verifying their email
 	if err := authdb.CreateUser(user); err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})
 		return
 	}
 	
@@ -154,8 +171,17 @@ func VerifyOtpHandler(c *gin.Context) {
 	if err := authdb.DeletePendingUser(req.Email); err != nil {
 		log.Printf("Failed to delete pending user for %s: %v", req.Email, err)
 	}
-	
-	c.JSON(http.StatusOK, gin.H{"message": "verification successful"})
+
+    accessToken, refreshToken, err := token.GenerateTokens(user.ID, user.Email)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+	c.JSON(http.StatusOK, gin.H{
+		"message": "verification successful",
+		"access_token": accessToken,
+		"refresh_token": refreshToken,
+	})
 }
 // <---------------------> End Sign Up And Verify OTP <---------------------->
 
@@ -163,13 +189,13 @@ func VerifyOtpHandler(c *gin.Context) {
 func EmailLoginHandler(c *gin.Context) {
     var loginObj LoginRequest
     if err := c.ShouldBindJSON(&loginObj); err != nil {
-        c.JSON(400, gin.H{"error": "Invalid request"})
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
         return
     }
 
     user, err := authdb.FindCreatedUserByEmail(loginObj.Email)
 	if err != nil && errors.Is(err, ErrorGettingUser) {
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -180,7 +206,7 @@ func EmailLoginHandler(c *gin.Context) {
     // Get the current login attempts and TTL
     attempts, err := db.RedisClient.Get(ctx, loginKey).Int()
     if err != nil && err != redis.Nil {
-        c.JSON(500, gin.H{"error": "error checking login attempts"})
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "error checking login attempts"})
         return
     }
 
@@ -190,14 +216,12 @@ func EmailLoginHandler(c *gin.Context) {
 		log := authlog.Logs["3"]
 		fmtMessage := fmt.Sprintf(log.Message, "login attempt exceeded")
 		newLog := db.SecurityLog {
-			UserID: &user.ID,
+			ID: uuid.New(),
+			UserID: user.ID,
 			Log: fmtMessage,
 			Level: log.Level,
 		}
-		if err := authlog.CreateLog(newLog); err != nil {
-			c.JSON(500, gin.H{"error": err.Error()})
-			return
-		}
+		authlog.SecurityLog(newLog)
 
         c.JSON(http.StatusTooManyRequests, gin.H{
             "error": fmt.Sprintf("Too many login attempts. Please try again in %d minutes", int(ttl.Minutes())),
@@ -207,7 +231,7 @@ func EmailLoginHandler(c *gin.Context) {
 
     isMatch, err := CheckPasswordMatch(loginObj.Password, user.Password)
     if err != nil {
-        c.JSON(500, gin.H{"error": "error validating password"})
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "error validating password"})
         return
     }
 
@@ -217,7 +241,7 @@ func EmailLoginHandler(c *gin.Context) {
         if attempts == 0 {
             db.RedisClient.Expire(ctx, loginKey, 20*time.Minute)
         }
-        c.JSON(401, gin.H{"error": "invalid password"})
+        c.JSON(http.StatusForbidden, gin.H{"error": "invalid password"})
         return
     }
 
@@ -226,7 +250,7 @@ func EmailLoginHandler(c *gin.Context) {
 
     accessToken, refreshToken, err := token.GenerateTokens(user.ID, user.Email)
     if err != nil {
-        c.JSON(500, gin.H{"error": err.Error()})
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
     }
 
@@ -241,37 +265,37 @@ func EmailLoginHandler(c *gin.Context) {
 func ResendOTPHandler(c *gin.Context) {
 	var otpRequest ResendOTP
 	if err := c.ShouldBindJSON(&otpRequest); err != nil {
-		c.JSON(500, gin.H{"error": InvalidRequest})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": InvalidRequest})
 		return
 	}
 
 	// check if user is already created and verified
 	createduser, err := authdb.FindCreatedUserByEmail(otpRequest.Email)
 	if err != nil && errors.Is(err, ErrorGettingUser) {
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	if createduser != nil  {
-		c.JSON(400, gin.H{"error": "user already created, please login"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user already created, please login"})
 		return		
 	}
 
 	// check if the user exists as a pending user
 	pendinguser, err := authdb.FindPendingUser(otpRequest.Email)
 	if err != nil && errors.Is(err, ErrorGettingPendingUser) {
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	if errors.Is(err, ErrorPendingUserNotFound) {
-		c.JSON(400, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	otp, err := token.GenerateOTP()
 	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to generate otp"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate otp"})
 		return
 	}
 
@@ -282,13 +306,13 @@ func ResendOTPHandler(c *gin.Context) {
 
 	// update the pending data with the new otp
 	if err := authdb.UpdatePendingUser(pendinguser.Email, data); err != nil {
-		c.JSON(500, err.Error())
+		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	// send the new otp
 	if err := token.SendOTP(pendinguser.Email, otp); err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -303,7 +327,7 @@ func LogoutHandler(c *gin.Context) {
 
 	refreshtoken := c.GetHeader("X-Refresh-Token")
 	if refreshtoken == "" {
-		c.JSON(400, gin.H{"error": "refresh token header not provided"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "refresh token header not provided"})
 		return		
 	}
 
@@ -312,30 +336,30 @@ func LogoutHandler(c *gin.Context) {
 
 	accessclaims, err := token.ValidateToken(accesstoken)
 	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
+	// validate token before blacklisting
 	refreshclaims, err := token.ValidateToken(refreshtoken)
 	if err != nil {
 		log := authlog.Logs["4"]
-		id, _ := c.Get("id")
-		userid, ok := id.(uuid.UUID)
+		userid, _ := c.Get("id")
+		
+		userID, ok := userid.(string)
 		if !ok {
-			c.JSON(500, gin.H{"error": "invalid user ID type in context"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id type"})
 			return
 		}
 		newLog := db.SecurityLog {
-			UserID: &userid,
+			ID: uuid.New(),
+			UserID: userID,
 			Log: log.Message,
 			Level: log.Level,
 		}
-		if err := authlog.CreateLog(newLog); err != nil {
-			c.JSON(500, gin.H{"error": err.Error()})
-			return
-		}
+		authlog.SecurityLog(newLog)
 
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -343,26 +367,25 @@ func LogoutHandler(c *gin.Context) {
 
 	isblacklisted, err := token.IsTokenBlacklisted(c.Request.Context(), refreshjti)
 	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
+	// check if token had already been blacklisted
 	if isblacklisted {
 		// create a log
 		log  := authlog.Logs["1"]
 		fmtMessage := fmt.Sprintf(log.Message, refreshtoken)
 		newLog := db.SecurityLog{
-			UserID: &refreshclaims.UserID,
+			ID: uuid.New(),
+			UserID: refreshclaims.UserID,
 			Log: fmtMessage,
 			Level: log.Level,
 		}
 
-		if err := authlog.CreateLog(newLog); err != nil {
-			c.JSON(500, gin.H{"error": err.Error()})
-			return
-		}
+		authlog.SecurityLog(newLog)
 
-		c.JSON(401, gin.H{"error": "token already used"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "token already used"})
 		return
 	}
 
@@ -374,7 +397,7 @@ func LogoutHandler(c *gin.Context) {
 	refreshduration := time.Until(refreshexp)
 
 	if err := token.RevokeTokens(c.Request.Context(), accessjti, refreshjti, accessduration, refreshduration); err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -387,7 +410,7 @@ func LogoutHandler(c *gin.Context) {
 func RefreshTokenHandler(c *gin.Context) {
 	refreshToken := c.GetHeader("X-Refresh-Token")
 	if refreshToken == "" {
-		c.JSON(400, gin.H{"error": "refresh token header not provided"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "refresh token header not provided"})
 		return		
 	}
 
@@ -396,15 +419,13 @@ func RefreshTokenHandler(c *gin.Context) {
 	if err != nil {
 		log := authlog.Logs["4"]
 		newLog := db.SecurityLog {
+			ID: uuid.New(),
 			Log: log.Message,
 			Level: log.Level,
 		}
-		if err := authlog.CreateLog(newLog); err != nil {
-			c.JSON(500, gin.H{"error": err.Error()})
-			return
-		}
+		authlog.SecurityLog(newLog)
 
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -412,7 +433,7 @@ func RefreshTokenHandler(c *gin.Context) {
 	// check if token has been used and blacklisted
 	isblacklisted, err := token.IsTokenBlacklisted(c.Request.Context(), refreshjti)
 	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -421,24 +442,22 @@ func RefreshTokenHandler(c *gin.Context) {
 		log  := authlog.Logs["1"]
 		fmtMessage := fmt.Sprintf(log.Message, refreshToken)
 		newLog := db.SecurityLog{
-			UserID: &refreshclaims.UserID,
+			ID: uuid.New(),
+			UserID: refreshclaims.UserID,
 			Log: fmtMessage,
 			Level: log.Level,
 		}
 
-		if err := authlog.CreateLog(newLog); err != nil {
-			c.JSON(500, gin.H{"error": err.Error()})
-			return
-		}
+		authlog.SecurityLog(newLog)
 
-		c.JSON(401, gin.H{"error": "token already used"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "token already used"})
 		return
 	}
 
 	// first generate token
 	access_token, refresh_token, err := token.RefreshToken(refreshclaims.UserID, refreshclaims.Email)
 	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -446,14 +465,69 @@ func RefreshTokenHandler(c *gin.Context) {
 	refreshexp := refreshclaims.ExpiresAt.Time
 	refreshduration := time.Until(refreshexp)
 	if err := token.RevokeTokens(c.Request.Context(), "", refreshjti, 0, refreshduration); err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(200, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"access_token": access_token,
 		"refresh_token": refresh_token,
 	})
 
 }
 // <---------------------> End Refresh Token <---------------------->
+
+func DeleteCreatedUser(cld *cloudinary.Cloudinary) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, exists := c.Get("id")
+        if !exists {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "user ID not found in context"})
+            return
+        }
+
+		userID, ok := id.(string)
+		if !ok {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id type"})
+			return
+		}
+        // 2. Find the user based on the trusted ID
+        createdUser, err := authdb.FindCreatedUserByID(userID)
+        if err != nil {
+            if errors.Is(err, authdb.ErrorUserNotFound) {
+                c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+            } else {
+                // Log the user retrieval failure
+                authlog.LogAuth(userID, err)
+                c.JSON(http.StatusInternalServerError, gin.H{"error": "error getting user"})
+            }
+            return
+        }
+
+		ctx := context.Background()
+		// delete all user's assets in cloudinary
+		if createdUser.Role == "user" {
+			kyc, err := kycdb.FindUserKYC(createdUser.ID)
+			if err != nil && !errors.Is(err, kycdb.ErrorKYCNotFound) {
+				authlog.LogAuth(createdUser.ID,  err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get kyc record"})
+				return
+			}
+			if kyc != nil {
+				if err := db.DeleteCloudinaryAsset(ctx, cld, kyc.ProfileImg.PublicID, "image"); err != nil {
+					authlog.LogAuth(createdUser.ID,  err)
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete asset"})
+					return
+				}				
+			}
+		} else {
+			//will do this later
+		}
+		// if err := authdb.DeleteCreatedUserByID(createdUser.ID); err != nil {
+		// 	authlog.LogAuth(createdUser.ID, err)
+		// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete account"})
+		// 	return
+		// }
+		
+		c.JSON(http.StatusOK, gin.H{"message": "account deleted successfully"})
+	}
+}

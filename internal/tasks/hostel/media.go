@@ -5,12 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"errors"
 	"bytes"
 	"mime/multipart"
 	"io"
 	"github.com/hibiken/asynq"
-	"github.com/google/uuid"
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/oladev/ufinda_v0.01/internal/db/hostel"
 	"github.com/oladev/ufinda_v0.01/internal/logs/hostel"
@@ -28,8 +26,8 @@ type FileData struct {
 
 // HostelMediaUploadPayload defines the data for the background media upload task.
 type HostelMediaUploadPayload struct {
-	HostelID       uuid.UUID
-	VendorID 	   uuid.UUID
+	HostelID       string
+	VendorID 	   string
 	ImageFilesData []FileData
 	VideoFilesData []FileData
 }
@@ -40,46 +38,46 @@ func HandleHostelMediaUpload(cld *cloudinary.Cloudinary, ctx context.Context, t 
 
 	var p HostelMediaUploadPayload
 	if err := json.Unmarshal(t.Payload(), &p); err != nil {
-		hostellog.LogWorkerProcess(p.VendorID, "low", "bad request", errors.New("invalid request"))
+		hostellog.LogHostel(p.VendorID, &p.HostelID, fmt.Errorf("failed to retrieve payload for worker"))
 		return fmt.Errorf("json.Unmarshal failed: %v: %w", err, asynq.SkipRetry)
 	}
 
-	log.Printf("Starting media upload for Hostel ID: %s", p.HostelID.String())
+	log.Printf("Starting media upload for Hostel ID: %s", p.HostelID)
 
 	// Process and upload images
-	var uploadedImages []db.UploadedImage
+	var uploadedImages []db.UploadedFile
 
 	for _, data := range p.ImageFilesData {
 		reader := bytes.NewReader(data.Content)
 		url, publicID, err := hosteldb.UploadHostelImages(cld, reader, data.Filename)
 		if err != nil {
-			log.Printf("Hostel ID %s: Failed to upload image '%s'. Error: %v", p.HostelID.String(), data.Filename, err)
-			hostellog.LogWorkerProcess(p.VendorID, "high", "image upload error", err)
+			log.Printf("Hostel ID %s: Failed to upload image '%s'. Error: %v", p.HostelID, data.Filename, err)
+			hostellog.LogHostel(p.VendorID, &p.HostelID, fmt.Errorf("image upload error: %w", err))
 			return fmt.Errorf("error uploading image '%s': %w", data.Filename, asynq.SkipRetry)
 		}
-		uploadedImages = append(uploadedImages, db.UploadedImage{
+		uploadedImages = append(uploadedImages, db.UploadedFile{
 			URL: url,
 			PublicID: publicID,
 		})
-		log.Printf("Hostel ID %s: Successfully uploaded image '%s' to %s", p.HostelID.String(), data.Filename, url)
+		log.Printf("Hostel ID %s: Successfully uploaded image '%s' to %s", p.HostelID, data.Filename, url)
 	}
 
-	var uploadedVideos []db.UploadedVideo
+	var uploadedVideos []db.UploadedFile
 
 	for _, data := range p.VideoFilesData {
 		reader := bytes.NewReader(data.Content)
 		url, publicID, err := hosteldb.UploadHostelVideos(cld, reader, data.Filename)
 		if err != nil {
-			log.Printf("Hostel ID %s: Failed to upload video '%s'. Error: %v", p.HostelID.String(), data.Filename, err)
-			hostellog.LogWorkerProcess(p.VendorID, "high", "video upload error", err)
+			log.Printf("Hostel ID %s: Failed to upload video '%s'. Error: %v", p.HostelID, data.Filename, err)
+			hostellog.LogHostel(p.VendorID, &p.HostelID, fmt.Errorf("video upload error: %w", err))
 			return fmt.Errorf("error uploading video '%s': %w", data.Filename, asynq.SkipRetry)
 		}
-		uploadedVideos = append(uploadedVideos, db.UploadedVideo{
+		uploadedVideos = append(uploadedVideos, db.UploadedFile{
 			URL: url,
 			PublicID: publicID,
 		})
 		
-		log.Printf("Hostel ID %s: Successfully uploaded video '%s' to %s", p.HostelID.String(), data.Filename, url)
+		log.Printf("Hostel ID %s: Successfully uploaded video '%s' to %s", p.HostelID, data.Filename, url)
 	}
 
 	updateData := make(map[string]interface{})
@@ -106,16 +104,16 @@ func HandleHostelMediaUpload(cld *cloudinary.Cloudinary, ctx context.Context, t 
 
 	if len(updateData) > 0 {
 		if err := hosteldb.UpdateHostel(p.HostelID, updateData); err != nil {
-			log.Printf("Hostel ID %s: Failed to update hostel media in DB. Error: %v", p.HostelID.String(), err)
-			hostellog.LogWorkerProcess(p.VendorID, "high", "database update error", err)
-			return fmt.Errorf("failed to update hostel media in DB for Hostel ID %s: %w", p.HostelID.String(), asynq.SkipRetry)
+			log.Printf("Hostel ID %s: Failed to update hostel media in DB. Error: %v", p.HostelID, err)
+			hostellog.LogHostel(p.VendorID, &p.HostelID, fmt.Errorf("database update error: %w", err))
+			return fmt.Errorf("failed to update hostel media in DB for Hostel ID %s: %w", p.HostelID, asynq.SkipRetry)
 		}
-		log.Printf("Hostel ID %s: Successfully updated database with media URLs.", p.HostelID.String())
+		log.Printf("Hostel ID %s: Successfully updated database with media URLs.", p.HostelID)
 	} else {
-		log.Printf("Hostel ID %s: No new media uploaded or processed. Skipping database update for media.", p.HostelID.String())
+		log.Printf("Hostel ID %s: No new media uploaded or processed. Skipping database update for media.", p.HostelID)
 	}
 
-	log.Printf("Successfully processed all media for hostel ID %s", p.HostelID.String())
+	log.Printf("Successfully processed all media for hostel ID %s", p.HostelID)
 	return nil
 }
 
