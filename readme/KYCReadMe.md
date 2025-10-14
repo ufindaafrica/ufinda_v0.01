@@ -67,8 +67,9 @@ The request must be a **`multipart/form-data`** submission. Text fields are opti
 
 | Status Code | Description |
 | :--- | :--- |
-| `403 Forbidden` | The authenticated user does not have the required role (`createdUser.Role != "user"`). |
+| `400 Bad Request` | Invalid User ID format retrieved from the context (internal middleware error). |
+| `403 Forbidden` | The authenticated user does not have the required role (`Role != "user"`). |
 | `404 Not Found` | The authenticated user's account could not be found in the database. |
-| `500 Internal Server Error` | An unexpected server error occurred (e.g., **database error**, **asset deletion failure**, or **KYC ID generation failure**). |
+| `500 Internal Server Error` | An unexpected server error occurred (e.g., database error fetching user or KYC, failure to generate unique ID, or failure to save/update KYC data). |
 
 -----
