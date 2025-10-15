@@ -78,9 +78,14 @@ This endpoint requires an `Authorization` header with a valid vendor access toke
 
 --------
 
-### PATCH `/hostels/:id`
+Here is the documentation for the `UpdateHostelHandler` endpoint, formatted similarly to your previous API documentation.
 
-This endpoint allows a verified vendor to update an existing hostel listing. It ensures that only the owner of a hostel can modify its details.
+-----
+
+
+### PATCH `/hostel/:id`
+
+This endpoint allows an authenticated and verified **Vendor** to update the details of a specific hostel they own. It accepts `multipart/form-data` for partial updates (PATCH-like behavior).
 
 -----
 
@@ -88,47 +93,43 @@ This endpoint allows a verified vendor to update an existing hostel listing. It 
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `PUT` | `/hostels/:id` | Updates a hostel listing by its ID. |
+| `POST` | `/hostel/:id` | Updates an existing hostel record identified by the `:id` URL parameter. |
 
-#### Parameters
+#### URL Parameters
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
-| `id` | `string` | The unique ID of the hostel to update. This should be a UUID. |
+| `:id` | `string` | The unique ID of the hostel to be updated. |
 
 #### Body
 
-The request body must be sent as `multipart/form-data`. You only need to send the fields you want to update.
+The request must be a **`multipart/form-data`** submission. All fields are **optional**; only fields provided will overwrite the existing values.
 
-| Field | Type | Description |
+| Field Name | Type | Description |
 | :--- | :--- | :--- |
-| `total_price` | `string` | The new total cost of the hostel. |
-| `total_hostel_rooms` | `string` | The new number of rooms available. |
-| `rent_per_year` | `string` | The new annual rent. |
-| `location` | `string` | The new physical location. |
-| `landlord_resides` | `string` | New value for whether the landlord lives on the property. |
-| `room_type` | `string` | The new type of room. |
-| `roommates_allowed` | `string` | New value for whether roommates are permitted. |
-| `kitchen_access` | `string` | New value for whether kitchen access is provided. |
-| `toilet_access` | `string` | New value for whether toilet access is provided. |
-| `description` | `string` | The new detailed description. |
+| `total_price` | `string` | The total annual price for the hostel (e.g., total fees). Must be an integer. |
+| `rent_per_year` | `string` | The cost of rent per year. Must be an integer. |
+| `total_hostel_rooms` | `string` | The total number of rooms in the hostel. Must be an integer. |
+| `landlord_resides` | `string` | Boolean-like string indicating if the landlord resides on the property. |
+| `roommates_allowed` | `string` | Boolean-like string indicating if roommates are permitted. |
+| `description` | `string` | A detailed description of the hostel. |
 
 #### Headers
 
-This endpoint requires an `Authorization` header with a valid vendor access token.
-
-| Header | Example Value | Description |
+| Header | Value | Description |
 | :--- | :--- | :--- |
-| `Authorization` | `Bearer <access_token>` | The vendor's current access token. |
+| `Authorization` | `Bearer <access_token>` | **Required** for user authentication. |
 
 -----
 
 ### Workflow
 
-1.  **Authorization and Ownership Check**: The endpoint first validates the user's access token to ensure they are a **verified vendor**. It then checks if the **authenticated user's ID matches the `VendorID`** of the hostel record being updated. This prevents a vendor from updating another's hostel.
-2.  **Hostel Retrieval**: The endpoint retrieves the existing hostel record from the database using the ID provided in the URL.
-3.  **Partial Update**: It iterates through the received form data. Only fields that are present in the request body are used to update the corresponding fields in the hostel record. Missing fields are ignored, allowing for partial updates.
-4.  **Database Update**: The updated hostel record is saved back to the database.
+1.  **Authentication & Authorization**: The user's ID is retrieved from the context.
+2.  **Vendor Verification**: The system verifies that the authenticated user's `Role` is **`vendor`** and that their account is **`IsVerified: true`**. Access is denied if either condition fails.
+3.  **Hostel Retrieval**: The existing hostel record is retrieved using the ID from the URL.
+4.  **Ownership Check**: The authenticated user's ID is checked against the hostel's `VendorID` to ensure **only the owner** can modify the record.
+5.  **Data Update**: All provided form fields are parsed (including conversion of price and room fields to integers) and used to update the corresponding fields in the existing hostel object.
+6.  **Database Save**: The modified hostel object is saved to the database.
 
 -----
 
@@ -138,7 +139,7 @@ This endpoint requires an `Authorization` header with a valid vendor access toke
 
 | Status Code | Description |
 | :--- | :--- |
-| `200 OK` | The hostel listing was successfully updated. |
+| `200 OK` | The hostel details were successfully updated. |
 
 **Body**
 
@@ -152,72 +153,10 @@ This endpoint requires an `Authorization` header with a valid vendor access toke
 
 | Status Code | Description |
 | :--- | :--- |
-| `400 Bad Request` | The hostel ID in the URL is not a valid UUID, or a provided form field has an invalid format (e.g., `total_price` is not a number). |
-| `401 Unauthorized` | The access token is invalid, missing, or the user is not a verified vendor. |
-| `403 Forbidden` | The authenticated user is a verified vendor but does not own the hostel they are trying to update. |
-| `404 Not Found` | The specified hostel ID does not exist in the database. |
-| `500 Internal Server Error` | An unexpected server error occurred (e.g., a database connection issue or an invalid user ID type in the context). |
+| `400 Bad Request` | Invalid format provided for numerical fields (`total_price`, `rent_per_year`, `total_hostel_rooms`). |
+| `401 Unauthorized` | User is not authenticated, is not a **Vendor**, or is a Vendor but is **not KYC verified**. |
+| `403 Forbidden` | The authenticated user is trying to update a hostel that they do not own. |
+| `404 Not Found` | The authenticated user's account or the specified hostel (`:id`) could not be found. |
+| `500 Internal Server Error` | An unexpected server error occurred (e.g., database error fetching user/hostel, or failure to update the hostel record). |
 
------
-
-### DELETE `/hostels/:id`
-
-This endpoint allows a verified vendor to delete one of their hostel listings. The process securely deletes the hostel record and all associated media (images and videos) from the server and cloud storage.
-
------
-
-### Request
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `DELETE` | `/hostels/:id` | Deletes a hostel listing and its associated media. |
-
-#### Parameters
-
-| Parameter | Type | Description |
-| :--- | :--- | :--- |
-| `id` | `string` | The unique ID of the hostel to be deleted. This should be a UUID. |
-
-#### Headers
-
-This endpoint requires an `Authorization` header with a valid vendor access token.
-
-| Header | Example Value | Description |
-| :--- | :--- | :--- |
-| `Authorization` | `Bearer <access_token>` | The vendor's current access token. |
-
------
-
-### Workflow
-
-1.  **Authorization and Ownership Check**: The endpoint first verifies the user's access token to ensure they are a **verified vendor**. It then retrieves the specified hostel record and performs a crucial check: it verifies that the **authenticated user's ID matches the `VendorID`** of the hostel record. This prevents unauthorized deletion of listings.
-2.  **Media Deletion**: Before deleting the hostel record, the endpoint retrieves the public IDs of all associated images and videos. It then uses these public IDs to delete the media files from the cloud storage provider (Cloudinary). Errors during media deletion are logged but do not prevent the database record from being deleted.
-3.  **Hostel Record Deletion**: Finally, the endpoint proceeds to delete the hostel record from the database.
-
------
-
-### Responses
-
-#### Success
-
-| Status Code | Description |
-| :--- | :--- |
-| `200 OK` | The hostel listing and its associated media were successfully deleted. |
-
-**Body**
-
-```json
-{
-  "message": "listing deleted successfully"
-}
-```
-
-#### Errors
-
-| Status Code | Description |
-| :--- | :--- |
-| `400 Bad Request` | The hostel ID in the URL is not a valid UUID format. |
-| `401 Unauthorized` | The access token is invalid, missing, or the user is not a verified vendor. |
-| `403 Forbidden` | The authenticated user is a verified vendor but does not own the hostel they are trying to delete. |
-| `404 Not Found` | The specified hostel ID does not exist in the database or the user is not found. |
-| `500 Internal Server Error` | An unexpected server error occurred (e.g., a database connection issue, an invalid user ID in the context, or a failure to delete the database record). |
+----

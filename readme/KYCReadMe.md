@@ -9,7 +9,7 @@ This endpoint is used by an authenticated user to submit or update their Know Yo
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `POST` | `/kyc` | Creates a new KYC record or updates an existing one for the authenticated user. |
+| `POST` | `/kyc/user` | Creates a new KYC record or updates an existing one for the authenticated user. |
 
 #### Body
 

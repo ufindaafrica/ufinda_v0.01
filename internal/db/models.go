@@ -53,7 +53,7 @@ type SecurityLog struct {
 	Log       string `json:"log" binding:"required"`
 	Level     string `json:"level" binding:"required"`
 	CreatedAt string `json:"created_at,omitempty"`
-	UpdatedAt time.Time `json:"updated_at"`
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
 }
 
 type UploadedFile struct {
@@ -90,7 +90,7 @@ type KycLog struct {
 
 type HostelLog struct {
 	ID uuid.UUID `json:"id"`
-	UserID string `json:"user_id"`
+	VendorID string `json:"vendor_id"`
 	HostelID *string `json:"hostel_id,omitempty"`
 	Reason string `json:"reason"`
 	CreatedAt time.Time `json:"created_at,omitempty"`
@@ -101,6 +101,14 @@ type AuthLog struct {
 	ID uuid.UUID `json:"id"`
 	UserID string `json:"user_id"`
 	Reason string `json:"reason"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
+}
+
+type ResetPwdData struct {
+	ID uuid.UUID `json:"id"`
+	Token string `json:"token"`
+	UserID string `json:"user_id"`
+	ExpiresAt time.Time `json:"expires_at"`
+	CreatedAt time.Time `json:"created_at,omitempty"`
 }

@@ -6,7 +6,6 @@ import (
 	"time"
 	"context"
 	"io"
-	"log"
 	"errors"
 	"encoding/json"
 	"net/http"
@@ -197,29 +196,3 @@ func DeleteHostel(id string) error {
 	return nil
 }
 
-
-func DeleteCloudinaryAsset(cld *cloudinary.Cloudinary, publicID, resourceType string) error {
-	ctx := context.Background()
-
-	// Set parameters for the destroy method
-	destroyParams := uploader.DestroyParams{
-		PublicID: publicID,
-	}
-
-	// Set the resource type if provided (e.g., "video")
-	if resourceType != "" {
-		destroyParams.ResourceType = resourceType
-	}
-
-	resp, err := cld.Upload.Destroy(ctx, destroyParams)
-	if err != nil {
-		return fmt.Errorf("failed to destroy asset with public ID %s: %w", publicID, err)
-	}
-
-	if resp.Result != "ok" {
-		return fmt.Errorf("failed to destroy asset with public ID %s. Result: %s", publicID, resp.Result)
-	}
-
-	log.Printf("Successfully deleted asset with public ID: %s", publicID)
-	return nil
-}

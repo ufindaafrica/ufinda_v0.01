@@ -15,6 +15,7 @@ var ErrorGettingUser = errors.New("Failed to get user")
 var ErrorUserNotFound = errors.New("no user found")
 var ErrorPendingUserNotFound = errors.New("no pending user found")
 var ErrorAssetNotFound = errors.New("no asset found")
+var ErrorResetTokenNotFound = errors.New("no reset token found")
 // <-------------------------> End Error Tools <---------------------------->
 
 // <-------------------------------> Begin User Creation, Search, Update and Delete Tools <-------------------------------------->
@@ -260,46 +261,6 @@ type AssetsResponse struct {
 	} `json:"hostel"`
 }
 
-// FindAssetsByID retrieves specific asset fields from related tables based on user ID.
-func FindUserAssetsByID(id string) (*AssetsResponse, error) {
-	selectParam := url.QueryEscape(",user_kyc(profile_img)")
-
-	// The complete endpoint URL
-	// We still filter by ID on the 'users' table, but only select the related fields.
-	endpoint := fmt.Sprintf("/rest/v1/users?id=eq.%s&select=%s", url.QueryEscape(id), selectParam)
-
-	// NOTE: Assuming db.MakeDBRequest exists and returns *http.Response and error.
-	resp, err := db.MakeDBRequest("GET", endpoint, nil, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error making DB request to find assets: %w", err)
-	}
-	defer resp.Body.Close()
-
-	// 2. Elaborate Error Handling (reading body on non-200 status)
-	if resp.StatusCode != http.StatusOK {
-		bodyBytes, readErr := io.ReadAll(resp.Body)
-		if readErr != nil {
-			return nil, fmt.Errorf("failed to find assets (Status: %d). Failed to read body: %w", resp.StatusCode, readErr)
-		}
-		bodyString := string(bodyBytes)
-		return nil, fmt.Errorf("failed to find assets for user ID '%s'. Status: %d, Response Body: %s", id, resp.StatusCode, bodyString)
-	}
-
-	// 3. Decode the response
-	var responseArray []AssetsResponse
-	if err := json.NewDecoder(resp.Body).Decode(&responseArray); err != nil {
-		return nil, fmt.Errorf("error decoding response for assets: %w", err)
-	}
-
-	// Check for existence
-	if len(responseArray) == 0 {
-		return nil, ErrorAssetNotFound
-	}
-
-	// Return the single result, which contains only the nested asset data
-	return &responseArray[0], nil
-}
-
 
 func DeleteCreatedUserByID(userID string) error {
 	url := fmt.Sprintf("/rest/v1/users?id=eq.%s", url.QueryEscape(userID)) 
@@ -326,5 +287,83 @@ func DeleteCreatedUserByID(userID string) error {
 	}
 
 	// Deletion was successful (StatusNoContent)
+	return nil
+}
+
+func CreateResetToken(resetData db.ResetPwdData) error {
+	url := fmt.Sprint("/rest/v1/password_reset")
+
+	resp, err := db.MakeDBRequest("POST", url, resetData, nil)
+	if err != nil {
+		return fmt.Errorf("error making DB request to upload reset token: %w", err)
+	}
+	defer resp.Body.Close()
+    
+    if resp.StatusCode != http.StatusCreated {
+        bodyBytes, readErr := io.ReadAll(resp.Body)
+        if readErr != nil {
+            return fmt.Errorf("failed to upload reset token (Status: %d). Additionally, failed to read response body: %w", resp.StatusCode, readErr)
+        }
+
+        bodyString := string(bodyBytes)
+        
+        return fmt.Errorf("failed to upload reset token. Status: %d, Response Body: %s", resp.StatusCode, bodyString)
+    }
+
+    return nil
+}
+
+func FindResetToken(token string) (*db.ResetPwdData, error) {
+	if token == "" {
+		return nil, fmt.Errorf("token cannot be empty")
+	}
+	url := fmt.Sprintf("/rest/v1/password_reset?token=eq.%s", url.QueryEscape(token))
+	resp, err := db.MakeDBRequest("GET", url, nil, nil)
+
+	if err != nil {
+		return nil, fmt.Errorf("error making DB request to find reset token data: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// 2. Elaborate Error Handling (reading body on non-200 status)
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			return nil, fmt.Errorf("failed to find reset token data (Status: %d). Failed to read body: %w", resp.StatusCode, readErr)
+		}
+		bodyString := string(bodyBytes)
+		return nil, fmt.Errorf("failed to find reset token data. Status: %d, Response Body: %s", resp.StatusCode, bodyString)
+	}
+
+	var responseArray []db.ResetPwdData
+	if err := json.NewDecoder(resp.Body).Decode(&responseArray); err != nil {
+		return nil, fmt.Errorf("error decoding response for reset token data: %w", err)
+	}
+
+	if len(responseArray) == 0 {
+		return nil, ErrorResetTokenNotFound
+	}
+
+	return &responseArray[0], nil
+}
+
+func DeleteResetToken(token string) error {
+	url := fmt.Sprintf("/rest/v1/password_reset?token=eq.%s", url.QueryEscape(token))
+	resp, err := db.MakeDBRequest("DELETE", url, nil, nil)
+
+	if err != nil {
+		return fmt.Errorf("error making DB request to delete reset token data: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent {
+		bodyBytes, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			return fmt.Errorf("failed to delete reset token data (Status: %d). Failed to read body: %w", resp.StatusCode, readErr)
+		}
+		bodyString := string(bodyBytes)
+		return fmt.Errorf("failed to delete reset token data. Status: %d, Response Body: %s", resp.StatusCode, bodyString)
+	}
+
 	return nil
 }

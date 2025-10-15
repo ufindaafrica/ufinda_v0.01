@@ -12,7 +12,7 @@ import (
 func LogHostel(userID string, hostelID *string, reason error) {
 	newLog := db.HostelLog{
 		ID: uuid.New(),
-		UserID: userID,
+		VendorID: userID,
 		HostelID: hostelID,
 		Reason: reason.Error(),
 	}

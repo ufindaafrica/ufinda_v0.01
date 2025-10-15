@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"fmt"
 	"errors"
+	"context"
 	"log"
 	"github.com/cloudinary/cloudinary-go/v2"
 	"encoding/json"
@@ -189,12 +190,6 @@ func UpdateHostelHandler() gin.HandlerFunc {
             return
         }
 
-        // 4. Parse the multipart form to access fields and files
-        if err := c.Request.ParseMultipartForm(25 << 20); err != nil {
-            c.JSON(http.StatusBadRequest, gin.H{"error": "failed to parse form data"})
-            return
-        }
-
         if totalPriceStr := c.PostForm("total_price"); totalPriceStr != "" {
             totalPrice, err := strconv.ParseInt(totalPriceStr, 10, 64)
             if err != nil {
@@ -204,14 +199,6 @@ func UpdateHostelHandler() gin.HandlerFunc {
             existingHostel.TotalPrice = totalPrice
         }
 
-        if location := c.PostForm("location"); location != "" {
-            existingHostel.Location = location
-        }
-        
-        if roomType := c.PostForm("room_type"); roomType != "" {
-            existingHostel.RoomType = roomType
-        }
-        
         if rentPerYearStr := c.PostForm("rent_per_year"); rentPerYearStr != "" {
             rentPerYear, err := strconv.ParseInt(rentPerYearStr, 10, 64)
             if err != nil {
@@ -238,14 +225,6 @@ func UpdateHostelHandler() gin.HandlerFunc {
             existingHostel.RoommatesAllowed = c.PostForm("roommates_allowed")
         }
         
-        if kitchenAccess := c.PostForm("kitchen_access"); kitchenAccess != "" {
-            existingHostel.KitchenAccess = kitchenAccess
-        }
-        
-        if toiletAccess := c.PostForm("toilet_access"); toiletAccess != "" {
-            existingHostel.ToiletAccess = toiletAccess
-        }
-
         if description := c.PostForm("description"); description != "" {
             existingHostel.Description = description
         }
@@ -316,9 +295,10 @@ func DeleteHostelHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get images"})
 		}
 		
+		ctx := context.Background()
 		// loop through and delete
 		for _, img := range images {
-			if err := hosteldb.DeleteCloudinaryAsset(cld, img.PublicID, "image"); err != nil {
+			if err := db.DeleteCloudinaryAsset(ctx, cld, img.PublicID, "image"); err != nil {
 				log.Printf("failed to delete image %s with err: %w", img.URL, err)
 			}
 		}
@@ -330,7 +310,7 @@ func DeleteHostelHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 
 		// loop through and delete
 		for _, vid := range videos {
-			if err := hosteldb.DeleteCloudinaryAsset(cld, vid.PublicID, "video"); err != nil {
+			if err := db.DeleteCloudinaryAsset(ctx, cld, vid.PublicID, "video"); err != nil {
 				log.Printf("failed to delete video %s with err: %w", vid.URL, err)
 			}
 		}

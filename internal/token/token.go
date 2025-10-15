@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"io"
 	"encoding/json"
+	"encoding/base64"
 	"github.com/google/uuid"
 	"fmt"
 	"time"
@@ -249,4 +250,55 @@ func IsIDUnique(id string, endpoint string) (bool, error) {
 	isUnique := len(responseArray) == 0
 
 	return isUnique, nil
+}
+
+func GenerateSecureToken() (string, error) {
+	const length = 32 
+	
+	randomBytes := make([]byte, length)
+	
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate random bytes for token: %w", err)
+	}
+
+	token := base64.URLEncoding.EncodeToString(randomBytes)
+
+	return token, nil
+}
+
+func SendPasswordResetLink(email string, resetLink string) error {
+	from := mail.NewEmail("uFinda", "ufinda.app@gmail.com")
+	subject := "Password Reset Request"
+	to := mail.NewEmail("User", email)
+
+	
+	// Plain text version
+	plainTextContent := fmt.Sprintf("You requested a password reset. Please use the following link to reset your password: %s. This link will expire in 15 minutes.", resetLink)
+
+	// HTML version (using a clickable button/link)
+	htmlContent := fmt.Sprintf(`
+        <p>You requested a password reset. Please click the link below to securely reset your password:</p>
+        <p><a href="%s" style="background-color: #007bff; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a></p>
+        <p>Alternatively, you can copy and paste the following URL into your browser:</p>
+        <p>%s</p>
+        <p>This link is valid for 15 minutes.</p>
+    `, resetLink, resetLink)
+
+	message := mail.NewSingleEmail(from, subject, to, plainTextContent, htmlContent)
+
+	apiKey := os.Getenv("SENDGRID_KEY")
+	if apiKey == "" {
+		return fmt.Errorf("sendgrid key not set")
+	}
+
+	client := sendgrid.NewSendClient(apiKey)
+	_, err := client.Send(message)
+
+	if err != nil {
+		// Log the underlying error for debugging (optional, but recommended in production)
+		// log.Printf("SendGrid error: %v", err)
+		return fmt.Errorf("failed to send email: %w", err)
+	}
+	return nil
 }

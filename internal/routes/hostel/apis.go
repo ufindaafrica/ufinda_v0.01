@@ -15,7 +15,7 @@ func RegisterHostel(r *gin.Engine, asynqClient *asynq.Client, cld *cloudinary.Cl
 		hostelApis.POST("/create", MaxBytesMiddleware(25<<20), CreateHostelHandler(asynqClient))
 		
 		// update hostel api
-		hostelApis.PATCH("/:id", MaxBytesMiddleware(50<<20), UpdateHostelHandler())
+		hostelApis.PATCH("/:id", UpdateHostelHandler())
 
 		//delere hostel api
 		hostelApis.DELETE("/:id", DeleteHostelHandler(cld))

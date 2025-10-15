@@ -37,6 +37,16 @@ type LoginRequest struct {
 type ResendOTP struct {
 	Email string `json:"email"`
 }
+
+type ForgetPwdData struct {
+	Email string `json:"email"`
+}
+
+type ResetPwdData struct{
+	Token string `json:"token" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required"`
+}
+
 // <-------------------------> End Data Type Tools <---------------------------->
 
 // <-------------------------------> Password Check Tools <-------------------------------------->
