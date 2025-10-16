@@ -24,5 +24,9 @@ export const images = {
     saved: require("../assets/images/saved.png"),
     search0: require("../assets/images/search0.png"),
     star: require("../assets/images/star.png"),
-    user0: require("../assets/images/user0.png")
+    user0: require("../assets/images/user0.png"),
+    light: require("../assets/images/light.png"),
+    bed: require("../assets/images/bed.png"),
+    bath: require("../assets/images/bath.png"),
+    arrowBack: require("../assets/images/arrow-back.png")
 }

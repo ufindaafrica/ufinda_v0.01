@@ -4,6 +4,7 @@ import * as SecureStore from "expo-secure-store";
 import Onboarding from "./onboarding";
 import { Inter_300Light, Inter_400Regular, Inter_700Bold, useFonts } from "@expo-google-fonts/inter";
 import { router } from "expo-router";
+import Mode from "./auth/mode";
 
 export default function Index() {
 
@@ -38,18 +39,18 @@ export default function Index() {
 
   }, []);
 
-  useEffect(() => {
-    if (!splashScreen && firstOpen === false) {
-      router.replace("/(tabs)/home")
-    }
-  }, [splashScreen, firstOpen]);
+  // useEffect(() => {
+  //   if (!splashScreen && firstOpen === false) {
+  //     router.replace("/(tabs)/home")
+  //   }
+  // }, [splashScreen, firstOpen]);
 
   
-  if (!fontsLoaded || firstOpen === null) return null
+  // if (!fontsLoaded || firstOpen === null) return null
 
   
-  if (splashScreen) return <Splash />
-  if (firstOpen) return <Onboarding />
-  return null
+  // if (splashScreen) return <Splash />
+  // if (firstOpen) return <Onboarding />
+  return <Mode />
 
 }

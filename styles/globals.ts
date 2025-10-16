@@ -9,10 +9,14 @@ export const fonts = {
 export const globals = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "green"
+        backgroundColor: "#f5f5f5"
     },
     text: {
         fontFamily: "System",
         fontSize: 30
+    },
+    authContainer: {
+        padding: 24,
+        // flex: 1
     }
 });
