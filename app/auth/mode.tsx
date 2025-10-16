@@ -1,26 +1,38 @@
 import BackArrow from "@/components/back";
 import Select from "@/components/select";
-import { images } from "@/constants/images";
 import { globals } from "@/styles/globals";
 import { modeStyles } from "@/styles/mode";
 import { useState } from "react";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as Secure from "expo-secure-store"
 
 
 export default function Mode () {
 
     const [ student, setStudent ] = useState(false)
     const [ agent, setAgent ] = useState(false)
+    const [ picked, setPicked ] = useState(true)
 
     const pickStudent = () => {
         setStudent(true)
         setAgent(false)
+        setPicked(false)
     }
 
     const pickAgent = () => {
         setAgent(true)
         setStudent(false)
+        setPicked(false)
+    }
+
+    const setMode = async () => {
+        if (agent === true) {
+            await Secure.setItemAsync("MODE", "agent")
+        }
+        if (student === true) {
+            await Secure.setItemAsync("MODE", "student")
+        }
     }
 
     return (
@@ -39,7 +51,7 @@ export default function Mode () {
             </View>
 
             <View style={modeStyles.selectMode}>
-                <Select text={"Continue"} selected={true} clickable={false} />
+                <Select text={"Continue"} selected={true} clickable={picked} selectFun={setMode} />
             </View>
         </SafeAreaView>
     )

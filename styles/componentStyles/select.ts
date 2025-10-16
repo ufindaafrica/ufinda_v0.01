@@ -26,8 +26,8 @@ export const selectStyles = StyleSheet.create({
     },
 
     clickable: {
-        backgroundColor: "red"
+        opacity: 0.5,
+        borderWidth: 0
     }
-
     
 })
