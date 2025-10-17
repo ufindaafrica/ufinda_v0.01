@@ -10,7 +10,7 @@ type inputProps = {
     returnKeyType?: string
 } & TextInputProps
 
-const Input = forwardRef<TextInput, inputProps>(({ label, hint, onFocus, onSubmitEditing, returnKeyType }: inputProps, ref) => {
+const Input = forwardRef<TextInput, inputProps>(({ label, hint, onFocus, onSubmitEditing, returnKeyType, ...props }: inputProps, ref) => {
 
     const [focused, setFocused] = useState(false)
 
@@ -23,17 +23,15 @@ const Input = forwardRef<TextInput, inputProps>(({ label, hint, onFocus, onSubmi
                 style={[inputStyles.gen, inputStyles.inputBox, focused ? inputStyles.focusedInputBox : null]}
                 placeholder={hint}
                 placeholderTextColor={"#c7c7cc"}
-                // onChange={() => {
-                //     setFocused(true)
-                // }}
-                // numberOfLines={1}
-                onFocus={(e) => {
+                onChange={() => {
                     setFocused(true)
-                    onFocus?.(e)
                 }}
+                numberOfLines={1}
+                onFocus={(e) => onFocus?.(e)}
                 returnKeyType={returnKeyType as ReturnKeyTypeOptions}
                 onSubmitEditing={onSubmitEditing}
-                blurOnSubmit={false}
+                submitBehavior="submit"
+                {...props}
             />
         </View>
     )

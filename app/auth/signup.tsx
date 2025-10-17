@@ -5,7 +5,7 @@ import { signupStyles } from "@/styles/signup";
 import { Keyboard, KeyboardAvoidingView, Platform, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 
 
 export default function SignUp() {
@@ -68,6 +68,7 @@ export default function SignUp() {
                             ref={lastNameRef}
                             label="Last Name" 
                             hint="doe"
+                            returnKeyType="next"
                             onSubmitEditing={() => focusNext(emailRef)} />
                         </View>
                     </View>
@@ -77,6 +78,7 @@ export default function SignUp() {
                         ref={emailRef}
                         label="Email" 
                         hint="email@email.com"
+                        returnKeyType="next"
                         onSubmitEditing={() => focusNext(phoneRef)} />
                     </View>
 
@@ -85,7 +87,9 @@ export default function SignUp() {
                         ref={phoneRef}
                         label="Phone" 
                         hint="2349012345678"
-                        onSubmitEditing={() => focusNext(passwordRef)} />
+                        returnKeyType="next"
+                        onSubmitEditing={() => focusNext(passwordRef)}
+                        keyboardType="numeric" />
                     </View>
 
                     <View style={signupStyles.formPadding}>
@@ -93,6 +97,7 @@ export default function SignUp() {
                         ref={passwordRef}
                         label="Password" 
                         hint="********"
+                        returnKeyType="next"
                         onSubmitEditing={() => focusNext(confirmPasswordRef)} />
                     </View>
 
@@ -101,6 +106,7 @@ export default function SignUp() {
                         ref={confirmPasswordRef}
                         label="Confirm Password" 
                         hint="********"
+                        returnKeyType="done"
                         onSubmitEditing={() => Keyboard.dismiss()} />
                     </View>
 
