@@ -59,5 +59,33 @@ export const signupStyles = StyleSheet.create({
 
     formPadding: {
         paddingTop: 24
+    },
+
+    passwordCheck: {
+        flexDirection: "row",
+        padding: 3,
+        alignItems: "center"
+    },
+
+    passText: {
+        fontFamily: fonts.regular,
+        color: "#bf0000"
+    },
+
+    validPassText: {
+        fontFamily: fonts.light,
+        color: "#008000"
+    },
+
+    mediumPassText: {
+        fontFamily: fonts.light,
+        color: "#cccc00"
+    },
+
+    icon: {
+        marginRight: 5,
+        height: 12,
+        width: 12
     }
+
 })

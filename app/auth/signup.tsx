@@ -2,10 +2,11 @@ import BackArrow from "@/components/back";
 import Input from "@/components/input";
 import Select from "@/components/select";
 import { signupStyles } from "@/styles/signup";
-import { Keyboard, KeyboardAvoidingView, Platform, Text, TextInput, View } from "react-native";
+import { Image, Keyboard, KeyboardAvoidingView, Platform, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import React, { useRef, useState } from "react";
+import { images } from "@/constants/images";
 
 
 export default function SignUp() {
@@ -24,6 +25,37 @@ export default function SignUp() {
         if (!nextInput) return
         nextInput.focus()
         scrollRef.current?.scrollToFocusedInput(nextInput)
+    }
+
+    const [passwordEmpty, setPasswordEmpty] = useState(true)
+
+    const [firstName, setFirstName] = useState("")
+    const [lastName, setLastName] = useState("")
+    const [email, setEmail] = useState("")
+    const [phone, setPhone] = useState("")
+    const [password, setPassword] = useState("a")
+    const [confirmPassword, setConfirmPassword] = useState("")
+
+    const [passwordStrength, setPasswordStrength] = useState("low")
+    const [specialChar, setSpecialChar] = useState(false)
+    const [includesNum, setIncludesNum] = useState(false)
+    const [allCases, setAllCases] = useState(false)
+
+    const [defaultIcon, setDefaultIcon] = useState(images.bad)
+    const [validIcon, setValidIcon] = useState(images.check)
+    const [midIcon, setMidIcon] = useState(images.alertCircle)
+
+    const checkPass = (text: string) => {
+        
+        setPassword(text)
+        
+        if (/\d/.test(text)) setIncludesNum(true); else setIncludesNum(false)
+        if (/[^a-zA-Z0-9\s]/.test(text)) setSpecialChar(true); else setSpecialChar(false)
+        if (/[A-Z]/.test(text) && /[a-z]/.test(text)) setAllCases(true); else setAllCases(false)
+        if (text.length < 8) setPasswordStrength("low")
+        if (text.length >= 8) setPasswordStrength("medium")
+        if (text.length > 10 && includesNum == true && specialChar == true && allCases == true) setPasswordStrength("strong")
+
     }
 
     return (
@@ -55,59 +87,96 @@ export default function SignUp() {
 
                     <View style={[signupStyles.firstInputLine, signupStyles.layoutPadding]}>
                         <View style={signupStyles.eachName}>
-                            <Input 
-                            ref={firstNameRef}
-                            label="First Name" 
-                            hint="john" 
-                            returnKeyType="next" 
-                            onSubmitEditing={() => focusNext(lastNameRef)} />
+                            <Input
+                                ref={firstNameRef}
+                                label="First Name"
+                                hint="john"
+                                returnKeyType="next"
+                                onSubmitEditing={() => focusNext(lastNameRef)} />
                         </View>
                         <View style={signupStyles.break}></View>
                         <View style={signupStyles.eachName}>
-                            <Input 
-                            ref={lastNameRef}
-                            label="Last Name" 
-                            hint="doe"
-                            returnKeyType="next"
-                            onSubmitEditing={() => focusNext(emailRef)} />
+                            <Input
+                                ref={lastNameRef}
+                                label="Last Name"
+                                hint="doe"
+                                returnKeyType="next"
+                                onSubmitEditing={() => focusNext(emailRef)} />
                         </View>
                     </View>
 
                     <View style={signupStyles.formPadding}>
-                        <Input 
-                        ref={emailRef}
-                        label="Email" 
-                        hint="email@email.com"
-                        returnKeyType="next"
-                        onSubmitEditing={() => focusNext(phoneRef)} />
+                        <Input
+                            ref={emailRef}
+                            label="Email"
+                            hint="email@email.com"
+                            returnKeyType="next"
+                            onSubmitEditing={() => focusNext(phoneRef)} />
                     </View>
 
                     <View style={signupStyles.formPadding}>
-                        <Input 
-                        ref={phoneRef}
-                        label="Phone" 
-                        hint="2349012345678"
-                        returnKeyType="next"
-                        onSubmitEditing={() => focusNext(passwordRef)}
-                        keyboardType="numeric" />
+                        <Input
+                            ref={phoneRef}
+                            label="Phone"
+                            hint="2349012345678"
+                            returnKeyType="next"
+                            onSubmitEditing={() => focusNext(passwordRef)}
+                            keyboardType="numeric" />
                     </View>
 
                     <View style={signupStyles.formPadding}>
-                        <Input 
-                        ref={passwordRef}
-                        label="Password" 
-                        hint="********"
-                        returnKeyType="next"
-                        onSubmitEditing={() => focusNext(confirmPasswordRef)} />
+                        <Input
+                            ref={passwordRef}
+                            label="Password"
+                            hint="********"
+                            returnKeyType="next"
+                            onSubmitEditing={() => focusNext(confirmPasswordRef)}
+                            onChangeText={(text) => {
+                                checkPass(text)
+                            }} />
                     </View>
 
+                    {
+                        password === "" ? null : <View>
+                            <View style={signupStyles.passwordCheck}>
+                                <Image
+                                    source={
+                                        passwordStrength == "low" ? defaultIcon : passwordStrength == "medium" ? midIcon : validIcon
+                                    }
+                                    style={signupStyles.icon} />
+                                <Text style={[signupStyles.passText, passwordStrength == "medium" ? signupStyles.mediumPassText : passwordStrength == "strong" ? signupStyles.validPassText : null]}>Password strength: {passwordStrength}</Text>
+                            </View>
+
+                            <View style={signupStyles.passwordCheck}>
+                                <Image
+                                    source={specialChar ? validIcon : defaultIcon}
+                                    style={signupStyles.icon} />
+                                <Text style={[signupStyles.passText, specialChar && signupStyles.validPassText]}>At least 1 special character</Text>
+                            </View>
+
+                            <View style={signupStyles.passwordCheck}>
+                                <Image
+                                    source={includesNum ? validIcon : defaultIcon}
+                                    style={signupStyles.icon} />
+                                <Text style={[signupStyles.passText, includesNum && signupStyles.validPassText]}>Includes a number</Text>
+                            </View>
+
+                            <View style={signupStyles.passwordCheck}>
+                                <Image
+                                    source={allCases ? validIcon : defaultIcon}
+                                    style={signupStyles.icon} />
+                                <Text style={[signupStyles.passText, allCases && signupStyles.validPassText]}>Lower case and upper case letters</Text>
+                            </View>
+                        </View>
+                    }
+
                     <View style={signupStyles.formPadding}>
-                        <Input 
-                        ref={confirmPasswordRef}
-                        label="Confirm Password" 
-                        hint="********"
-                        returnKeyType="done"
-                        onSubmitEditing={() => Keyboard.dismiss()} />
+                        <Input
+                            ref={confirmPasswordRef}
+                            label="Confirm Password"
+                            hint="********"
+                            returnKeyType="done"
+                            onSubmitEditing={() => Keyboard.dismiss()} />
                     </View>
 
                     <View style={signupStyles.layoutPadding}>

@@ -28,5 +28,8 @@ export const images = {
     light: require("../assets/images/light.png"),
     bed: require("../assets/images/bed.png"),
     bath: require("../assets/images/bath.png"),
-    arrowBack: require("../assets/images/arrow-back.png")
+    arrowBack: require("../assets/images/arrow-back.png"),
+    alertCircle: require("../assets/images/alert-circle.png"),
+    bad: require("../assets/images/x.png"),
+    check: require("../assets/images/check.png")
 }
