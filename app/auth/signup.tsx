@@ -2,15 +2,29 @@ import BackArrow from "@/components/back";
 import Input from "@/components/input";
 import Select from "@/components/select";
 import { signupStyles } from "@/styles/signup";
-import { KeyboardAvoidingView, Platform, Text, View } from "react-native";
+import { Keyboard, KeyboardAvoidingView, Platform, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { useRef } from "react";
+import React, { useRef } from "react";
 
 
 export default function SignUp() {
 
-    
+    const firstNameRef = useRef<TextInput | null>(null)
+    const lastNameRef = useRef<TextInput | null>(null)
+    const emailRef = useRef<TextInput | null>(null)
+    const phoneRef = useRef<TextInput | null>(null)
+    const passwordRef = useRef<TextInput | null>(null)
+    const confirmPasswordRef = useRef<TextInput | null>(null)
+
+    const scrollRef = useRef<KeyboardAwareScrollView | null>(null)
+
+    const focusNext = (nextRef: React.RefObject<TextInput | null>) => {
+        const nextInput = nextRef.current
+        if (!nextInput) return
+        nextInput.focus()
+        scrollRef.current?.scrollToFocusedInput(nextInput)
+    }
 
     return (
         <SafeAreaView style={signupStyles.main}>
@@ -21,8 +35,6 @@ export default function SignUp() {
             >
 
                 <KeyboardAwareScrollView
-                    // contentContainerStyle={{ paddingBottom: keyboardVisible ? 200 : 0}}
-                    // contentContainerStyle={{ height: "100%"}}
                     contentContainerStyle={{
                         flexGrow: 1, paddingBottom: 40
                     }}
@@ -31,6 +43,7 @@ export default function SignUp() {
                     showsVerticalScrollIndicator={false}
                     enableOnAndroid={true}
                     extraScrollHeight={150}
+                    ref={scrollRef}
                 >
 
                     <BackArrow />
@@ -42,28 +55,53 @@ export default function SignUp() {
 
                     <View style={[signupStyles.firstInputLine, signupStyles.layoutPadding]}>
                         <View style={signupStyles.eachName}>
-                            <Input label="First Name" hint="john" />
+                            <Input 
+                            ref={firstNameRef}
+                            label="First Name" 
+                            hint="john" 
+                            returnKeyType="next" 
+                            onSubmitEditing={() => focusNext(lastNameRef)} />
                         </View>
                         <View style={signupStyles.break}></View>
                         <View style={signupStyles.eachName}>
-                            <Input label="Last Name" hint="doe" />
+                            <Input 
+                            ref={lastNameRef}
+                            label="Last Name" 
+                            hint="doe"
+                            onSubmitEditing={() => focusNext(emailRef)} />
                         </View>
                     </View>
 
                     <View style={signupStyles.formPadding}>
-                        <Input label="Email" hint="email@email.com" />
+                        <Input 
+                        ref={emailRef}
+                        label="Email" 
+                        hint="email@email.com"
+                        onSubmitEditing={() => focusNext(phoneRef)} />
                     </View>
 
                     <View style={signupStyles.formPadding}>
-                        <Input label="Phone" hint="2349012345678" />
+                        <Input 
+                        ref={phoneRef}
+                        label="Phone" 
+                        hint="2349012345678"
+                        onSubmitEditing={() => focusNext(passwordRef)} />
                     </View>
 
                     <View style={signupStyles.formPadding}>
-                        <Input label="Password" hint="********" />
+                        <Input 
+                        ref={passwordRef}
+                        label="Password" 
+                        hint="********"
+                        onSubmitEditing={() => focusNext(confirmPasswordRef)} />
                     </View>
 
                     <View style={signupStyles.formPadding}>
-                        <Input label="Confirm Password" hint="********" />
+                        <Input 
+                        ref={confirmPasswordRef}
+                        label="Confirm Password" 
+                        hint="********"
+                        onSubmitEditing={() => Keyboard.dismiss()} />
                     </View>
 
                     <View style={signupStyles.layoutPadding}>
@@ -80,11 +118,6 @@ export default function SignUp() {
                             <Text style={signupStyles.policyText}>data policy.</Text>
                         </View>
                     </View>
-
-                    {/* {
-                        keyboardVisible ? <View style={{ height: 300 }}></View> : null
-                    } */}
-
 
                 </KeyboardAwareScrollView>
 

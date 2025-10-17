@@ -1,32 +1,43 @@
 import { inputStyles } from "@/styles/componentStyles/input";
-import { useState } from "react";
-import { Text, TextInput, View } from "react-native";
+import { forwardRef, useState } from "react";
+import { ReturnKeyTypeOptions, Text, TextInput, TextInputProps, View } from "react-native";
 
 type inputProps = {
     label: string,
     hint?: string,
-    onFocus?: (value: any) => void
-}
+    onFocus?: (value: any) => void,
+    onSubmitEditing?: (value: any) => void,
+    returnKeyType?: string
+} & TextInputProps
 
+const Input = forwardRef<TextInput, inputProps>(({ label, hint, onFocus, onSubmitEditing, returnKeyType }: inputProps, ref) => {
 
-export default function Input({ label, hint, onFocus }: inputProps) {
-
-    const [ focused, setFocused ] = useState(false)
+    const [focused, setFocused] = useState(false)
 
     return (
         <View>
             <Text style={inputStyles.label}>{label}</Text>
-            
+
             <TextInput
+                ref={ref}
                 style={[inputStyles.gen, inputStyles.inputBox, focused ? inputStyles.focusedInputBox : null]}
                 placeholder={hint}
                 placeholderTextColor={"#c7c7cc"}
-                onChange={() => {
+                // onChange={() => {
+                //     setFocused(true)
+                // }}
+                // numberOfLines={1}
+                onFocus={(e) => {
                     setFocused(true)
+                    onFocus?.(e)
                 }}
-                numberOfLines={1}
-                onFocus={onFocus}
+                returnKeyType={returnKeyType as ReturnKeyTypeOptions}
+                onSubmitEditing={onSubmitEditing}
+                blurOnSubmit={false}
             />
         </View>
     )
-}
+})
+
+Input.displayName = "Input"
+export default Input
