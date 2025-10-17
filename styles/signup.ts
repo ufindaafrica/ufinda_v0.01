@@ -41,7 +41,23 @@ export const signupStyles = StyleSheet.create({
         justifyContent: "center"
     },
 
+    policyText: {
+        fontFamily: fonts.light
+    },
+
     continueView: {
         paddingTop: 10
+    },
+
+    keyboardVisible: {
+        paddingBottom: 40
+    },
+
+    layoutPadding: {
+        paddingTop: 36
+    },
+
+    formPadding: {
+        paddingTop: 24
     }
 })
