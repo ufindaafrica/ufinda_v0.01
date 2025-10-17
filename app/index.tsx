@@ -39,18 +39,22 @@ export default function Index() {
 
   }, []);
 
-  // useEffect(() => {
-  //   if (!splashScreen && firstOpen === false) {
-  //     router.replace("/(tabs)/home")
-  //   }
-  // }, [splashScreen, firstOpen]);
+  useEffect(() => {
+    if (!splashScreen && firstOpen === false) {
+      if (SecureStore.getItem("AUTH") == null) {
+        router.replace("/auth/mode")
+      } else {
+        router.replace("/(tabs)/home")
+      }
+    }
+  }, [splashScreen, firstOpen]);
 
   
-  // if (!fontsLoaded || firstOpen === null) return null
+  if (!fontsLoaded || firstOpen === null) return null
 
   
-  // if (splashScreen) return <Splash />
-  // if (firstOpen) return <Onboarding />
+  if (splashScreen) return <Splash />
+  if (firstOpen) return <Onboarding />
   return <Mode />
 
 }

@@ -71,7 +71,7 @@ export default function Onboarding() {
 
                 <TouchableOpacity
                     style={onboardingStyles.button}
-                    onPress={() => router.replace("/(tabs)/home")}
+                    onPress={() => router.replace("/auth/mode")}
                 >
                     <Text style={onboardingStyles.buttonText}>Get Started</Text>
                 </TouchableOpacity>

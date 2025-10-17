@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Secure from "expo-secure-store"
+import { router } from "expo-router";
 
 
 export default function Mode () {
@@ -33,6 +34,7 @@ export default function Mode () {
         if (student === true) {
             await Secure.setItemAsync("MODE", "student")
         }
+        router.push("/auth/signup")
     }
 
     return (

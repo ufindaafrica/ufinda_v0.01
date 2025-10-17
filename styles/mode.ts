@@ -1,14 +1,17 @@
 import { StyleSheet } from "react-native";
+import { fonts } from "./globals";
 
 export const modeStyles = StyleSheet.create({
     
     headerText: {
-        fontSize: 32
+        fontSize: 32,
+        fontFamily: fonts.regular
     },
 
     pText: {
         fontSize: 24,
-        paddingTop: 5
+        paddingTop: 5,
+        fontFamily: fonts.light
     },
 
     textView: {
