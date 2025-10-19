@@ -1,4 +1,3 @@
-import BackArrow from "@/components/back";
 import Select from "@/components/select";
 import { globals } from "@/styles/globals";
 import { modeStyles } from "@/styles/mode";
