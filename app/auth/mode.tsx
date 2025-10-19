@@ -40,8 +40,6 @@ export default function Mode () {
     return (
         <SafeAreaView style={[globals.authContainer, globals.container]}>
 
-            {/* <BackArrow backFun={() => router.canGoBack()} /> */}
-
             <View style={modeStyles.textView}>
                 <Text style={modeStyles.headerText}>Let's get you started!</Text>
                 <Text style={modeStyles.pText}>Are you a</Text>
