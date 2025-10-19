@@ -7,6 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import React, { useEffect, useRef, useState } from "react";
 import { images } from "@/constants/images";
+import { router } from "expo-router";
 
 
 export default function SignUp() {
@@ -27,8 +28,6 @@ export default function SignUp() {
         scrollRef.current?.scrollToFocusedInput(nextInput)
     }
 
-    const [passwordEmpty, setPasswordEmpty] = useState(true)
-
     const [firstName, setFirstName] = useState("")
     const [lastName, setLastName] = useState("")
     const [email, setEmail] = useState("")
@@ -43,9 +42,9 @@ export default function SignUp() {
 
     const [passwordMatch, setPasswordMatch] = useState(false)
 
-    const [defaultIcon, setDefaultIcon] = useState(images.bad)
-    const [validIcon, setValidIcon] = useState(images.check)
-    const [midIcon, setMidIcon] = useState(images.alertCircle)
+    const defaultIcon = images.bad
+    const validIcon = images.check
+    const midIcon = images.alertCircle
 
     const [secureIcon, setSecureIcon] = useState(images.openEyeDefault)
     const [securePass, setSecurePass] = useState(false)
@@ -54,9 +53,6 @@ export default function SignUp() {
 
     const [invalidPassword, setInvalidPassword] = useState(false)
     const [invalidConfirmPassword, setinvalidConfirmPassword] = useState(false)
-
-    const [passwordValText, setPasswordValText] = useState(false)
-    const [confirmPassEditing, setConfirmPassEditing] = useState(false)
 
     const checkPass = (text: string) => {
 
@@ -108,6 +104,21 @@ export default function SignUp() {
             setSecureIcon(images.openEyeDefault)
         }
     }, [securePass]);
+
+    const clickContinue = () => {
+        
+        const newUser = {
+            firstName: firstName,
+            lastName: lastName,
+            email: email,
+            phone: phone,
+            password: password
+        }
+
+        console.log(newUser)
+        router.push('/auth/otp')
+    }
+
 
     return (
         <SafeAreaView style={signupStyles.main}>
@@ -260,7 +271,7 @@ export default function SignUp() {
 
                     <View style={signupStyles.layoutPadding}>
                         <View style={signupStyles.continueView}>
-                            <Select text="Continue" selected={true} selectFun={() => null} clickable={formIncomplete} />
+                            <Select text="Continue" selected={true} selectFun={clickContinue} clickable={formIncomplete} />
                         </View>
                     </View>
 
