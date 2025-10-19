@@ -8,6 +8,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 import React, { useEffect, useRef, useState } from "react";
 import { images } from "@/constants/images";
 import { router } from "expo-router";
+import { globals } from "@/styles/globals";
 
 
 export default function SignUp() {
@@ -121,7 +122,7 @@ export default function SignUp() {
 
 
     return (
-        <SafeAreaView style={signupStyles.main}>
+        <SafeAreaView style={[signupStyles.main, globals.container]}>
 
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
