@@ -47,6 +47,9 @@ export default function SignUp() {
     const [validIcon, setValidIcon] = useState(images.check)
     const [midIcon, setMidIcon] = useState(images.alertCircle)
 
+    const [secureIcon, setSecureIcon] = useState(images.openEyeDefault)
+    const [securePass, setSecurePass] = useState(false)
+
     const [formIncomplete, setFormIncomplete] = useState(true)
 
     const [invalidPassword, setInvalidPassword] = useState(false)
@@ -97,6 +100,14 @@ export default function SignUp() {
             setFormIncomplete(true)
         }
     }, [firstName, lastName, email, phone, passwordStrength, passwordMatch]);
+
+    useEffect(() => {
+        if (securePass) {
+            setSecureIcon(images.closedEyeDefault)
+        } else {
+            setSecureIcon(images.openEyeDefault)
+        }
+    }, [securePass]);
 
     return (
         <SafeAreaView style={signupStyles.main}>
@@ -183,9 +194,10 @@ export default function SignUp() {
                                 checkPass(text)
                             }}
                             invalid={invalidPassword}
-                            onFocus={() => {
-                                setInvalidPassword(true)
-                            }} />
+                            icon={secureIcon}
+                            secureText={securePass}
+                            setSecureText={() => setSecurePass(!securePass)}
+                             />
                     </View>
 
                     {
@@ -231,7 +243,8 @@ export default function SignUp() {
                             onSubmitEditing={() => Keyboard.dismiss()}
                             onChangeText={(text) => checkConfirmPass(text)}
                             invalid={invalidConfirmPassword}
-                            onFocus={() => setinvalidConfirmPassword(true)} />
+                            icon={secureIcon}
+                            setSecureText={() => {setSecurePass(!securePass)}} />
                     </View>
 
                     {

@@ -1,6 +1,6 @@
 import { inputStyles } from "@/styles/componentStyles/input";
 import { forwardRef, useState } from "react";
-import { ReturnKeyTypeOptions, Text, TextInput, TextInputProps, View } from "react-native";
+import { Image, ReturnKeyTypeOptions, Text, TextInput, TextInputProps, TouchableOpacity, View } from "react-native";
 
 type inputProps = {
     label: string,
@@ -8,10 +8,13 @@ type inputProps = {
     onFocus?: (value: any) => void,
     onSubmitEditing?: (value: any) => void,
     returnKeyType?: string,
-    invalid?: boolean
+    invalid?: boolean,
+    icon?: any,
+    secureText?: boolean,
+    setSecureText?: (value: any) => void
 } & TextInputProps
 
-const Input = forwardRef<TextInput, inputProps>(({ label, hint, onFocus, onSubmitEditing, returnKeyType, invalid, ...props }: inputProps, ref) => {
+const Input = forwardRef<TextInput, inputProps>(({ label, hint, onFocus, onSubmitEditing, returnKeyType, invalid, icon, secureText, setSecureText, ...props }: inputProps, ref) => {
 
     const [focused, setFocused] = useState(false)
 
@@ -19,9 +22,11 @@ const Input = forwardRef<TextInput, inputProps>(({ label, hint, onFocus, onSubmi
         <View>
             <Text style={inputStyles.label}>{label}</Text>
 
+            <View style={[inputStyles.inputV, focused ? inputStyles.focusedInputBox : null, invalid && inputStyles.invalidInputBox]}>
+
             <TextInput
                 ref={ref}
-                style={[inputStyles.gen, inputStyles.inputBox, focused ? inputStyles.focusedInputBox : null, invalid && inputStyles.invalidInputBox]}
+                style={[inputStyles.gen, icon && inputStyles.genIcon]}
                 placeholder={hint}
                 placeholderTextColor={"#c7c7cc"}
                 onChange={() => {
@@ -32,8 +37,17 @@ const Input = forwardRef<TextInput, inputProps>(({ label, hint, onFocus, onSubmi
                 returnKeyType={returnKeyType as ReturnKeyTypeOptions}
                 onSubmitEditing={onSubmitEditing}
                 submitBehavior="submit"
+                secureTextEntry={secureText}
                 {...props}
             />
+
+            {
+                icon ? <TouchableOpacity onPress={setSecureText}>
+                    <Image source={icon} style={inputStyles.icon} />
+                </TouchableOpacity> : null
+            }
+
+            </View>
         </View>
     )
 })

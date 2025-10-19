@@ -31,5 +31,11 @@ export const images = {
     arrowBack: require("../assets/images/arrow-back.png"),
     alertCircle: require("../assets/images/alert-circle.png"),
     bad: require("../assets/images/x.png"),
-    check: require("../assets/images/check.png")
+    check: require("../assets/images/check.png"),
+    openEyeDefault: require("../assets/images/openEyeDefault.png"),
+    openEyeValid: require("../assets/images/openEyeValid.png"),
+    openEyeInvalid: require("../assets/images/openEyeInvalid.png"),
+    closedEyeDefault: require("../assets/images/closedEyeDefault.png"),
+    closedEyeValid: require("../assets/images/closedEyeValid.png"),
+    closedEyeInvalid: require("../assets/images/closedEyeInvalid.png")
 }
