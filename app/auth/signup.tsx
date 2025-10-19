@@ -33,7 +33,7 @@ export default function SignUp() {
     const [lastName, setLastName] = useState("")
     const [email, setEmail] = useState("")
     const [phone, setPhone] = useState("")
-    const [password, setPassword] = useState("a")
+    const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
 
     const [passwordStrength, setPasswordStrength] = useState("low")
@@ -41,9 +41,13 @@ export default function SignUp() {
     const [includesNum, setIncludesNum] = useState(false)
     const [allCases, setAllCases] = useState(false)
 
+    const [ passwordMatch, setPasswordMatch ] = useState(false)
+
     const [defaultIcon, setDefaultIcon] = useState(images.bad)
     const [validIcon, setValidIcon] = useState(images.check)
     const [midIcon, setMidIcon] = useState(images.alertCircle)
+
+    const [formComplete, setFormComplete] = useState(false)
 
     const checkPass = (text: string) => {
         
@@ -56,6 +60,18 @@ export default function SignUp() {
         if (text.length >= 8) setPasswordStrength("medium")
         if (text.length > 10 && includesNum == true && specialChar == true && allCases == true) setPasswordStrength("strong")
 
+    }
+
+    const checkConfirmPass = (text: string) => {
+        if (text === password) {
+            setPasswordMatch(true)
+        } else { setPasswordMatch(false) }
+
+        setConfirmPassword(text)
+    }
+
+    const completeForm = () => {
+        
     }
 
     return (
@@ -74,7 +90,7 @@ export default function SignUp() {
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                     enableOnAndroid={true}
-                    extraScrollHeight={150}
+                    extraScrollHeight={15}
                     ref={scrollRef}
                 >
 
@@ -176,8 +192,20 @@ export default function SignUp() {
                             label="Confirm Password"
                             hint="********"
                             returnKeyType="done"
-                            onSubmitEditing={() => Keyboard.dismiss()} />
+                            onSubmitEditing={() => Keyboard.dismiss()}
+                            onChangeText={(text) => checkConfirmPass(text)} />
                     </View>
+
+                    {
+                        confirmPassword === "" ? null : <View>
+                            <View style={signupStyles.passwordCheck}>
+                                <Image
+                                    source={passwordMatch ? validIcon : defaultIcon}
+                                    style={signupStyles.icon} />
+                                <Text style={[signupStyles.passText, passwordMatch && signupStyles.validPassText]}>{passwordMatch ? "Matches password" : "Not the same as password"}</Text>
+                            </View>
+                        </View>
+                    }
 
                     <View style={signupStyles.layoutPadding}>
                         <View style={signupStyles.continueView}>
