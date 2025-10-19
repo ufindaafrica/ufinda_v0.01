@@ -1,11 +1,16 @@
-import { Image } from "react-native"
+import { Image, TouchableOpacity } from "react-native"
 import { images } from "@/constants/images"
 import { backStyles } from "@/styles/componentStyles/back"
 
+type BackArrowProps = {
+    backFun: (value: any) => void
+}
 
-export default function BackArrow() {
+export default function BackArrow({ backFun }: BackArrowProps) {
 
     return (
-        <Image source={images.arrowBack} style={backStyles.img} />
+        <TouchableOpacity onPress={backFun}>
+            <Image source={images.arrowBack} style={backStyles.img} />
+        </TouchableOpacity>
     )
 }

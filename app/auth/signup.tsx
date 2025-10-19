@@ -140,7 +140,7 @@ export default function SignUp() {
                     ref={scrollRef}
                 >
 
-                    <BackArrow />
+                    <BackArrow backFun={() => router.back()} />
 
                     <View style={signupStyles.layoutPadding}>
                         <Text style={signupStyles.headerText}>Create Account</Text>
