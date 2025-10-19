@@ -5,7 +5,7 @@ import { signupStyles } from "@/styles/signup";
 import { Image, Keyboard, KeyboardAvoidingView, Platform, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { images } from "@/constants/images";
 
 
@@ -41,38 +41,62 @@ export default function SignUp() {
     const [includesNum, setIncludesNum] = useState(false)
     const [allCases, setAllCases] = useState(false)
 
-    const [ passwordMatch, setPasswordMatch ] = useState(false)
+    const [passwordMatch, setPasswordMatch] = useState(false)
 
     const [defaultIcon, setDefaultIcon] = useState(images.bad)
     const [validIcon, setValidIcon] = useState(images.check)
     const [midIcon, setMidIcon] = useState(images.alertCircle)
 
-    const [formComplete, setFormComplete] = useState(false)
+    const [formIncomplete, setFormIncomplete] = useState(true)
+
+    const [invalidPassword, setInvalidPassword] = useState(false)
+    const [invalidConfirmPassword, setinvalidConfirmPassword] = useState(false)
+
+    const [passwordValText, setPasswordValText] = useState(false)
+    const [confirmPassEditing, setConfirmPassEditing] = useState(false)
 
     const checkPass = (text: string) => {
-        
+
         setPassword(text)
-        
+
         if (/\d/.test(text)) setIncludesNum(true); else setIncludesNum(false)
         if (/[^a-zA-Z0-9\s]/.test(text)) setSpecialChar(true); else setSpecialChar(false)
         if (/[A-Z]/.test(text) && /[a-z]/.test(text)) setAllCases(true); else setAllCases(false)
         if (text.length < 8) setPasswordStrength("low")
-        if (text.length >= 8) setPasswordStrength("medium")
-        if (text.length > 10 && includesNum == true && specialChar == true && allCases == true) setPasswordStrength("strong")
-
+        if (text.length >= 8) {
+            setPasswordStrength("medium")
+            setInvalidPassword(false)
+        } else {
+            setInvalidPassword(true)
+        }
+        if (text.length > 10 && includesNum == true && specialChar == true && allCases == true) {
+            setPasswordStrength("strong")
+            setInvalidPassword(false)
+        }
     }
 
     const checkConfirmPass = (text: string) => {
         if (text === password) {
             setPasswordMatch(true)
-        } else { setPasswordMatch(false) }
+            setinvalidConfirmPassword(false)
+        } else { 
+            setPasswordMatch(false) 
+            setinvalidConfirmPassword(true)
+        }
 
         setConfirmPassword(text)
     }
 
-    const completeForm = () => {
-        
-    }
+    useEffect(() => {
+        if (passwordStrength == "medium" || passwordStrength == "strong") {
+             if (firstName && lastName && email && phone && passwordMatch) {
+                setFormIncomplete(false)
+            }
+        }
+        else {
+            setFormIncomplete(true)
+        }
+    }, [firstName, lastName, email, phone, passwordStrength, passwordMatch]);
 
     return (
         <SafeAreaView style={signupStyles.main}>
@@ -108,7 +132,10 @@ export default function SignUp() {
                                 label="First Name"
                                 hint="john"
                                 returnKeyType="next"
-                                onSubmitEditing={() => focusNext(lastNameRef)} />
+                                onSubmitEditing={() => focusNext(lastNameRef)}
+                                onChangeText={(text) => {
+                                    setFirstName(text)
+                                }} />
                         </View>
                         <View style={signupStyles.break}></View>
                         <View style={signupStyles.eachName}>
@@ -117,7 +144,10 @@ export default function SignUp() {
                                 label="Last Name"
                                 hint="doe"
                                 returnKeyType="next"
-                                onSubmitEditing={() => focusNext(emailRef)} />
+                                onSubmitEditing={() => focusNext(emailRef)}
+                                onChangeText={(text) => {
+                                    setLastName(text)
+                                }} />
                         </View>
                     </View>
 
@@ -127,7 +157,8 @@ export default function SignUp() {
                             label="Email"
                             hint="email@email.com"
                             returnKeyType="next"
-                            onSubmitEditing={() => focusNext(phoneRef)} />
+                            onSubmitEditing={() => focusNext(phoneRef)}
+                            onChangeText={(text) => {setEmail(text)}} />
                     </View>
 
                     <View style={signupStyles.formPadding}>
@@ -137,7 +168,8 @@ export default function SignUp() {
                             hint="2349012345678"
                             returnKeyType="next"
                             onSubmitEditing={() => focusNext(passwordRef)}
-                            keyboardType="numeric" />
+                            keyboardType="numeric"
+                            onChangeText={(text) => {setPhone(text)}} />
                     </View>
 
                     <View style={signupStyles.formPadding}>
@@ -149,11 +181,15 @@ export default function SignUp() {
                             onSubmitEditing={() => focusNext(confirmPasswordRef)}
                             onChangeText={(text) => {
                                 checkPass(text)
+                            }}
+                            invalid={invalidPassword}
+                            onFocus={() => {
+                                setInvalidPassword(true)
                             }} />
                     </View>
 
                     {
-                        password === "" ? null : <View>
+                        password == "" ? null : <View>
                             <View style={signupStyles.passwordCheck}>
                                 <Image
                                     source={
@@ -193,7 +229,9 @@ export default function SignUp() {
                             hint="********"
                             returnKeyType="done"
                             onSubmitEditing={() => Keyboard.dismiss()}
-                            onChangeText={(text) => checkConfirmPass(text)} />
+                            onChangeText={(text) => checkConfirmPass(text)}
+                            invalid={invalidConfirmPassword}
+                            onFocus={() => setinvalidConfirmPassword(true)} />
                     </View>
 
                     {
@@ -209,7 +247,7 @@ export default function SignUp() {
 
                     <View style={signupStyles.layoutPadding}>
                         <View style={signupStyles.continueView}>
-                            <Select text="Continue" selected={true} selectFun={() => null} />
+                            <Select text="Continue" selected={true} selectFun={() => null} clickable={formIncomplete} />
                         </View>
                     </View>
 

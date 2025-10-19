@@ -25,4 +25,8 @@ export const inputStyles = StyleSheet.create({
         paddingBottom: 3
     },
 
+    invalidInputBox: {
+        borderColor: "#bf0000"
+    }
+
 })

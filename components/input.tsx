@@ -7,10 +7,11 @@ type inputProps = {
     hint?: string,
     onFocus?: (value: any) => void,
     onSubmitEditing?: (value: any) => void,
-    returnKeyType?: string
+    returnKeyType?: string,
+    invalid?: boolean
 } & TextInputProps
 
-const Input = forwardRef<TextInput, inputProps>(({ label, hint, onFocus, onSubmitEditing, returnKeyType, ...props }: inputProps, ref) => {
+const Input = forwardRef<TextInput, inputProps>(({ label, hint, onFocus, onSubmitEditing, returnKeyType, invalid, ...props }: inputProps, ref) => {
 
     const [focused, setFocused] = useState(false)
 
@@ -20,7 +21,7 @@ const Input = forwardRef<TextInput, inputProps>(({ label, hint, onFocus, onSubmi
 
             <TextInput
                 ref={ref}
-                style={[inputStyles.gen, inputStyles.inputBox, focused ? inputStyles.focusedInputBox : null]}
+                style={[inputStyles.gen, inputStyles.inputBox, focused ? inputStyles.focusedInputBox : null, invalid && inputStyles.invalidInputBox]}
                 placeholder={hint}
                 placeholderTextColor={"#c7c7cc"}
                 onChange={() => {
