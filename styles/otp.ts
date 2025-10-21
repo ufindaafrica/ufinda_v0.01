@@ -3,7 +3,7 @@ import { fonts } from "./globals";
 
 export const otpStyles = StyleSheet.create({
     main: {
-        marginTop: 32
+        marginTop: 28
     },
 
     img: {

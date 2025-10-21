@@ -1,20 +1,32 @@
 import { otpInputStyles } from "@/styles/componentStyles/otpInput"
-import { forwardRef } from "react"
-import { TextInput, TextInputComponent } from "react-native"
+import { forwardRef, useState } from "react"
+import { TextInput } from "react-native"
 
 type OtpInputProps = {
-    // refId: string
+    value: string,
+    valueChange: (value: string, value2: number) => void,
+    index: number
 }
 
 
-const OtpInput = forwardRef<TextInput, OtpInputProps>(({ ...props }: OtpInputProps, ref) => {
+const OtpInput = forwardRef<TextInput, OtpInputProps>(({ value, valueChange, index, ...props }: OtpInputProps, ref) => {
+
+    const [ focused, setFocused ] = useState(false)
 
     return (
         <TextInput
             ref={ref}
-            style={otpInputStyles.main}
+            style={[otpInputStyles.main, focused && otpInputStyles.focusedMain]}
             cursorColor={"transparent"}
             keyboardType="numeric"
+            value={value}
+            onChangeText={(text) => {
+                valueChange(text.slice(-1), index)
+                setFocused(false)
+            }}
+            onFocus={() => {
+                setFocused(true)
+            }}
         />
     )
 })
