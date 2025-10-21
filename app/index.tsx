@@ -5,6 +5,7 @@ import Onboarding from "./onboarding";
 import { Inter_300Light, Inter_400Regular, Inter_700Bold, useFonts } from "@expo-google-fonts/inter";
 import { router } from "expo-router";
 import Mode from "./auth/mode";
+import Otp from "./auth/otp";
 
 export default function Index() {
 
@@ -42,7 +43,8 @@ export default function Index() {
   useEffect(() => {
     if (!splashScreen && firstOpen === false) {
       if (SecureStore.getItem("AUTH") == null) {
-        router.replace("/auth/mode")
+        // router.replace("/auth/mode")
+        router.replace("/auth/otp")
       } else {
         router.replace("/(tabs)/home")
       }
@@ -55,6 +57,7 @@ export default function Index() {
   
   if (splashScreen) return <Splash />
   if (firstOpen) return <Onboarding />
-  return <Mode />
+  // return <Mode />
+  return <Otp/>
 
 }
