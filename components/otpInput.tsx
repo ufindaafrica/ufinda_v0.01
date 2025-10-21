@@ -14,6 +14,7 @@ const OtpInput = forwardRef<TextInput, OtpInputProps>(({ ...props }: OtpInputPro
             ref={ref}
             style={otpInputStyles.main}
             cursorColor={"transparent"}
+            keyboardType="numeric"
         />
     )
 })
