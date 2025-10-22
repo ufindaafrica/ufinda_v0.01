@@ -256,6 +256,7 @@ export default function SignUp() {
                             onChangeText={(text) => checkConfirmPass(text)}
                             invalid={invalidConfirmPassword}
                             icon={secureIcon}
+                            secureText={securePass}
                             setSecureText={() => {setSecurePass(!securePass)}} />
                     </View>
 

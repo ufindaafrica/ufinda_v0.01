@@ -66,6 +66,12 @@ export const picStyles = StyleSheet.create({
         alignSelf: "center",
         fontFamily: fonts.bold,
         color: "#008000"
+    },
+
+    previewImage: {
+        height: "100%",
+        width: "100%",
+        borderRadius: 150
     }
 
 })

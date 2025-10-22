@@ -4,23 +4,39 @@ import { globals } from "@/styles/globals";
 import { picStyles } from "@/styles/pic";
 import { Link, router } from "expo-router";
 import { useState } from "react";
-import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Image, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as ImagePicker from "expo-image-picker"
 
 
 export default function Pic() {
 
-    const [ desc, setDesc ] = useState("")
-    const [ descLength, setDescLength ] = useState(0)
+    const [desc, setDesc] = useState("")
+    const [descLength, setDescLength] = useState(0)
 
     const onEnterDesc = (text: string) => {
         setDesc(text)
         setDescLength(text.length)
     }
 
-    const [ image, setImage ] = useState(null)
+    const [image, setImage] = useState("")
+    const [imageName, setImageName] = useState<any>(null)
+    const [imageType, setImageType] = useState("")
 
-    const pickImage = () => {}
+    const pickImage = async () => {
+        const selectedImage = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ["images"],
+            allowsEditing: false,
+            aspect: [4, 4],
+            quality: 1
+        })
+
+        if (!selectedImage.canceled) {
+            setImage(selectedImage.assets[0].uri)
+            setImageName(selectedImage.assets[0].fileName)
+            setImageType("image/" + selectedImage.assets[0].fileName?.split(".").pop()?.toLowerCase())
+        }
+    }
 
     return (
         <SafeAreaView style={[globals.container, globals.authContainer]}>
@@ -35,7 +51,9 @@ export default function Pic() {
             <View style={[picStyles.main, picStyles.imgV]}>
                 <TouchableOpacity style={picStyles.imgO} onPress={() => pickImage()}>
                     {
-                        image ? image : <Text style={picStyles.fileText}>Browse files</Text>
+                        image ? <Image source={{ uri: image }} style={picStyles.previewImage} />
+                            :
+                            <Text style={picStyles.fileText}>Browse files</Text>
                     }
                 </TouchableOpacity>
             </View>
@@ -56,7 +74,7 @@ export default function Pic() {
             </View>
 
             <View style={picStyles.main}>
-                <Select text="Continue" selected clickable={image || desc ? false : true} />
+                <Select text="Continue" selected clickable={image || desc ? false : true} selectFun={() => router.replace("/auth/finishReg")} />
             </View>
 
             <Link href={"/(tabs)/home"} style={[picStyles.main, picStyles.linkText]}>

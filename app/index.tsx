@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
-import Splash from "./splash";
-import * as SecureStore from "expo-secure-store";
-import Onboarding from "./onboarding";
 import { Inter_300Light, Inter_400Regular, Inter_700Bold, useFonts } from "@expo-google-fonts/inter";
 import { router } from "expo-router";
-import Mode from "./auth/mode";
+import * as SecureStore from "expo-secure-store";
+import { useEffect, useState } from "react";
 import Otp from "./auth/otp";
+import Onboarding from "./onboarding";
+import Splash from "./splash";
 
 export default function Index() {
 
@@ -61,3 +60,6 @@ export default function Index() {
   return <Otp/>
 
 }
+
+// firstOpen? go to onboarding which goes to sign up
+// subsequentOpen but not signedIn? go to login which has a link to sign up just in case
