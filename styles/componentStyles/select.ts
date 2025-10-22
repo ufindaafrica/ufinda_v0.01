@@ -11,7 +11,8 @@ export const selectStyles = StyleSheet.create({
         borderWidth: 1.5,
         borderRadius: 15,
         alignItems: "center",
-        justifyContent: "center"
+        justifyContent: "center",
+        flexDirection: "row"
     },
 
     text: {
@@ -30,6 +31,10 @@ export const selectStyles = StyleSheet.create({
     clickable: {
         opacity: 0.5,
         borderWidth: 0
+    },
+
+    icon: {
+        marginRight: 10
     }
     
 })

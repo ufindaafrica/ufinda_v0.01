@@ -18,7 +18,7 @@ export default function Select({ text, icon, selected, selectFun, clickable }: s
             disabled={clickable}
             style={[selectStyles.box, selected && selectStyles.activeBox, clickable && selectStyles.clickable]}>
 
-            <Image source={icon} />
+            <Image source={icon} style={selectStyles.icon} />
 
             <Text style={[selectStyles.text, selected ? selectStyles.activeText : null]}>{text}</Text>
 

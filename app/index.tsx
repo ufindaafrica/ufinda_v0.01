@@ -43,7 +43,8 @@ export default function Index() {
     if (!splashScreen && firstOpen === false) {
       if (SecureStore.getItem("AUTH") == null) {
         // router.replace("/auth/mode")
-        router.replace("/auth/otp")
+        // router.replace("/auth/otp")
+        router.replace("/auth/login")
       } else {
         router.replace("/(tabs)/home")
       }
@@ -57,7 +58,7 @@ export default function Index() {
   if (splashScreen) return <Splash />
   if (firstOpen) return <Onboarding />
   // return <Mode />
-  return <Otp/>
+  // return <Otp/>
 
 }
 

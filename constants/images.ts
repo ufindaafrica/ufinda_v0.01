@@ -39,5 +39,8 @@ export const images = {
     closedEyeValid: require("../assets/images/closedEyeValid.png"),
     closedEyeInvalid: require("../assets/images/closedEyeInvalid.png"),
     otpPic: require("../assets/images/otpPic.png"),
-    largeCheck: require("../assets/images/large-check.png")
+    largeCheck: require("../assets/images/large-check.png"),
+    checkedBox: require("../assets/images/checked-box.png"),
+    emptyBox: require("../assets/images/empty-box.png"),
+    google: require("../assets/images/google.png")
 }
