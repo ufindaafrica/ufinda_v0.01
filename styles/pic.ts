@@ -72,6 +72,28 @@ export const picStyles = StyleSheet.create({
         height: "100%",
         width: "100%",
         borderRadius: 150
+    },
+
+    imgVExtra: {
+        marginTop: 32,
+        borderColor: "#008000",
+        borderWidth: 2.5,
+        backgroundColor: "#e3f4f1"
+    },
+
+    checkImg: {
+        height: 50,
+        width: 50
+    },
+
+    completeHeaderV: {
+        marginTop: 32,
+        paddingLeft: 16,
+        paddingRight: 16
+    },
+
+    centerText: {
+        textAlign: "center"
     }
 
 })
