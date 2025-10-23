@@ -18,9 +18,21 @@ import (
 
 
 func main() {
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("error loading .env")
-	}
+	if _, err := os.Stat(".env"); err == nil {
+        if err := godotenv.Load(); err != nil {
+            log.Println("Warning: Could not load .env file")
+        }
+    }
+
+	port := os.Getenv("PORT")
+    if port == "" {
+        port = "8080"
+    }
+
+	redisURL := os.Getenv("REDIS_URL")
+    if redisURL == "" {
+        redisURL = "localhost:6379"
+    }
 
 	db.InitDB()
 
@@ -28,7 +40,7 @@ func main() {
 
 	// Connect to Redis for both the API and the Asynq client
 	redisOpt := &redis.Options{
-		Addr:     "localhost:6379", // Use your Redis server address
+		Addr:     redisURL, // Use your Redis server address
 		Password: "",               // No password set
 		DB:       0,                // Use the default DB
 	}
@@ -64,7 +76,7 @@ func main() {
 	hostel.RegisterHostel(r, asynqClient, cld)
 
 	// Start the Gin router
-	r.Run(":8080")
+	// r.Run(":8080")
 
 	// // Initialize chat service
 	// hub := chat.NewHub()
@@ -98,5 +110,5 @@ func main() {
 	// log.Println("Server starting on :8080")
 	
 	// // Start server
-	r.Run(":8080")
+	r.Run(":" + port)
 }
