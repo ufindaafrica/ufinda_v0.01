@@ -1,6 +1,16 @@
+## Base URL
+The base URL for all API requests:
+
+| Environment | URL |
+| :--- | :--- |
+| **Production** | `a` |
+| **Local Dev** | `http://localhost:8080` |
+
+-----
+
 # HOSTEL APIs: *VENDOR*
 
-### POST `/hostel/create`
+### POST `[BASE_URL]/hostel/create`
 
 This endpoint allows verified vendors to create a new hostel listing. It processes hostel details and media (images, videos) asynchronously to provide a fast response. The media is handled by a background worker.
 
@@ -10,7 +20,7 @@ This endpoint allows verified vendors to create a new hostel listing. It process
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `POST` | `/hostel/create` | Creates a new hostel listing. |
+| `POST` | `[BASE_URL]/hostel/create` | Creates a new hostel listing. |
 
 #### Body
 
@@ -93,7 +103,7 @@ This endpoint allows an authenticated and verified **Vendor** to update the deta
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `POST` | `/hostel/:id` | Updates an existing hostel record identified by the `:id` URL parameter. |
+| `POST` | `[BASE_URL]/hostel/:id` | Updates an existing hostel record identified by the `:id` URL parameter. |
 
 #### URL Parameters
 

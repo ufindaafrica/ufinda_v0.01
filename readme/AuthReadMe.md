@@ -1,5 +1,15 @@
+## Base URL
+The base URL for all API requests:
+
+| Environment | URL |
+| :--- | :--- |
+| **Production** | `https://ufinda-v0-01.onrender.com` |
+| **Local Dev** | `http://localhost:8080` |
+
+-----
+
 ## Email SignUp API
-### POST `/auth/email/signup`
+### POST `[BASE_URL]/auth/email/signup`
 
 This endpoint registers a new user by creating a pending account and sending a one-time password (OTP) to their email address for verification.
 
@@ -9,7 +19,7 @@ This endpoint registers a new user by creating a pending account and sending a o
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `POST` | `/auth/email/signup` | Creates a new pending user account and initiates email verification. |
+| `POST` | `[BASE_URL]/auth/email/signup` | Creates a new pending user account and initiates email verification. |
 
 #### Body
 
@@ -69,7 +79,7 @@ No special headers are required.
 -----
 
 ## Resend OTP API
-### POST `/auth/otp/resend`
+### POST `[BASE_URL]/auth/otp/resend`
 
 This endpoint allows a user to request a new One-Time Password (OTP) if the previous one has expired or was not received.
 
@@ -79,7 +89,7 @@ This endpoint allows a user to request a new One-Time Password (OTP) if the prev
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `POST` | `/auth/otp/resend` | Requests a new OTP for a pending user account. |
+| `POST` | `[BASE_URL]/auth/otp/resend` | Requests a new OTP for a pending user account. |
 
 #### Body
 
@@ -132,7 +142,7 @@ No special headers are required.
 -----
 
 ## Verify OTP API
-### POST `/auth/verify-otp`
+### POST `[BASE_URL]/auth/verify-otp`
 
 This endpoint verifies a user's email address using a one-time password (OTP). A pending user account is converted into a fully active user account upon successful verification, and the user is immediately logged in.
 
@@ -142,7 +152,7 @@ This endpoint verifies a user's email address using a one-time password (OTP). A
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `POST` | `/auth/verify-otp` | Verifies a pending user's account with an OTP. |
+| `POST` | `[BASE_URL]/auth/verify-otp` | Verifies a pending user's account with an OTP. |
 
 #### Body
 
@@ -200,7 +210,7 @@ No special headers are required.
 -----
 
 ## Email Login API
-### POST `/auth/email/login`
+### POST `[BASE_URL]/auth/email/login`
 
 This endpoint allows a user to log in with their email and password. It validates user credentials, generates a new access and refresh token pair, and implements a security mechanism to prevent brute-force attacks.
 
@@ -210,7 +220,7 @@ This endpoint allows a user to log in with their email and password. It validate
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `POST` | `/auth/email/login` | Authenticates a user and issues new tokens. |
+| `POST` | `[BASE_URL]/auth/email/login` | Authenticates a user and issues new tokens. |
 
 #### Body
 
@@ -269,7 +279,7 @@ The endpoint employs a Redis-based rate-limiting system to prevent brute-force l
 -----
 
 ## Logout API
-### POST `/auth/logout`
+### POST `[BASE_URL]/auth/logout`
 
 This endpoint allows a user to securely log out by invalidating their access and refresh tokens. Both tokens are added to a blacklist, making them unusable for future requests.
 
@@ -279,7 +289,7 @@ This endpoint allows a user to securely log out by invalidating their access and
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `POST` | `/auth/logout` | Revokes the current session's tokens and logs the user out. |
+| `POST` | `[BASE_URL]/auth/logout` | Revokes the current session's tokens and logs the user out. |
 
 #### Headers
 
@@ -331,7 +341,7 @@ No request body is required.
 -----
 
 ## Refresh Token API
-### POST `/auth/token/refresh`
+### POST `[BASE_URL]/auth/token/refresh`
 
 This endpoint allows a client to obtain a new access token and refresh token pair using a valid refresh token. This process, known as token rotation, enhances security by invalidating the old refresh token after a successful refresh.
 
@@ -341,7 +351,7 @@ This endpoint allows a client to obtain a new access token and refresh token pai
 
 | Method | Endpoint | Description |
 |:---|:---|:---|
-| `POST` | `/auth/refresh` | Requests a new pair of access and refresh tokens. |
+| `POST` | `[BASE_URL]/auth/refresh` | Requests a new pair of access and refresh tokens. |
 
 #### Headers
 
