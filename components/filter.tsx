@@ -14,6 +14,9 @@ export default function Filter({ options, filterType, text }: FilterProps) {
     const [optionsVisible, setOptionsVisible] = useState(false)
     const [currentOption, setCurrentOption] = useState<string | null>(options?.[0] ?? text ?? null)
     const [enterInput, setEnterInput] = useState(false)
+    const [changed, setChanged] = useState(true)
+
+    const [input, setInput] = useState("")
 
     const onPress = () => {
         if (filterType === "options") setOptionsVisible(!optionsVisible)
@@ -35,7 +38,14 @@ export default function Filter({ options, filterType, text }: FilterProps) {
                         <TextInput
                             ref={inputRef}
                             style={[filterStyles.input, filterStyles.text]}
-                            keyboardType="numeric" />
+                            keyboardType="numeric"
+                            value={input}
+                            onChangeText={(text) => setInput(text)}
+                            onBlur={() => {
+                                if (input == "") {
+                                    setEnterInput(false)
+                                }
+                            }} />
                 }
 
                 {

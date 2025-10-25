@@ -27,7 +27,9 @@ export const filterStyles = StyleSheet.create({
         width: "100%",
         justifyContent: 'space-between',
         backgroundColor: "#fffffa",
-        borderRadius: 15
+        borderRadius: 15,
+        elevation: 5,
+        position: "absolute"
     },
 
     input: {

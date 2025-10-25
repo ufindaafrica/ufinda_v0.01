@@ -8,8 +8,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 
 
-export default function Home () {
-    
+export default function Home() {
+
     return (
         <SafeAreaView style={[globals.container, globals.authContainer]}>
             <View style={homeStyles.layoutMargin}>
@@ -20,11 +20,19 @@ export default function Home () {
                 <Search />
             </View>
 
-            <View>
-                <Filter filterType="options" options={["Near You", "Recommended", "Others"]} />
-                <Filter filterType="options" options={["Type", "SelfCon", "Flat", "Face Me"]} />
-                <Filter filterType="input" text="Min. Price" />
-                <Filter filterType="input" text="Max. Price" />
+            <View style={[homeStyles.layoutMargin, homeStyles.filterV]}>
+                <View style={[homeStyles.eachFilterV, {zIndex: 2}]}>
+                    <Filter filterType="options" options={["Near You", "Recommended", "Others"]} />
+                </View>
+                <View style={[homeStyles.eachFilterV, {zIndex: 2}]}>
+                    <Filter filterType="options" options={["Type", "SelfCon", "Flat", "Face Me"]} />
+                </View>
+                <View style={homeStyles.eachFilterV}>
+                    <Filter filterType="input" text="Min. Price" />
+                </View>
+                <View style={homeStyles.eachFilterV}>
+                    <Filter filterType="input" text="Max. Price" />
+                </View>
             </View>
         </SafeAreaView>
     )
