@@ -44,7 +44,8 @@ export default function Index() {
       if (SecureStore.getItem("AUTH") == null) {
         // router.replace("/auth/mode")
         // router.replace("/auth/otp")
-        router.replace("/auth/login")
+        // router.replace("/auth/login")
+        router.replace("/(tabs)/home")
       } else {
         router.replace("/(tabs)/home")
       }

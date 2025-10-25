@@ -16,7 +16,6 @@ export const globals = StyleSheet.create({
         fontSize: 30
     },
     authContainer: {
-        padding: 24,
-        // flex: 1
+        padding: 24
     }
 });
