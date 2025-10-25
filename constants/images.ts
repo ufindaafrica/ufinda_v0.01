@@ -9,7 +9,7 @@ export const images = {
     uFindaText: require("../assets/images/dt.png"),
     add: require("../assets/images/add.png"),
     archiveAdd: require("../assets/images/archive-add.png"),
-    arrowDown: require("../assets/images/arrow-down.png"),
+    arrowDown: require("../assets/images/arrowDown.png"),
     call: require("../assets/images/call.png"),
     chat: require("../assets/images/chat.png"),
     gallery: require("../assets/images/gallery.png"),
@@ -42,5 +42,6 @@ export const images = {
     largeCheck: require("../assets/images/large-check.png"),
     checkedBox: require("../assets/images/checked-box.png"),
     emptyBox: require("../assets/images/empty-box.png"),
-    google: require("../assets/images/google.png")
+    google: require("../assets/images/google.png"),
+    arrowUp: require("../assets/images/arrowUp.png")
 }
