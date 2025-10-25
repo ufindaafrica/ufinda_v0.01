@@ -21,7 +21,10 @@ export default function Home () {
             </View>
 
             <View>
-                <Filter options={["Near You", "Recommended", "Others"]} />
+                <Filter filterType="options" options={["Near You", "Recommended", "Others"]} />
+                <Filter filterType="options" options={["Type", "SelfCon", "Flat", "Face Me"]} />
+                <Filter filterType="input" text="Min. Price" />
+                <Filter filterType="input" text="Max. Price" />
             </View>
         </SafeAreaView>
     )

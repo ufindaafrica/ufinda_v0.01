@@ -30,4 +30,8 @@ export const filterStyles = StyleSheet.create({
         borderRadius: 15
     },
 
+    input: {
+        width: "100%"
+    }
+
 })
