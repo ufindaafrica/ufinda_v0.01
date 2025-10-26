@@ -1,17 +1,21 @@
 import { images } from "@/constants/images";
 import { filterStyles } from "@/styles/componentStyles/filter";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Image, Keyboard, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 type FilterProps = {
     options?: Array<string>,
     filterType: "options" | "input",
-    text?: string
+    text?: string,
+    visible?: boolean,
+    setVisible?: (value: any) => void,
+    onInputFocus?: (value: any) => void,
+    setCurrentFilter: (text: string, type: "options" | "input" | "search") => void
 }
 
-export default function Filter({ options, filterType, text }: FilterProps) {
+export default function Filter({ options, filterType, text, visible, setVisible, onInputFocus, setCurrentFilter }: FilterProps) {
 
-    const [optionsVisible, setOptionsVisible] = useState(false)
+    // const [optionsVisible, setOptionsVisible] = useState(visible)
     const [currentOption, setCurrentOption] = useState<string | null>(options?.[0] ?? text ?? null)
     const [enterInput, setEnterInput] = useState(false)
     const [changed, setChanged] = useState(true)
@@ -19,16 +23,27 @@ export default function Filter({ options, filterType, text }: FilterProps) {
     const [input, setInput] = useState("")
 
     const onPress = () => {
-        if (filterType === "options") setOptionsVisible(!optionsVisible)
+        if (filterType === "options") {
+            setVisible ? setVisible(!visible) : null
+        }
         else {
             setEnterInput(!enterInput)
             setTimeout(() => {
                 inputRef.current?.focus()
             }, 0);
         }
+        Keyboard.dismiss()
     }
     
     const inputRef = useRef<TextInput>(null)
+
+    useEffect(() => {
+        const hideKeys = Keyboard.addListener("keyboardDidHide", () => {
+            inputRef.current?.blur()
+        })
+
+        return () => hideKeys.remove()
+    }, [inputRef])
 
     return (
         <TouchableOpacity onPress={onPress}>
@@ -45,22 +60,31 @@ export default function Filter({ options, filterType, text }: FilterProps) {
                                 if (input == "") {
                                     setEnterInput(false)
                                 }
-                            }} />
+                                if (input != "") {
+                                    const preText = text ? text + ": " : ""
+                                    setCurrentFilter(preText + input, "input")
+                                }
+                            }}
+                            onFocus={onInputFocus} />
                 }
 
                 {
-                    filterType === "options" ? <TouchableOpacity onPress={() => setOptionsVisible(!optionsVisible)}>
-                        <Image source={optionsVisible ? images.arrowUp : images.arrowDown} style={filterStyles.img} />
+                    filterType === "options" ? <TouchableOpacity onPress={() => {
+                        setVisible ? setVisible(!visible) : null
+                        Keyboard.dismiss()
+                        }}>
+                        <Image source={visible ? images.arrowUp : images.arrowDown} style={filterStyles.img} />
                     </TouchableOpacity> : null
                 }
             </View>
             <View style={filterType === "options" ? filterStyles.visibleDropDown : null}>
                 {
-                    filterType === "options" ? optionsVisible ? options?.map((item, idx) => {
+                    filterType === "options" ? visible ? options?.map((item, idx) => {
                         return (
                             <TouchableOpacity key={idx} onPress={() => {
                                 setCurrentOption(item)
-                                setOptionsVisible(false)
+                                setVisible? setVisible(false) : null
+                                setCurrentFilter(item, "options")
                             }}>
                                 <Text style={filterStyles.text}>{item}</Text>
                             </TouchableOpacity>

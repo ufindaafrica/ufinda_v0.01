@@ -1,4 +1,5 @@
 import { StyleSheet } from "react-native";
+import { fonts } from "../globals";
 
 
 export const searchStyles = StyleSheet.create({
@@ -15,6 +16,8 @@ export const searchStyles = StyleSheet.create({
     },
 
     text: {
-        width: "90%"
+        width: "90%",
+        fontFamily: fonts.regular,
+        fontSize: 14
     }
 })
