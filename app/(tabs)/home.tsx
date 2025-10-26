@@ -1,5 +1,6 @@
 import AppHeader from "@/components/appHeader";
 import Filter from "@/components/filter";
+import HostelCard from "@/components/hostelCard";
 import Search from "@/components/search";
 import { globals } from "@/styles/globals";
 import { homeStyles } from "@/styles/home";
@@ -90,7 +91,9 @@ export default function Home() {
                 <Text style={homeStyles.currentOptionTxt}>{currentFilter}</Text>
             </View>
 
-            <ScrollView></ScrollView>
+            <ScrollView>
+                <HostelCard />
+            </ScrollView>
         </SafeAreaView>
     )
 }
