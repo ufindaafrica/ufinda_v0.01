@@ -114,6 +114,12 @@ export const hostelCardStyles = StyleSheet.create({
     phoneImg: {
         height: 25,
         width: 25
+    },
+
+    blackDot: {
+        width: 3,
+        height: 3,
+        alignSelf: "center"
     }
 })
 

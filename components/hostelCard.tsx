@@ -33,7 +33,7 @@ export default function HostelCard(hostel: DummyHostelsType) {
                                             idx > 0 ? <Text> </Text> : null
                                         }
                                         <Text style={[hostelCardStyles.address, hostelCardStyles.amenitiesT]}>{item} </Text>
-                                        {idx < len ? <Image source={images.blackDot} /> : null}
+                                        {idx < len ? <Image source={images.blackDot} style={hostelCardStyles.blackDot} /> : null}
                                     </View>
                                 )
                             })
