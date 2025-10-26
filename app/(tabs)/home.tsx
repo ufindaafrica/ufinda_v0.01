@@ -2,9 +2,10 @@ import AppHeader from "@/components/appHeader";
 import Filter from "@/components/filter";
 import HostelCard from "@/components/hostelCard";
 import Search from "@/components/search";
+import { dummyHostels, DummyHostelsType } from "@/constants/dummy_data";
 import { globals } from "@/styles/globals";
 import { homeStyles } from "@/styles/home";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -12,18 +13,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Home() {
 
+    const [hostels, setHostels] = useState<DummyHostelsType[] | null>()
+
     const [currentFilter, setCurrentFilter] = useState("Near You")
 
     const setFilter = (text: string, type: "options" | "input" | "search") => {
         if (type === "options" || type === "search") {
             setCurrentFilter(text)
-            console.log(currentFilter)
-            console.log(type)
             return
         }
 
         if (type === "input" && (currentFilter.startsWith("Min") || currentFilter.startsWith("Max")) && (currentFilter.slice(0, 3) != (text.slice(0, 3)))) {
-            console.log("i saw the light")
             if (currentFilter.slice(0, 3) == "Max") {
                 setCurrentFilter(prev => text + " - " + prev)
             } else {
@@ -32,14 +32,8 @@ export default function Home() {
             }
 
         } else {
-            console.log("it was me")
-            console.log(currentFilter.startsWith("Min"))
-            console.log(currentFilter.startsWith("Max"))
-            console.log(type)
             setCurrentFilter(text)
         }
-
-        console.log(currentFilter)
 
         return
     }
@@ -61,6 +55,10 @@ export default function Home() {
         setFilter1Vis(false)
         setFilter2Vis(false)
     }
+
+    useEffect(() => {
+        setHostels(dummyHostels)
+    }, [])
 
     return (
         <SafeAreaView style={[globals.container, globals.authContainer]}>
@@ -91,8 +89,24 @@ export default function Home() {
                 <Text style={homeStyles.currentOptionTxt}>{currentFilter}</Text>
             </View>
 
-            <ScrollView>
-                <HostelCard />
+            <ScrollView showsVerticalScrollIndicator={false}>
+                {
+                    hostels ? hostels.map((item, idx) => (
+                        <View style={homeStyles.layoutMargin} key={idx}>
+                            <HostelCard
+                                id={item.id}
+                                images={item.images}
+                                available={item.available}
+                                distance={item.distance}
+                                name={item.name}
+                                address={item.address}
+                                price={item.price}
+                                amenities={item.amenities}
+                                agent={item.agent}
+                             />
+                        </View>
+                    )) : null
+                }
             </ScrollView>
         </SafeAreaView>
     )

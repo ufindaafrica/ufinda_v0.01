@@ -27,7 +27,6 @@ export default function Otp() {
 
     const onContinue = () => {
         const otp = otpArray.join("")
-        console.log(otp)
         router.replace("/auth/pic")
     }
 

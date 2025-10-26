@@ -2,27 +2,27 @@ import { Image, Text, TouchableOpacity, View } from "react-native";
 import Thumbnail from "./thumbnail";
 import { images } from "@/constants/images";
 import { hostelCardStyles } from "@/styles/hostelCard"
+import { DummyHostelsType } from "@/constants/dummy_data";
 
+export default function HostelCard(hostel: DummyHostelsType) {
 
-export default function HostelCard() {
-
-    const amenities = ["Self contain", "Toilet", "Kitchen", "Duplex", "24 hours power"]
-    const stars = 4
+    const amenities = hostel.amenities || []
+    const stars = hostel.agent?.rating || 0
     const unstars = 5 - stars
 
     return (
         <View style={hostelCardStyles.card}>
 
             <View style={hostelCardStyles.thumbnailV}>
-                <Thumbnail />
+                <Thumbnail bg={hostel.images[0]} available={hostel.available} distance={hostel.distance} />
             </View>
 
             <View style={hostelCardStyles.main}>
                 <View>
-                    <Text style={[hostelCardStyles.hostelName]}>Bethel Lodge</Text>
-                    <Text style={[hostelCardStyles.address, hostelCardStyles.textMargin]}>Old Ikoyi, Ikoyi Lagos</Text>
-                    <Text style={hostelCardStyles.hostelName}>₦ 280,000 / year</Text>
-                    <Text style={[hostelCardStyles.address, hostelCardStyles.textMargin]}>PID: 78MBFK</Text>
+                    <Text style={[hostelCardStyles.hostelName]}>{hostel.name}</Text>
+                    <Text style={[hostelCardStyles.address, hostelCardStyles.textMargin]}>{hostel.address}</Text>
+                    <Text style={hostelCardStyles.hostelName}>₦ {hostel.price} / year</Text>
+                    <Text style={[hostelCardStyles.address, hostelCardStyles.textMargin]}>PID: {hostel.id}</Text>
                     <View style={[hostelCardStyles.amenitiesV, hostelCardStyles.textMargin]}>
                         {
                             amenities.map((item, idx) => {
@@ -47,9 +47,9 @@ export default function HostelCard() {
 
             <View style={hostelCardStyles.agentInfo}>
                 <View style={hostelCardStyles.agentCard}>
-                    <Image source={images.user0} style={hostelCardStyles.agentPic} />
+                    <Image source={hostel.agent?.pic} style={hostelCardStyles.agentPic} />
                     <View>
-                        <Text style={[hostelCardStyles.agentName, hostelCardStyles.agentMargin]}>Adeyemi Martins</Text>
+                        <Text style={[hostelCardStyles.agentName, hostelCardStyles.agentMargin]}>{hostel.agent?.name}</Text>
                         <View style={[hostelCardStyles.stars, hostelCardStyles.agentMargin]}>
                             {
                                 [...Array(stars).fill("star"), ...Array(unstars).fill("unstar")].map((type, idx) => (
@@ -59,10 +59,10 @@ export default function HostelCard() {
                                 ))
                             }
                         </View>
-                        <View style={hostelCardStyles.verifiedAgent}>
+                        {hostel.agent?.verified ? <View style={hostelCardStyles.verifiedAgent}>
                             <Image source={images.profileTick} />
                             <Text style={hostelCardStyles.verifiedAgentT}>Verified Agent</Text>
-                        </View>
+                        </View> : null}
                     </View>
                 </View>
                 <TouchableOpacity style={hostelCardStyles.phoneView}>

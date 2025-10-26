@@ -115,8 +115,7 @@ export default function SignUp() {
             phone: phone,
             password: password
         }
-
-        console.log(newUser)
+        
         router.push('/auth/otp')
     }
 

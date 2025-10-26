@@ -1,0 +1,22 @@
+
+export const dummyImages = {
+    hostel0: require("../assets/images/hostel0.jpg"),
+    hostel1: require("../assets/images/hostel1.jpg"),
+    hostel2: require("../assets/images/hostel2.jpg"),
+    hostel3: require("../assets/images/hostel3.jpg"),
+    hostel4: require("../assets/images/hostel4.jpg"),
+    hostel5: require("../assets/images/hostel5.jpg"),
+    hostel6: require("../assets/images/hostel6.jpg"),
+    hostel7: require("../assets/images/hostel7.jpg"),
+    hostel8: require("../assets/images/hostel8.jpg"),
+    hostel9: require("../assets/images/hostel9.jpg"),
+    hostel10: require("../assets/images/hostel10.avif"),
+    hostel11: require("../assets/images/hostel11.avif"),
+    hostel12: require("../assets/images/hostel12.avif"),
+    hostel13: require("../assets/images/hostel13.avif"),
+    hostel14: require("../assets/images/hostel14.avif"),
+    hostelbg: require("../assets/images/hostelbg.png"),
+    hostelbg2: require("../assets/images/hostelbg2.avif"),
+    hostelbg3: require("../assets/images/hostelbg3.avif"),
+    hostelbg4: require("../assets/images/hostelbg4.avif"),
+}

@@ -14,12 +14,20 @@ export const thumbnailStyles = StyleSheet.create({
         color: "#593a00",
         backgroundColor: "#fff6e6",
         padding:5,
-        borderRadius: 10
+        borderRadius: 10,
+        alignSelf: "flex-start"
+    },
+
+    unavailable: {
+        opacity: 0
     },
 
     txtV: {
         flexDirection: "row",
-        justifyContent: "space-between",
-        alignContent: "center"
+        justifyContent: "space-between"
+    },
+
+    bgStyle: {
+        borderRadius: 10
     }
 })
