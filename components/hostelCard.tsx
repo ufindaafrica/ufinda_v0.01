@@ -3,6 +3,7 @@ import Thumbnail from "./thumbnail";
 import { images } from "@/constants/images";
 import { hostelCardStyles } from "@/styles/hostelCard"
 import { DummyHostelsType } from "@/constants/dummy_data";
+import { router } from "expo-router";
 
 export default function HostelCard(hostel: DummyHostelsType) {
 
@@ -13,9 +14,9 @@ export default function HostelCard(hostel: DummyHostelsType) {
     return (
         <View style={hostelCardStyles.card}>
 
-            <View style={hostelCardStyles.thumbnailV}>
+            <TouchableOpacity style={hostelCardStyles.thumbnailV} onPress={() => hostel?.id && router.push({ pathname: "/hostel/[id]", params: { id: String(hostel.id) }})}>
                 <Thumbnail bg={hostel.images[0]} available={hostel.available} distance={hostel.distance} />
-            </View>
+            </TouchableOpacity>
 
             <View style={hostelCardStyles.main}>
                 <View>
