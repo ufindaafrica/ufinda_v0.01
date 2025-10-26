@@ -61,7 +61,7 @@ export default function Home() {
     }, [])
 
     return (
-        <SafeAreaView style={[globals.container, globals.authContainer]}>
+        <SafeAreaView style={[globals.homeContainer]}>
             <View style={homeStyles.layoutMargin}>
                 <AppHeader />
             </View>
@@ -89,7 +89,7 @@ export default function Home() {
                 <Text style={homeStyles.currentOptionTxt}>{currentFilter}</Text>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={homeStyles.scrollV}>
                 {
                     hostels ? hostels.map((item, idx) => (
                         <View style={homeStyles.layoutMargin} key={idx}>

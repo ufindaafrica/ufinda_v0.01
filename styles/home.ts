@@ -20,6 +20,10 @@ export const homeStyles = StyleSheet.create({
     currentOptionTxt: {
         fontSize: 20,
         fontFamily: fonts.regular
+    },
+
+    scrollV: {
+        paddingBottom: 300
     }
 })
 

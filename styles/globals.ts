@@ -11,11 +11,18 @@ export const globals = StyleSheet.create({
         flex: 1,
         backgroundColor: "#f5f5f5"
     },
+    
     text: {
         fontFamily: "System",
         fontSize: 30
     },
+
     authContainer: {
         padding: 24
+    },
+
+    homeContainer: {
+        padding: 24,
+        backgroundColor: "#f5f5f5"
     }
 });
