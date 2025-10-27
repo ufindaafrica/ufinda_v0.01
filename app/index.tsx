@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Otp from "./auth/otp";
 import Onboarding from "./onboarding";
 import Splash from "./splash";
+import Mode from "./auth/mode";
 
 export default function Index() {
 
@@ -47,7 +48,8 @@ export default function Index() {
         // router.replace("/auth/login")
         router.replace("/(tabs)/home")
       } else {
-        router.replace("/(tabs)/home")
+        // router.replace("/(tabs)/home")
+        router.replace("/auth/mode")
       }
     }
   }, [splashScreen, firstOpen]);

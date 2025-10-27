@@ -48,5 +48,9 @@ export const images = {
     activeAdd: require("../assets/images/activeAdd.png"),
     activeChat: require("../assets/images/activeChat.png"),
     activeSaved: require("../assets/images/activeSaved.png"),
-    activeUser: require("../assets/images/activeUser.png")
+    activeUser: require("../assets/images/activeUser.png"),
+    kitchen: require("../assets/images/kitchen.png"),
+    duplex: require("../assets/images/duplex.png"),
+    pet: require("../assets/images/pet.png"),
+    water: require("../assets/images/water.png")
 }

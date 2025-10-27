@@ -97,6 +97,67 @@ export const idStyles = StyleSheet.create({
 
     thirdTopPrelimV: {
         width: "48%"
+    },
+
+    amenitiesV: {
+        // backgroundColor: "#fffff7",
+        // flexDirection: "row"
+        // padding: 14
+        alignItems: "center",
+        justifyContent: "center",
+        width: "25%"
+    },
+
+    outerAmenitiesV: {
+        padding: 14,
+        // flexDirection: "row",
+        // backgroundColor: "#fffff7"
+    },
+
+    innerAmenitiesV: {
+        backgroundColor: "#fffff7",
+        flexDirection: "row",
+        justifyContent: "space-around",
+        flexWrap: "wrap",
+        padding: 14,
+        alignItems: "center",
+        borderRadius: 15
+    },
+
+    amenitiesTxt: {
+        fontFamily: fonts.light,
+        // paddingHorizontal: 5
+    },
+
+    scrollV: {
+        padding: 14,
+        backgroundColor: "#fffff7",
+        borderRadius: 15,
+        flexDirection: "row",
+        flexWrap: "wrap",
+        paddingBottom: 70,
+
+    },
+
+    outerScrollV: {
+        paddingTop: 14,
+        paddingHorizontal: 14,
+        borderRadius: 15
+    },
+
+    detTxtV: {
+        padding: 5,
+        width: "50%"
+    },
+
+    detHeaderTxt: {
+        fontFamily: fonts.bold,
+        paddingBottom: 1,
+        fontSize: 16
+    },
+
+    detLabelTxt: {
+        fontFamily: fonts.regular
     }
 
 

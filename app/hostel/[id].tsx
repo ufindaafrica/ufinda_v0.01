@@ -4,10 +4,11 @@ import { dummyHostels, DummyHostelsType } from "@/constants/dummy_data";
 import { images } from "@/constants/images";
 import { idStyles } from "@/styles/id";
 import { router, useLocalSearchParams } from "expo-router";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { Image, Text, TouchableOpacity, View, ScrollView } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import { useEffect, useState } from "react";
+// import { ScrollView } from "react-native-gesture-handler";
 
 
 export default function HostelDetails() {
@@ -18,8 +19,30 @@ export default function HostelDetails() {
     const hostelImages = hostelDetails?.images
     const imgLen = hostelDetails?.images.length
 
-    const [ currentImage, setCurrentImg ] = useState(hostelImages?.[0])
-    const [ idx, setIdx ] = useState(0)
+    const [currentImage, setCurrentImg] = useState(hostelImages?.[0])
+    const [idx, setIdx] = useState(0)
+
+    const amenities = {
+        "duplex": images.duplex,
+        "bathroom": images.bath,
+        "24 hrs power": images.light,
+        "bedroom": images.bed,
+        // "duplex1": images.duplex,
+        // "bathroom1": images.bath,
+        // "24 hrs power1": images.light,
+        // "bedroom1": images.bed,
+    }
+
+    const importantDetails = {
+        "Property Address": hostelDetails?.address,
+        "Number of Rooms": 10,
+        "Electricity": "24 hours",
+        "Property ID": hostelDetails?.id,
+        "Kitchen": "1 Kitchen",
+        "Toilet": "1 Toilet",
+        "Landlord resides": "Yes",
+        "Roomates": "Not allowed"
+    }
 
     const onSwipeLeft = () => {
         if (idx <= 0) {
@@ -31,7 +54,7 @@ export default function HostelDetails() {
     }
 
     const onSwipeRight = () => {
-        if ( imgLen ? idx >= (imgLen - 1) : null) {
+        if (imgLen ? idx >= (imgLen - 1) : null) {
             return
         } else {
             setIdx(idx + 1)
@@ -40,7 +63,6 @@ export default function HostelDetails() {
     }
 
     useEffect(() => {
-        console.log("idx", idx)
         setCurrentImg(hostelImages?.[idx])
     }, [idx])
 
@@ -62,8 +84,8 @@ export default function HostelDetails() {
                         else if (direction === "right") onSwipeLeft()
                     }
                 }
-                renderLeftActions={() => <View style={{width: 1}} />}
-                renderRightActions={() => <View style={{width: 1}} />}>
+                    renderLeftActions={() => <View style={{ width: 1 }} />}
+                    renderRightActions={() => <View style={{ width: 1 }} />}>
                     <View style={idStyles.picV}>
                         <Image source={currentImage} style={idStyles.hostelImg} />
                         <View style={idStyles.galleryV}>
@@ -77,7 +99,9 @@ export default function HostelDetails() {
                     <View style={idStyles.topPrelimV}>
                         <View style={idStyles.firstTopPrelimV}>
                             <Text style={idStyles.regTxt}>Room Self Contained</Text>
-                            <Image source={images.archiveAdd} />
+                            <TouchableOpacity>
+                                <Image source={images.archiveAdd} />
+                            </TouchableOpacity>
                         </View>
                         <View style={idStyles.firstTopPrelimV}>
                             <Text style={[idStyles.regTxt, idStyles.boldTxt]}>₦ {hostelDetails?.price} / year</Text>
@@ -94,10 +118,29 @@ export default function HostelDetails() {
                     </View>
                 </View>
 
-                <View></View>
+                <View style={idStyles.outerAmenitiesV}>
+                    <View style={idStyles.innerAmenitiesV}>
+                        {
+                            Object.entries(amenities).map((item, idx) =>
+                                <View style={idStyles.amenitiesV} key={idx}>
+                                    <Image source={item[1]} />
+                                    <Text style={idStyles.amenitiesTxt}>{item[0]}</Text>
+                                </View>
+                            )
+                        }
+                    </View>
+                </View>
 
-                <View></View>
-
+                <ScrollView style={idStyles.outerScrollV} showsVerticalScrollIndicator={false}>
+                    <View style={idStyles.scrollV}>
+                        {
+                            Object.entries(importantDetails).map(([key, value], idx) => <View key={idx} style={idStyles.detTxtV}>
+                                <Text style={idStyles.detHeaderTxt}>{value}</Text>
+                                <Text style={idStyles.detLabelTxt}>{key}</Text>
+                            </View>)
+                        }
+                    </View>
+                </ScrollView>
             </SafeAreaView>
         </SafeAreaProvider>
     )
