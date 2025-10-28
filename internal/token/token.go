@@ -13,19 +13,36 @@ import (
 	"fmt"
 	"time"
 	"os"
-	"crypto/rand"
 	"math/big"
 	"github.com/oladev/ufinda_v0.01/internal/db"
-	"github.com/sendgrid/sendgrid-go"
-	"github.com/sendgrid/sendgrid-go/helpers/mail"
+	"github.com/keighl/postmark"
+	"log"
+	"math"
+	mrand"math/rand"
+	"crypto/rand"
+	"strings"
 )
 
 var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
+
+// Define the required prefixes for each entity type.
+var prefixes = map[string]string{
+	"user":    "usr-",
+	"vendor":  "vnd-",
+	"hostel":  "rmn-", // For Room/Rental
+	"product": "prd-", // New prefix for Products
+}
 
 type Claims struct {
 	UserID         string `json:"id"`
 	Email          string `json:"email"`
 	jwt.RegisteredClaims
+}
+
+// init function runs before main and is used to seed the pseudo-random number generator.
+// This is crucial in Go to ensure the IDs are different on each execution.
+func init() {
+	mrand.Seed(time.Now().UnixNano())
 }
 
 func GenerateTokens(
@@ -133,84 +150,103 @@ func GenerateOTP() (string, error) {
 
 // sending otp to email
 func SendOTP(email string, otp string) error {
-	from := mail.NewEmail("uFinda", "ufinda.app@gmail.com")
-	subject := "Your One-Time Password"
-	to := mail.NewEmail("User", email)
+	// --- Postmark API Key Setup ---
+	// Postmark requires a Server API Token for sending messages.
+	apiKey := os.Getenv("POSTMARK_SERVER_KEY")
+	if apiKey == "" {
+		// Use a specific error message to help the user debug
+		return fmt.Errorf("POSTMARK_SERVER_KEY environment variable not set")
+	}
 
-	// Plain text version (for email clients that don't support HTML)
+	client := postmark.NewClient(apiKey, "") // The second argument is for Account Token, which is not needed for sending
+
+	// --- Email Content Construction ---
+	subject := "Your uFinda One-Time Password"
+
+	// Plain text version
 	plainTextContent := fmt.Sprintf("Your one-time password is %s. This code will expire in 15 minutes.", otp)
 
 	// HTML version with the OTP in bold
 	htmlContent := fmt.Sprintf("<strong>Your one-time password is <b>%s</b>.</strong> This code will expire in 15 minutes.", otp)
 
-	message := mail.NewSingleEmail(from, subject, to, plainTextContent, htmlContent)
-
-	apiKey := os.Getenv("SENDGRID_KEY")
-	if apiKey == "" {
-		return fmt.Errorf("sendgrid key not set")
+	// --- Postmark Email Message Configuration ---
+	emailMessage := postmark.Email{
+		// Set the From address with name and email, as requested.
+		// Note: This email MUST be a confirmed Sender Signature in Postmark.
+		From:    "uFinda <no-reply@ufinda.org>",
+		// Set the ReplyTo address, ensuring any replies go to the correct address (in this case, also no-reply).
+		ReplyTo: "no-reply@ufinda.org",
+		To:      email,
+		Subject: subject,
+		TextBody: plainTextContent,
+		HtmlBody: htmlContent,
+		// It's recommended to tag transactional emails for better statistics
+		Tag: "otp-transactional", 
 	}
 
-	client := sendgrid.NewSendClient(apiKey)
-	_, err := client.Send(message)
+	// --- Send Email ---
+	_, err := client.SendEmail(emailMessage)
 
 	if err != nil {
-		return fmt.Errorf("failed to send email")
+		// Postmark client typically returns a more descriptive error than SendGrid's simple error interface
+		// We'll wrap it to provide context
+		return fmt.Errorf("failed to send email via Postmark: %w", err)
 	}
+
 	return nil
 }
+
 // <-------------------------------> End OTP Tools <-------------------------------------->
 
 // <-------------------------------> Begin ID Tools <-------------------------------------->
 
-// The character set: 62 possible characters (A-Z, a-z, 0-9)
-const charSet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-const idLength = 6
+// generateRandomDigits generates a random integer with the specified length.
+// For length=6, it generates a number between 100000 and 999999 (inclusive).
+func generateRandomDigits(length int) int {
+	// Calculate min (10^5 for length 6)
+	min := int(math.Pow10(length - 1))
+	
+	// Calculate max (10^6 - 1 for length 6, i.e., 999999)
+	max := int(math.Pow10(length)) - 1
 
-// generateRandomID generates a 6-character alphanumeric string.
-func generateRandomID() (string, error) {
-	bytes := make([]byte, idLength)
-	_, err := rand.Read(bytes)
-	if err != nil {
-		return "", fmt.Errorf("error reading random bytes: %w", err)
-	}
-	
-	for i, b := range bytes {
-		// Map the random byte to an index in the charSet
-		bytes[i] = charSet[b%byte(len(charSet))]
-	}
-	
-	return string(bytes), nil
+	// Generate random number in the range [min, max]
+	// Go's rand.Intn(n) returns [0, n).
+	// Range size is (max - min + 1). We add min to shift the range up.
+	return mrand.Intn(max-min+1) + min
 }
 
-// GetUniqueID generates a 7-character ID (1-char prefix + 6-char random ID)
-// that is guaranteed to be unique in the specified table.
-func GetUniqueID(prefix string, checkUniquenessFunc func(string) (bool, error)) (string, error) {
-	const maxAttempts = 10 
+func GenerateRandomID(entityType string, checkUniquenessFunc func(string) (bool, error)) (string, error) {
+	const maxAttempts = 5
+	// Normalize the type input to ensure it matches the keys in the prefixes map.
+	normalizedType := strings.ToLower(entityType)
+	var attempt int
+
+	// 1. Check if the type is supported.
+	prefix, ok := prefixes[normalizedType]
+	if !ok {
+		// Log the error (Go equivalent of console.error) and fall back.
+		log.Printf("Invalid ID type: %s. Falling back to a generic prefix.", entityType)
+		
+		// Fallback to 'gen-' + 6 random digits
+		return fmt.Sprintf("gen-%d", generateRandomDigits(6)), nil
+	}
 	
-	for attempt := 0; attempt < maxAttempts; attempt++ {
-		// Generate the random 6-character base ID
-		baseID, err := generateRandomID()
-		if err != nil {
-			return "", err
-		}
-		
-		// Create the final 7-character ID
-		finalID := prefix + baseID
-		
+	for attempt = 0; attempt <= maxAttempts; attempt++ {
+		// 2. Generate the random numerical suffix (6 digits).
+		suffix := generateRandomDigits(6)
+		generatedID := fmt.Sprintf("%s%d", prefix, suffix)
+
 		// Check the database for collisions
-		isUnique, err := checkUniquenessFunc(finalID)
+		isUnique, err := checkUniquenessFunc(generatedID)
 		if err != nil {
-			// Handle database error during check
-			return "", fmt.Errorf("database error during uniqueness check for ID %s: %w", finalID, err)
+			return "", fmt.Errorf("database error during uniqueness check for ID %s: %w", generatedID, err)
 		}
 		
 		if isUnique {
-			return finalID, nil // Success!
+			return generatedID, nil // Success!
 		}
-		// If not unique, the loop continues to the next attempt
 	}
-	
-	// If maxAttempts is reached without success, something is seriously wrong (high collision rate).
+
 	return "", fmt.Errorf("failed to generate unique ID after %d attempts. Collision rate is too high", maxAttempts)
 }
 
@@ -252,6 +288,8 @@ func IsIDUnique(id string, endpoint string) (bool, error) {
 	return isUnique, nil
 }
 
+// <-------------------------------> End ID Tools <-------------------------------------->
+
 func GenerateSecureToken() (string, error) {
 	const length = 32 
 	
@@ -268,37 +306,128 @@ func GenerateSecureToken() (string, error) {
 }
 
 func SendPasswordResetLink(email string, resetLink string) error {
-	from := mail.NewEmail("uFinda", "ufinda.app@gmail.com")
-	subject := "Password Reset Request"
-	to := mail.NewEmail("User", email)
+	// --- Postmark API Key Setup ---
+	apiKey := os.Getenv("POSTMARK_SERVER_KEY")
+	if apiKey == "" {
+		// Postmark uses a server key for sending
+		return fmt.Errorf("POSTMARK_SERVER_KEY environment variable not set")
+	}
 
-	
+	client := postmark.NewClient(apiKey, "") // Second arg (Account Token) is not needed for sending
+
+	// --- Email Content Construction ---
+	subject := "Password Reset Request for uFinda"
+
 	// Plain text version
 	plainTextContent := fmt.Sprintf("You requested a password reset. Please use the following link to reset your password: %s. This link will expire in 15 minutes.", resetLink)
 
-	// HTML version (using a clickable button/link)
 	htmlContent := fmt.Sprintf(`
-        <p>You requested a password reset. Please click the link below to securely reset your password:</p>
-        <p><a href="%s" style="background-color: #007bff; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a></p>
-        <p>Alternatively, you can copy and paste the following URL into your browser:</p>
-        <p>%s</p>
-        <p>This link is valid for 15 minutes.</p>
-    `, resetLink, resetLink)
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+            <p>You requested a password reset. Please click the button below to securely reset your password:</p>
+            <p style="margin: 20px 0;">
+                <a href="%s" 
+                   style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+                    Reset Password
+                </a>
+            </p>
+            <p>Alternatively, you can copy and paste the following URL into your browser:</p>
+            <p><a href="%s">%s</a></p>
+            <p style="color: #888;">This link is valid for 15 minutes.</p>
+        </div>
+    `, resetLink, resetLink, resetLink)
 
-	message := mail.NewSingleEmail(from, subject, to, plainTextContent, htmlContent)
-
-	apiKey := os.Getenv("SENDGRID_KEY")
-	if apiKey == "" {
-		return fmt.Errorf("sendgrid key not set")
+	// --- Postmark Email Message Configuration ---
+	emailMessage := postmark.Email{
+		From:    "uFinda <no-reply@ufinda.org>",
+		ReplyTo: "no-reply@ufinda.org",
+		To:      email,
+		Subject: subject,
+		TextBody: plainTextContent,
+		HtmlBody: htmlContent,
+		Tag: "password-reset",
 	}
 
-	client := sendgrid.NewSendClient(apiKey)
-	_, err := client.Send(message)
+	// --- Send Email ---
+	_, err := client.SendEmail(emailMessage)
 
 	if err != nil {
-		// Log the underlying error for debugging (optional, but recommended in production)
-		// log.Printf("SendGrid error: %v", err)
-		return fmt.Errorf("failed to send email: %w", err)
+		return fmt.Errorf("failed to send password reset link via Postmark: %w", err)
 	}
+
 	return nil
 }
+
+func SendWelcomeEmail(email string, userName string) error {
+	// --- Postmark API Key Setup ---
+	apiKey := os.Getenv("POSTMARK_SERVER_KEY")
+	if apiKey == "" {
+		return fmt.Errorf("POSTMARK_SERVER_KEY environment variable not set")
+	}
+
+	client := postmark.NewClient(apiKey, "")
+
+	// --- Email Content Construction ---
+	subject := "Welcome to uFinda! Your Hunting Starts Now."
+
+	// Customize content for the new user
+	plainTextContent := fmt.Sprintf(
+		"Hello %s,\n\nWelcome to uFinda! We're thrilled to have you join our community. You can now log in and start exploring. \n\nIf you have any questions, please visit our help center or reply to this email.\n\nHappy finding!\nThe uFinda Team",
+		userName,
+	)
+
+	// HTML version with a simple button or link
+	htmlContent := fmt.Sprintf(`
+		<html>
+		<head>
+			<style>
+				.container { font-family: sans-serif; padding: 20px; color: #333; }
+				.header { color: #4F46E5; font-size: 24px; margin-bottom: 20px; }
+				.button {
+					display: inline-block;
+					padding: 10px 20px;
+					margin: 20px 0;
+					background-color: #4F46E5;
+					color: white !important;
+					text-decoration: none;
+					border-radius: 5px;
+					font-weight: bold;
+				}
+			</style>
+		</head>
+		<body>
+			<div class="container">
+				<div class="header">Welcome to uFinda, %s!</div>
+				<p>We're thrilled to have you join our community. Your account is ready, and your hunting starts now.</p>
+				<p>You can use the button below to log in and start exploring.</p>
+				<a href="https://your-app-domain.com/login" class="button">Log In to uFinda</a>
+				<p>If you have any questions, please visit our help center or simply reply to this email.</p>
+				<p>Happy hunting!</p>
+				<p>The uFinda Team</p>
+			</div>
+		</body>
+		</html>
+	`, userName)
+
+	// --- Postmark Email Message Configuration ---
+	emailMessage := postmark.Email{
+		From:     "uFinda <contact@ufinda.org>",
+		ReplyTo:  "contact@ufinda.org",
+		To:       email,
+		Subject:  subject,
+		TextBody: plainTextContent,
+		HtmlBody: htmlContent,
+		Tag:      "welcome-onboarding", 
+	}
+
+	// --- Send Email ---
+	_, err := client.SendEmail(emailMessage)
+
+	if err != nil {
+		return fmt.Errorf("failed to send welcome email via Postmark: %w", err)
+	}
+
+	return nil
+}
+
+
+

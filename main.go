@@ -13,6 +13,8 @@ import (
 	"github.com/oladev/ufinda_v0.01/internal/routes/auth/client"
 	"github.com/oladev/ufinda_v0.01/internal/routes/kyc/client"
 	"github.com/oladev/ufinda_v0.01/internal/routes/hostel"
+	"github.com/oladev/ufinda_v0.01/internal/webhooks"
+
 	// "uFinda/internal/sockets"
 )
 
@@ -71,6 +73,7 @@ func main() {
 	// Public endpoints
 	auth.RegisterAuth(r, cld)
 	userkyc.RegisterKYC(r, cld)
+	webhook.RegisterWebhooks(r)
 	
 	// Pass the Cloudinary client and the Asynq client to the hostel registration
 	hostel.RegisterHostel(r, asynqClient, cld)

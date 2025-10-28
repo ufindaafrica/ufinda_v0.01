@@ -56,6 +56,15 @@ func CreateHostelHandler(asynqClient *asynq.Client) gin.HandlerFunc {
 			return
 		}
 
+		// Get files to send to the worker
+		imageHeaders := c.Request.MultipartForm.File["hostel_images"]
+		if len(imageHeaders) < 1 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "no images uploaded"})
+			return
+		}
+
+		videoHeaders := c.Request.MultipartForm.File["hostel_videos"]
+
 		// Extract form data
 		totalPrice, err := strconv.ParseInt(c.PostForm("total_price"), 10, 64)
 		if err != nil {
@@ -80,7 +89,7 @@ func CreateHostelHandler(asynqClient *asynq.Client) gin.HandlerFunc {
 			return (token.IsIDUnique(id, "/rest/v1/hostels"))
 		}
 
-		hostelID, err := token.GetUniqueID("H", checkUniquenessFunc)
+		hostelID, err := token.GenerateRandomID("hostel", checkUniquenessFunc)
 		if err != nil {
 			hostellog.LogHostel(user.ID, nil, fmt.Errorf("failed to generate hostel id: %w", err))
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate id"})
@@ -110,10 +119,6 @@ func CreateHostelHandler(asynqClient *asynq.Client) gin.HandlerFunc {
 			return
 		}
 
-		// Get files to send to the worker
-		imageHeaders := c.Request.MultipartForm.File["hostel_images"]
-		videoHeaders := c.Request.MultipartForm.File["hostel_videos"]
-
 		// Prepare payload for background task
 		payload, err := json.Marshal(tasks.HostelMediaUploadPayload{
 			HostelID:       hostelID,
@@ -128,6 +133,7 @@ func CreateHostelHandler(asynqClient *asynq.Client) gin.HandlerFunc {
 
 		// Enqueue the task
 		task := asynq.NewTask(tasks.TypeHostelMediaUpload, payload)
+
 		if _, err := asynqClient.Enqueue(task, asynq.MaxRetry(3)); err != nil {
 			log.Printf("Could not enqueue task: %v", err)
 		}

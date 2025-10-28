@@ -29,7 +29,11 @@ func main() {
 		log.Fatalf("Failed to initialize Cloudinary client: %v", err)
 	}
 
-	redisOpt := asynq.RedisClientOpt{Addr: "localhost:6379"}
+	RedisUrl := os.Getenv("REDIS_URL")
+	if RedisUrl == "" {
+		RedisUrl = "localhost:6379"
+	}
+	redisOpt := asynq.RedisClientOpt{Addr: RedisUrl}
 	
 	server := asynq.NewServer(
 		redisOpt,

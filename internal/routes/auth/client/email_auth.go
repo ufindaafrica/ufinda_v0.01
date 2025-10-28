@@ -144,9 +144,9 @@ func VerifyOtpHandler(c *gin.Context) {
 	}
 	var prefix string
 	if pendinguser.Role == "user" {
-		prefix = "U"
-	} else { prefix = "V" }
-	userID, err := token.GetUniqueID(prefix, checkUniqueness)
+		prefix = "user"
+	} else { prefix = "vendor" }
+	userID, err := token.GenerateRandomID(prefix, checkUniqueness)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error generating id"})
 		fmt.Fprintf(os.Stderr, "CRITICAL: Failed to generate ID for user '%s': %w", req.Email, err)
@@ -180,6 +180,10 @@ func VerifyOtpHandler(c *gin.Context) {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
     }
+
+	if err := token.SendWelcomeEmail(user.Email, user.FirstName); err != nil {
+		authlog.LogAuth(user.ID, err)
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"message": "verification successful",
 		"access_token": accessToken,
@@ -296,12 +300,14 @@ func ResendOTPHandler(c *gin.Context) {
 		return
 	}
 
+	// generate the new otp
 	otp, err := token.GenerateOTP()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate otp"})
 		return
 	}
 
+	// set expiry
 	data := map[string]interface{}{
 		"otp": otp,
 		"expire_at": time.Now().Add(15 * time.Minute),

@@ -11,7 +11,7 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/hibiken/asynq v0.25.1
 	github.com/joho/godotenv v1.5.1
-	github.com/sendgrid/sendgrid-go v3.16.1+incompatible
+	github.com/keighl/postmark v0.0.0-20190821160221-28358b1a94e3
 	golang.org/x/crypto v0.37.0
 )
 
@@ -40,10 +40,10 @@ require (
 	github.com/redis/go-redis/v9 v9.7.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
-	github.com/sendgrid/rest v2.6.9+incompatible // indirect
 	github.com/spf13/cast v1.7.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
+	goji.io v2.0.2+incompatible // indirect
 	golang.org/x/arch v0.8.0 // indirect
 	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect

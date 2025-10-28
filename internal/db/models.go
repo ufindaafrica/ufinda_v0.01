@@ -34,7 +34,7 @@ type PendingUser struct {
 }
 
 type UserKYC struct {
-	ID        string    `json:"id,omitempty"`
+	ID        uuid.UUID    `json:"id,omitempty"`
 	UserID    string    `json:"user_id"`
 	Level     string    `json:"level,omitempty"`
 	Faculty   string    `json:"faculty,omitempty"`
