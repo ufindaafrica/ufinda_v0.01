@@ -35,7 +35,12 @@ func main() {
 	if RedisUrl == "" {
 		RedisUrl = "localhost:6379"
 	}
-	redisOpt := asynq.RedisClientOpt{Addr: RedisUrl}
+
+	
+	redisOpt := asynq.RedisClientOpt{
+		Addr: RedisUrl,
+		Password: "",
+	}
 	
 	server := asynq.NewServer(
 		redisOpt,
