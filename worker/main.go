@@ -13,9 +13,11 @@ import (
 )
 
 func main() {
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("error loading .env")
-	}
+	if _, err := os.Stat(".env"); err == nil {
+        if err := godotenv.Load(); err != nil {
+            log.Println("Warning: Could not load .env file")
+        }
+    }
 
 	db.BaseURL = os.Getenv("SUPABASE_URL")
 	db.ServiceRoleKey = os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
