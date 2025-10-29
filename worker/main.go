@@ -40,6 +40,7 @@ func main() {
 	redisOpt := asynq.RedisClientOpt{
 		Addr: RedisUrl,
 		Password: "",
+		DB: 0,
 	}
 	
 	server := asynq.NewServer(
