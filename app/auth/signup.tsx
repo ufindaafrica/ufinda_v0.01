@@ -9,9 +9,22 @@ import React, { useEffect, useRef, useState } from "react";
 import { images } from "@/constants/images";
 import { router } from "expo-router";
 import { globals } from "@/styles/globals";
+import { signUp } from "@/services/signUp";
+import * as SecureStore from "expo-secure-store"
+import Loader from "@/components/loader";
+import ErrorModal from "@/components/errorModal";
 
 
 export default function SignUp() {
+
+    let role: string | null
+    useEffect(() => {
+        const getRole = async () => {
+            role = await SecureStore.getItemAsync("MODE")
+        }
+
+        getRole()
+    }, [])
 
     const firstNameRef = useRef<TextInput | null>(null)
     const lastNameRef = useRef<TextInput | null>(null)
@@ -68,9 +81,6 @@ export default function SignUp() {
         if (text.length < 8) setPasswordStrength("low")
         if (text.length >= 8) {
             setPasswordStrength("medium")
-            // setInvalidPassword(false)
-        } else {
-            // setInvalidPassword(true)
         }
         if (text.length > 10 && includesNum == true && specialChar == true && allCases == true) {
             setPasswordStrength("strong")
@@ -129,19 +139,51 @@ export default function SignUp() {
         }
     }, [securePass]);
 
-    const clickContinue = () => {
+    const clickContinue = async () => {
+
+        setLoaderVisible(true)
 
         const newUser = {
             firstName: firstName.trim(),
             lastName: lastName.trim(),
             email: email.trim(),
             phone: "+234" + phone.trim().slice(),
-            password: password
+            password: password,
+            role: role ? role : "user"
         }
 
-        router.push('/auth/otp')
+        const result = await signUp(newUser)
+
+        setLoaderVisible(false)
+
+        if (result[0] === "201") {
+            router.push('/auth/otp')
+        } else {
+
+            if (result[1] == undefined) setErrorText("Server Down. Try Again Later.")
+            else setErrorText(result[1])
+        }
+
     }
 
+    const [loaderVisible, setLoaderVisible] = useState(false)
+
+    useEffect(() => {
+        if (loaderVisible) {
+            setFormIncomplete(true)
+        } else {
+            setFormIncomplete(false)
+        }
+    }, [loaderVisible])
+
+    const [errorModal, seterrorModal] = useState(false)
+    const [errorText, setErrorText] = useState("")
+
+    useEffect(() => {
+        if (errorText != "") {
+            seterrorModal(true)
+        }
+    }, [errorText])
 
     return (
         <SafeAreaView style={[signupStyles.main, globals.container]}>
@@ -203,7 +245,7 @@ export default function SignUp() {
                             hint="email@email.com"
                             returnKeyType="next"
                             onSubmitEditing={() => focusNext(phoneRef)}
-                            onChangeText={(text) => { setEmail(text) ; validateEmail(text) }} 
+                            onChangeText={(text) => { setEmail(text); validateEmail(text) }}
                             invalid={invalidEmail} />
                     </View>
 
@@ -216,7 +258,7 @@ export default function SignUp() {
                             returnKeyType="next"
                             onSubmitEditing={() => focusNext(passwordRef)}
                             keyboardType="numeric"
-                            onChangeText={(text) => { setPhone(text) ; validatePhone(text) }} 
+                            onChangeText={(text) => { setPhone(text); validatePhone(text) }}
                             invalid={invalidPhone} />
                     </View>
 
@@ -310,6 +352,14 @@ export default function SignUp() {
                             <Text style={signupStyles.policyText}>data policy.</Text>
                         </View>
                     </View>
+
+                    {
+                        loaderVisible ? <Loader /> : null
+                    }
+
+                    {
+                        errorModal ? <ErrorModal text={errorText} errorFun={() => { setErrorText(""); seterrorModal(false) }} /> : null
+                    }
 
                 </KeyboardAwareScrollView>
 

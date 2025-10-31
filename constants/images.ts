@@ -52,5 +52,7 @@ export const images = {
     kitchen: require("../assets/images/kitchen.png"),
     duplex: require("../assets/images/duplex.png"),
     pet: require("../assets/images/pet.png"),
-    water: require("../assets/images/water.png")
+    water: require("../assets/images/water.png"),
+    loader: require("../assets/images/loader.gif"),
+    errorIcon: require("../assets/images/group.png")
 }
