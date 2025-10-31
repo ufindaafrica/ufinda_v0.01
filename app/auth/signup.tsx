@@ -55,6 +55,9 @@ export default function SignUp() {
     const [invalidPassword, setInvalidPassword] = useState(false)
     const [invalidConfirmPassword, setinvalidConfirmPassword] = useState(false)
 
+    const [invalidEmail, setInvalidEmail] = useState(false)
+    const [invalidPhone, setInvalidPhone] = useState(false)
+
     const checkPass = (text: string) => {
 
         setPassword(text)
@@ -65,13 +68,21 @@ export default function SignUp() {
         if (text.length < 8) setPasswordStrength("low")
         if (text.length >= 8) {
             setPasswordStrength("medium")
-            setInvalidPassword(false)
+            // setInvalidPassword(false)
         } else {
-            setInvalidPassword(true)
+            // setInvalidPassword(true)
         }
         if (text.length > 10 && includesNum == true && specialChar == true && allCases == true) {
             setPasswordStrength("strong")
             setInvalidPassword(false)
+        }
+
+        if (text === confirmPassword) {
+            setPasswordMatch(true)
+            setinvalidConfirmPassword(false)
+        } else {
+            setPasswordMatch(false)
+            setinvalidConfirmPassword(true)
         }
     }
 
@@ -79,24 +90,36 @@ export default function SignUp() {
         if (text === password) {
             setPasswordMatch(true)
             setinvalidConfirmPassword(false)
-        } else { 
-            setPasswordMatch(false) 
+        } else {
+            setPasswordMatch(false)
             setinvalidConfirmPassword(true)
         }
 
         setConfirmPassword(text)
     }
 
+    const validateEmail = (email: string) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        setInvalidEmail(!emailRegex.test(email))
+    };
+
+    const validatePhone = (phoneNumber: string) => {
+        const phoneRegex = /^\s*0\d{10}\s*$/
+        setInvalidPhone(!phoneRegex.test(phoneNumber))
+    }
+
     useEffect(() => {
-        if (passwordStrength == "medium" || passwordStrength == "strong") {
-             if (firstName && lastName && email && phone && passwordMatch) {
+        if (passwordStrength == "strong") {
+            if (firstName && lastName && email && !invalidEmail && phone && !invalidPhone && passwordMatch) {
                 setFormIncomplete(false)
+            } else {
+                setFormIncomplete(true)
             }
         }
         else {
             setFormIncomplete(true)
         }
-    }, [firstName, lastName, email, phone, passwordStrength, passwordMatch]);
+    }, [firstName, lastName, email, phone, passwordStrength, passwordMatch, invalidEmail, invalidPassword]);
 
     useEffect(() => {
         if (securePass) {
@@ -107,7 +130,7 @@ export default function SignUp() {
     }, [securePass]);
 
     const clickContinue = () => {
-        
+
         const newUser = {
             firstName: firstName,
             lastName: lastName,
@@ -115,7 +138,7 @@ export default function SignUp() {
             phone: phone,
             password: password
         }
-        
+
         router.push('/auth/otp')
     }
 
@@ -180,18 +203,21 @@ export default function SignUp() {
                             hint="email@email.com"
                             returnKeyType="next"
                             onSubmitEditing={() => focusNext(phoneRef)}
-                            onChangeText={(text) => {setEmail(text)}} />
+                            onChangeText={(text) => { setEmail(text) ; validateEmail(text) }} 
+                            invalid={invalidEmail} />
                     </View>
 
                     <View style={signupStyles.formPadding}>
+
                         <Input
                             ref={phoneRef}
-                            label="Phone"
-                            hint="2349012345678"
+                            label="Phone (eg. 08000000000)"
+                            hint="08000000000"
                             returnKeyType="next"
                             onSubmitEditing={() => focusNext(passwordRef)}
                             keyboardType="numeric"
-                            onChangeText={(text) => {setPhone(text)}} />
+                            onChangeText={(text) => { setPhone(text) ; validatePhone(text) }} 
+                            invalid={invalidPhone} />
                     </View>
 
                     <View style={signupStyles.formPadding}>
@@ -208,7 +234,7 @@ export default function SignUp() {
                             icon={secureIcon}
                             secureText={securePass}
                             setSecureText={() => setSecurePass(!securePass)}
-                             />
+                        />
                     </View>
 
                     {
@@ -256,7 +282,7 @@ export default function SignUp() {
                             invalid={invalidConfirmPassword}
                             icon={secureIcon}
                             secureText={securePass}
-                            setSecureText={() => {setSecurePass(!securePass)}} />
+                            setSecureText={() => { setSecurePass(!securePass) }} />
                     </View>
 
                     {

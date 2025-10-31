@@ -28,10 +28,10 @@ export default function Mode () {
 
     const setMode = async () => {
         if (agent === true) {
-            await Secure.setItemAsync("MODE", "agent")
+            await Secure.setItemAsync("MODE", "vendor")
         }
         if (student === true) {
-            await Secure.setItemAsync("MODE", "student")
+            await Secure.setItemAsync("MODE", "user")
         }
         router.push("/auth/signup")
     }

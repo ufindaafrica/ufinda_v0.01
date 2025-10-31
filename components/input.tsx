@@ -3,7 +3,7 @@ import { forwardRef, useState } from "react";
 import { Image, ReturnKeyTypeOptions, Text, TextInput, TextInputProps, TouchableOpacity, View } from "react-native";
 
 type inputProps = {
-    label: string,
+    label?: string,
     hint?: string,
     onFocus?: (value: any) => void,
     onSubmitEditing?: (value: any) => void,
