@@ -136,7 +136,7 @@ export default function SignUp() {
             lastName: lastName,
             email: email,
             phone: phone,
-            password: password
+            password: "+234" + password.trim().slice(1)
         }
 
         router.push('/auth/otp')
