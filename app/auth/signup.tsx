@@ -99,7 +99,7 @@ export default function SignUp() {
     }
 
     const validateEmail = (email: string) => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const emailRegex = /^\s*[^\s@]+@[^\s@]+\.[^\s@]+[^\s@.]\s*$/;
         setInvalidEmail(!emailRegex.test(email))
     };
 
@@ -132,11 +132,11 @@ export default function SignUp() {
     const clickContinue = () => {
 
         const newUser = {
-            firstName: firstName,
-            lastName: lastName,
-            email: email,
-            phone: phone,
-            password: "+234" + password.trim().slice(1)
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            email: email.trim(),
+            phone: "+234" + phone.trim().slice(),
+            password: password
         }
 
         router.push('/auth/otp')
