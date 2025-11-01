@@ -148,7 +148,7 @@ export default function SignUp() {
             lastName: lastName.trim(),
             email: email.trim().toLowerCase(),
             phone: "+234" + phone.trim().slice(),
-            password: password,
+            password: password.trim(),
             role: role ? role : "user"
         }
 

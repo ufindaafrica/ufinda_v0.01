@@ -1,8 +1,9 @@
-import BackArrow from "@/components/back";
+import ErrorModal from "@/components/errorModal";
 import Input from "@/components/input";
+import Loader from "@/components/loader";
 import Select from "@/components/select";
 import { images } from "@/constants/images";
-import { inputStyles } from "@/styles/componentStyles/input";
+import { logIn } from "@/services/logIn";
 import { fonts, globals } from "@/styles/globals";
 import { signupStyles } from "@/styles/signup";
 import { Link, router } from "expo-router";
@@ -42,9 +43,38 @@ export default function Login() {
     }, [securePass]);
 
 
-    const clickContinue = () => {
-        router.replace("/(tabs)/home")
+    const clickContinue = async () => {
+
+        const userData = {
+            email: email.trim(),
+            password: password.trim()
+        }
+
+        setLoaderVisible(true)
+
+        const result = await logIn(userData)
+
+        setLoaderVisible(false)
+
+        if (result[0] != "200") {
+            setErrorText(result[1])
+        } else {
+            router.replace("/(tabs)/home")
+        }
+
     }
+
+    const [loaderVisible, setLoaderVisible] = useState(false)
+    const [errorModal, setErrorModal] = useState(false)
+    const [errorText, setErrorText] = useState("")
+
+    useEffect(() => {
+        if (errorText != "") {
+            setErrorModal(true)
+        } else {
+            setErrorModal(false)
+        }
+    }, [errorText])
 
     return (
         <SafeAreaView style={[signupStyles.main, globals.container]}>
@@ -112,18 +142,28 @@ export default function Login() {
                         <View style={signupStyles.continueView}>
                             <Select text="Continue" selected={true} selectFun={clickContinue} clickable={!email || !password} />
                         </View>
-                    
+
                         <Text style={[signupStyles.orText, signupStyles.orPadding]}>OR</Text>
 
-                        <Select text="Continue with Google" selected={false} icon={images.google} />
+                        <Select clickable={true} text="Continue with Google" selected={false} icon={images.google} />
                     </View>
 
-                    <View style={signupStyles.bottomView}>
-                        <View style={signupStyles.policyView}>
-                            <Text style={signupStyles.policyText}>Don't have an account? </Text>
-                            <Link href={"/auth/signup"} style={[signupStyles.policyText, {fontFamily: fonts.bold, color: "#008000"}]}>Register</Link>
+                    {
+                        loaderVisible || errorModal ? null : <View style={signupStyles.bottomView}>
+                            <View style={signupStyles.policyView}>
+                                <Text style={signupStyles.policyText}>Don't have an account? </Text>
+                                <Link href={"/auth/signup"} style={[signupStyles.policyText, { fontFamily: fonts.bold, color: "#008000" }]}>Register</Link>
+                            </View>
                         </View>
-                    </View>
+                    }
+
+                    {
+                        loaderVisible ? <Loader /> : null
+                    }
+
+                    {
+                        errorModal ? <ErrorModal text={errorText} errorFun={() => setErrorText("")} /> : null
+                    }
 
                 </KeyboardAwareScrollView>
 
