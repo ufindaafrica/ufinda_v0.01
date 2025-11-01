@@ -1,5 +1,5 @@
 import axios from "axios"
-import { BASE_URL } from "./apiConstants"
+import { BASE_URL, timeout } from "./apiConstants"
 import { setItemAsync } from "expo-secure-store"
 
 export const logIn = async (data : any) => {
@@ -12,7 +12,7 @@ export const logIn = async (data : any) => {
             data,
             {
                 baseURL: BASE_URL,
-                timeout: 5000,
+                timeout: timeout,
                 headers: {
                     "Content-Type": "application/json"
                 }

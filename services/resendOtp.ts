@@ -1,5 +1,5 @@
 import axios from "axios"
-import { BASE_URL } from "./apiConstants"
+import { BASE_URL, timeout } from "./apiConstants"
 
 export const resendOtp = async (data : any) => {
 
@@ -11,7 +11,7 @@ export const resendOtp = async (data : any) => {
             data,
             {
                 baseURL: BASE_URL,
-                timeout: 5000,
+                timeout: timeout,
                 headers: {
                     "Content-Type": "application/json"
                 }

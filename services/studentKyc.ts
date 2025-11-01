@@ -1,5 +1,5 @@
 import axios from "axios"
-import { BASE_URL, getAccessToken } from "./apiConstants"
+import { BASE_URL, getAccessToken, timeout } from "./apiConstants"
 
 export const studentKyc = async (data : any) => {
 
@@ -12,7 +12,7 @@ export const studentKyc = async (data : any) => {
             data,
             {
                 baseURL: BASE_URL,
-                timeout: 5000,
+                timeout: timeout,
                 headers: {
                     "Content-Type": "multipart/form-data",
                     "Authorization": `Bearer ${token}`
