@@ -146,7 +146,7 @@ export default function SignUp() {
         const newUser = {
             firstName: firstName.trim(),
             lastName: lastName.trim(),
-            email: email.trim(),
+            email: email.trim().toLowerCase(),
             phone: "+234" + phone.trim().slice(),
             password: password,
             role: role ? role : "user"

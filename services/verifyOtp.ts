@@ -1,13 +1,14 @@
 import axios from "axios"
 import { BASE_URL } from "./apiConstants"
+import { setItemAsync } from "expo-secure-store"
 
-export const resendOtp = async (data : any) => {
+export const verifyOtp = async (data : any) => {
 
     const result: Array<any> = []
 
     try {
         const res = await axios.post(
-            "/auth/otp/resend",
+            "/auth/verify-otp",
             data,
             {
                 baseURL: BASE_URL,
@@ -20,6 +21,9 @@ export const resendOtp = async (data : any) => {
 
         result[0] = "200"
         result[1] = res.data["message"]
+
+        await setItemAsync("ACCESS_TOKEN", res.data["access_token"])
+        await setItemAsync("REFRESH_TOKEN", res.data["refresh_token"])
 
     } catch (err: unknown) {
 

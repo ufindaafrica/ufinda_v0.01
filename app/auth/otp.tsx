@@ -12,9 +12,21 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import * as SecureStore from "expo-secure-store"
 import Loader from "@/components/loader";
 import ErrorModal from "@/components/errorModal";
+import { verifyOtp } from "@/services/verifyOtp";
 
 
 export default function Otp() {
+
+    const [userEmail, setUserEmail] = useState<string | null>("")
+
+    useEffect(() => {
+        const getUserEmail = async () => {
+            const email = await SecureStore.getItemAsync("EMAIL")
+            setUserEmail(email)
+        }
+
+        getUserEmail()
+    }, [])
 
     const [otpArray, setOtpArray] = useState(["", "", "", "", "", ""])
 
@@ -29,14 +41,35 @@ export default function Otp() {
         }
     }
 
-    const onContinue = () => {
+    const onContinue = async () => {
         const otp = otpArray.join("")
-        router.replace("/auth/pic")
+
+        if (userEmail) {
+
+            setLoaderVisible(true)
+
+            const result = await verifyOtp({
+                email: userEmail,
+                otp: otp
+            })
+
+            setLoaderVisible(false)
+
+            if (result[0] != "200") {
+                seterrorModal(true)
+                setErrorText(result[1])
+                setOtpArray(["", "", "", "", "", ""])
+            } else {
+                setCorrectModal(true)
+                setCorrectText(result[1])
+                setNxtPage(true)
+            }
+            
+        }
     }
 
     const onResend = async () => {
-        const userEmail = await SecureStore.getItemAsync("EMAIL")
-
+        
         if (userEmail) {
 
             setLoaderVisible(true)
@@ -47,7 +80,7 @@ export default function Otp() {
 
             setLoaderVisible(false)
 
-            if (result[0] != "201") {
+            if (result[0] != "200") {
                 seterrorModal(true)
                 setErrorText(result[1])
             } else {
@@ -64,6 +97,7 @@ export default function Otp() {
     const [errorText, setErrorText] = useState("")
     const [correctModal, setCorrectModal] = useState(false)
     const [correctText, setCorrectText] = useState("")
+    const [nxtPage, setNxtPage] = useState(false)
 
     useEffect(() => {
         if (errorText != "") {
@@ -124,7 +158,7 @@ export default function Otp() {
             }
 
             {
-                correctModal ? <ErrorModal correct text={correctText} errorFun={() => setCorrectText("")} /> : null
+                correctModal ? <ErrorModal correct text={correctText} errorFun={() => {setCorrectText("") ; if (nxtPage) router.replace("/auth/pic")}} /> : null
             }
 
         </SafeAreaView>
