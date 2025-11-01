@@ -47,6 +47,7 @@ export default function Index() {
         // router.replace("/auth/otp")
         // router.replace("/auth/login")
         // router.replace("/(tabs)/home")
+        // router.replace("/auth/pic")
       } else {
         // router.replace("/(tabs)/home")
         // router.replace("/auth/mode")

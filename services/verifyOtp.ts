@@ -31,6 +31,8 @@ export const verifyOtp = async (data : any) => {
 
             result[0] = err.status?.toString()
             result[1] = err.response?.data["error"]
+
+            if (result[1] == undefined) result[1] = ("Server Down. Try Again Later.")
         }
 
     }

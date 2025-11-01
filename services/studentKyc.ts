@@ -1,19 +1,21 @@
 import axios from "axios"
-import { BASE_URL } from "./apiConstants"
+import { BASE_URL, getAccessToken } from "./apiConstants"
 
-export const resendOtp = async (data : any) => {
+export const studentKyc = async (data : any) => {
 
+    const token = await getAccessToken()
     const result: Array<any> = []
 
     try {
         const res = await axios.post(
-            "/auth/otp/resend",
+            "/kyc/user",
             data,
             {
                 baseURL: BASE_URL,
                 timeout: 5000,
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "multipart/form-data",
+                    "Authorization": `Bearer ${token}`
                 }
             }
         )

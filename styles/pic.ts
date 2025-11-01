@@ -94,6 +94,14 @@ export const picStyles = StyleSheet.create({
 
     centerText: {
         textAlign: "center"
+    },
+
+    padding: {
+        padding: 24
+    },
+
+    paddingHorizontal: {
+        paddingHorizontal: 24
     }
 
 })

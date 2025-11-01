@@ -3,10 +3,13 @@ import Select from "@/components/select";
 import { globals } from "@/styles/globals";
 import { picStyles } from "@/styles/pic";
 import { Link, router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Image, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker"
+import { studentKyc } from "@/services/studentKyc";
+import Loader from "@/components/loader";
+import ErrorModal from "@/components/errorModal";
 
 
 export default function Pic() {
@@ -38,12 +41,66 @@ export default function Pic() {
         }
     }
 
+    const onContinue = async () => {
+
+        const form = new FormData()
+
+        const picData = {
+            uri: image,
+            name: imageName,
+            type: imageType
+        }
+
+        form.append("profile_pic", picData as any)
+
+        if (desc != "") form.append("about_me", desc)
+
+        setLoaderVisible(true)
+
+        const result = await studentKyc(form)
+
+        setLoaderVisible(false)
+
+        if (result[0] != "200") {
+            seterrorModal(true)
+            setErrorText(result[1])
+        }
+        else {
+            setCorrectModal(true)
+            setCorrectText(result[1])
+        }
+    }
+
+    const [loaderVisible, setLoaderVisible] = useState(false)
+    const [errorModal, seterrorModal] = useState(true)
+    const [errorText, setErrorText] = useState("")
+    const [correctModal, setCorrectModal] = useState(false)
+    const [correctText, setCorrectText] = useState("")
+
+    useEffect(() => {
+        if (errorText != "") {
+            seterrorModal(true)
+        } else {
+            seterrorModal(false)
+        }
+    }, [errorText])
+
+    useEffect(() => {
+        if (correctText != "") {
+            setCorrectModal(true)
+        } else {
+            setCorrectModal(false)
+        }
+    }, [correctText])
+
     return (
-        <SafeAreaView style={[globals.container, globals.authContainer]}>
+        <SafeAreaView style={[globals.container]}>
 
-            <BackArrow backFun={() => router.replace("/(tabs)/home")} />
+            <View style={picStyles.padding}>
+                <BackArrow backFun={() => router.replace("/(tabs)/home")} />
+            </View>
 
-            <View style={picStyles.main}>
+            <View style={[picStyles.main, picStyles.paddingHorizontal]}>
                 <Text style={picStyles.headerText}>One more step</Text>
                 <Text style={picStyles.pText}>Now let's communicate your presence, please update your profile.</Text>
             </View>
@@ -58,28 +115,40 @@ export default function Pic() {
                 </TouchableOpacity>
             </View>
 
-            <View style={[picStyles.main]}>
+            <View style={[picStyles.main, picStyles.paddingHorizontal]}>
                 <View style={picStyles.descHeader}>
                     <Text style={picStyles.descText}>Description</Text>
-                    <Text style={picStyles.descText}>{descLength.toString()}/20</Text>
+                    <Text style={picStyles.descText}>{descLength.toString()} / 50</Text>
                 </View>
                 <TextInput
                     placeholder="Tell us about yourself"
                     placeholderTextColor={"#b3b3b3"}
                     style={picStyles.descInput}
-                    maxLength={20}
+                    maxLength={50}
                     value={desc}
                     onChangeText={(text) => onEnterDesc(text)}
                 />
             </View>
 
-            <View style={picStyles.main}>
-                <Select text="Continue" selected clickable={image || desc ? false : true} selectFun={() => router.replace("/auth/finishReg")} />
+            <View style={[picStyles.main, picStyles.paddingHorizontal]}>
+                <Select text="Continue" selected clickable={image ? false : true} selectFun={() => onContinue()} />
             </View>
 
-            <Link href={"/(tabs)/home"} style={[picStyles.main, picStyles.linkText]}>
+            <Link href={"/auth/finishReg"} style={[picStyles.main, picStyles.linkText]}>
                 I'll do this later
             </Link>
+
+            {
+                loaderVisible ? <Loader /> : null
+            }
+
+            {
+                errorModal ? <ErrorModal text={errorText} errorFun={() => setErrorText("")} /> : null
+            }
+
+            {
+                correctModal ? <ErrorModal correct text={correctText} errorFun={() => {setCorrectText("") ; router.replace("/auth/finishReg")}} /> : null
+            }
 
         </SafeAreaView>
     )
