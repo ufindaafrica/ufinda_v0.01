@@ -29,5 +29,19 @@ export const otpStyles = StyleSheet.create({
 
     linkV: {
         alignSelf: "center"
+    },
+
+    otpPadding: {
+        padding: 24
+    },
+
+    otpPaddingHorizontal: {
+        paddingHorizontal: 24
+    },
+
+    lText: {
+        color: "#008000",
+        fontFamily: fonts.bold,
+        fontSize: 16
     }
 })

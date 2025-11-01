@@ -152,6 +152,8 @@ export default function SignUp() {
             role: role ? role : "user"
         }
 
+        await SecureStore.setItemAsync("EMAIL", newUser.email)
+
         const result = await signUp(newUser)
 
         setLoaderVisible(false)

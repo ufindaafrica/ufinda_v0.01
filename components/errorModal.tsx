@@ -5,15 +5,16 @@ import Select from "./select";
 
 type ErrorModalProps = {
     text: string,
-    errorFun: (value: any) => void
+    errorFun: (value: any) => void,
+    correct?: boolean
 }
 
-export default function ErrorModal({ text, errorFun }: ErrorModalProps) {
+export default function ErrorModal({ text, errorFun, correct }: ErrorModalProps) {
 
     return (
         <View style={errorModalStyles.mainV}>
             <View style={errorModalStyles.main}>
-                <Image source={images.errorIcon} />
+                <Image source={correct ? images.correctIcon : images.errorIcon} />
                 <Text style={errorModalStyles.text}>{text}</Text>
                 <View style={errorModalStyles.buttonV}>
                     <Select text="Okay" selected selectFun={errorFun} />

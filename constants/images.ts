@@ -54,5 +54,6 @@ export const images = {
     pet: require("../assets/images/pet.png"),
     water: require("../assets/images/water.png"),
     loader: require("../assets/images/loader.gif"),
-    errorIcon: require("../assets/images/group.png")
+    errorIcon: require("../assets/images/group.png"),
+    correctIcon: require("../assets/images/done.png")
 }
