@@ -4,12 +4,35 @@ import { images } from "@/constants/images";
 import { hostelCardStyles } from "@/styles/hostelCard"
 import { DummyHostelsType } from "@/constants/dummy_data";
 import { router } from "expo-router";
+import { useState } from "react";
+import { getItemAsync, setItemAsync } from "expo-secure-store";
+import { validatePathConfig } from "expo-router/build/fork/getPathFromState-forks";
 
 export default function HostelCard(hostel: DummyHostelsType) {
 
     const amenities = hostel.amenities || []
     const stars = hostel.agent?.rating || 0
     const unstars = 5 - stars
+
+    const [archiveImg, setArchiveImg] = useState(images.archiveAdd)
+
+    const onSave = async () => {
+        let savedHostels : Array<string> = JSON.parse(await getItemAsync("SAVED") || "[]")
+
+        if (archiveImg === images.archiveAdd) {
+            savedHostels.push(hostel.id)
+        } else {
+            savedHostels = savedHostels.filter(item => item !== hostel.id)
+        }
+
+        await setItemAsync("SAVED", JSON.stringify(savedHostels))
+
+        if (archiveImg === images.archiveAdd) {
+            setArchiveImg(images.savedIcon)
+        } else {
+            setArchiveImg(images.archiveAdd)
+        }
+    }
 
     return (
         <View style={hostelCardStyles.card}>
@@ -41,8 +64,8 @@ export default function HostelCard(hostel: DummyHostelsType) {
                         }
                     </View>
                 </View>
-                <TouchableOpacity>
-                    <Image source={images.archiveAdd} />
+                <TouchableOpacity onPress={() => onSave()}>
+                    <Image source={archiveImg} />
                 </TouchableOpacity>
             </View>
 
