@@ -3,41 +3,58 @@ import Thumbnail from "./thumbnail";
 import { images } from "@/constants/images";
 import { hostelCardStyles } from "@/styles/hostelCard"
 import { DummyHostelsType } from "@/constants/dummy_data";
-import { router } from "expo-router";
-import { useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import { getItemAsync, setItemAsync } from "expo-secure-store";
-import { validatePathConfig } from "expo-router/build/fork/getPathFromState-forks";
 
-export default function HostelCard(hostel: DummyHostelsType) {
+type HostelCardProps = {
+    hostel: DummyHostelsType,
+    isSaved: boolean,
+    reload?: () => void
+}
+
+export default function HostelCard({ hostel, isSaved, reload }: HostelCardProps) {
+
+    if (hostel.id === "3452RQ") console.log(isSaved)
+
+    const onSave = async (id: string, saved: boolean) => {
+
+        let savedHostels: Array<string> = JSON.parse(await getItemAsync("SAVED") || "[]")
+
+        if (!saved) {
+            savedHostels.includes(id) ? null : savedHostels.push(id)
+            setSaved(true)
+        } else {
+            savedHostels = savedHostels.filter(item => item !== id)
+            setSaved(false)
+        }
+
+        await setItemAsync("SAVED", JSON.stringify(savedHostels))
+
+        reload?.()
+    }
+
+    const [saved, setSaved] = useState(isSaved)
+
+    useEffect(() => {
+        if (saved) setArchiveImg(images.savedIcon)
+        else setArchiveImg(images.archiveAdd)
+    }, [saved])
+
+    useEffect(() => {
+        setSaved(isSaved)
+    }, [isSaved])
 
     const amenities = hostel.amenities || []
     const stars = hostel.agent?.rating || 0
     const unstars = 5 - stars
 
-    const [archiveImg, setArchiveImg] = useState(images.archiveAdd)
-
-    const onSave = async () => {
-        let savedHostels : Array<string> = JSON.parse(await getItemAsync("SAVED") || "[]")
-
-        if (archiveImg === images.archiveAdd) {
-            savedHostels.push(hostel.id)
-        } else {
-            savedHostels = savedHostels.filter(item => item !== hostel.id)
-        }
-
-        await setItemAsync("SAVED", JSON.stringify(savedHostels))
-
-        if (archiveImg === images.archiveAdd) {
-            setArchiveImg(images.savedIcon)
-        } else {
-            setArchiveImg(images.archiveAdd)
-        }
-    }
+    const [archiveImg, setArchiveImg] = useState(saved ? images.savedIcon : images.archiveAdd)
 
     return (
         <View style={hostelCardStyles.card}>
 
-            <TouchableOpacity style={hostelCardStyles.thumbnailV} onPress={() => hostel?.id && router.push({ pathname: "/hostel/[id]", params: { id: String(hostel.id) }})}>
+            <TouchableOpacity style={hostelCardStyles.thumbnailV} onPress={() => hostel?.id && router.push({ pathname: "/hostel/[id]", params: { id: String(hostel.id) } })}>
                 <Thumbnail bg={hostel.images[0]} available={hostel.available} distance={hostel.distance} />
             </TouchableOpacity>
 
@@ -64,7 +81,7 @@ export default function HostelCard(hostel: DummyHostelsType) {
                         }
                     </View>
                 </View>
-                <TouchableOpacity onPress={() => onSave()}>
+                <TouchableOpacity onPress={() => {onSave(hostel.id, saved)}}>
                     <Image source={archiveImg} />
                 </TouchableOpacity>
             </View>

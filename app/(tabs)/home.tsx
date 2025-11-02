@@ -5,7 +5,9 @@ import Search from "@/components/search";
 import { dummyHostels, DummyHostelsType } from "@/constants/dummy_data";
 import { globals } from "@/styles/globals";
 import { homeStyles } from "@/styles/home";
-import { useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { getItem, getItemAsync, setItemAsync } from "expo-secure-store";
+import { useCallback, useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -56,9 +58,23 @@ export default function Home() {
         setFilter2Vis(false)
     }
 
+    
+    const [savedIds, setSavedIds] = useState<Array<string>>([])
+    const [ reloadHome, setReloadHome ] = useState(false)
+
+    useFocusEffect(useCallback(() => {
+        console.log("i fired")
+        const savedHostels = async () => {
+            const favHostels = JSON.parse(await getItemAsync('SAVED') || "[]")
+            setSavedIds(favHostels)
+        }
+        savedHostels()
+        
+    }, [reloadHome]))
+
     useEffect(() => {
         setHostels(dummyHostels)
-    }, [])
+    }, [savedIds])
 
     return (
         <SafeAreaView style={[globals.homeContainer]}>
@@ -94,16 +110,10 @@ export default function Home() {
                     hostels ? hostels.map((item, idx) => (
                         <View style={homeStyles.layoutMargin} key={idx}>
                             <HostelCard
-                                id={item.id}
-                                images={item.images}
-                                available={item.available}
-                                distance={item.distance}
-                                name={item.name}
-                                address={item.address}
-                                price={item.price}
-                                amenities={item.amenities}
-                                agent={item.agent}
-                             />
+                                hostel={item}
+                                isSaved={savedIds.includes(item.id)}
+                                reload={() => setReloadHome(!reloadHome)}
+                            />
                         </View>
                     )) : null
                 }
