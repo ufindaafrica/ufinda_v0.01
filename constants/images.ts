@@ -55,5 +55,6 @@ export const images = {
     water: require("../assets/images/water.png"),
     loader: require("../assets/images/loader.gif"),
     errorIcon: require("../assets/images/group.png"),
-    correctIcon: require("../assets/images/done.png")
+    correctIcon: require("../assets/images/done.png"),
+    savedIcon: require("../assets/images/savedIcon.png")
 }

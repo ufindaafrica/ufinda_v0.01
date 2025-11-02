@@ -46,7 +46,7 @@ export default function Login() {
     const clickContinue = async () => {
 
         const userData = {
-            email: email.trim(),
+            email: email.trim().toLowerCase(),
             password: password.trim()
         }
 
