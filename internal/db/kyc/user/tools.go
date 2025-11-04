@@ -1,4 +1,4 @@
-package kycdb
+package userkycdb
 
 import (
 	"fmt"

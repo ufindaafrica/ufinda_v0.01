@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/go-redis/redis/v8"
 	"github.com/oladev/ufinda_v0.01/internal/db"
-	"github.com/oladev/ufinda_v0.01/internal/db/kyc"
+	"github.com/oladev/ufinda_v0.01/internal/db/kyc/user"
 	"github.com/cloudinary/cloudinary-go/v2"
 	"golang.org/x/crypto/bcrypt"
 	"strings"
@@ -201,8 +201,12 @@ func EmailLoginHandler(c *gin.Context) {
     }
 
     user, err := authdb.FindCreatedUserByEmail(loginObj.Email)
-	if err != nil && errors.Is(err, ErrorGettingUser) {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err != nil {
+		if errors.Is(err, authdb.ErrorUserNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		}else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 
@@ -264,6 +268,7 @@ func EmailLoginHandler(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{
         "access_token": accessToken,
         "refresh_token": refreshToken,
+		"role": user.Role,
     })
 }
 // <---------------------> End Login <---------------------->
@@ -353,13 +358,7 @@ func LogoutHandler(c *gin.Context) {
 	refreshclaims, err := token.ValidateToken(refreshtoken)
 	if err != nil {
 		log := authlog.Logs["4"]
-		userid, _ := c.Get("id")
-		
-		userID, ok := userid.(string)
-		if !ok {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id type"})
-			return
-		}
+		userID := accessclaims.UserID
 		newLog := db.SecurityLog {
 			ID: uuid.New(),
 			UserID: userID,
@@ -515,8 +514,8 @@ func DeleteCreatedUser(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 		ctx := context.Background()
 		// delete all user's assets in cloudinary
 		if createdUser.Role == "user" {
-			kyc, err := kycdb.FindUserKYC(createdUser.ID)
-			if err != nil && !errors.Is(err, kycdb.ErrorKYCNotFound) {
+			kyc, err := userkycdb.FindUserKYC(createdUser.ID)
+			if err != nil && !errors.Is(err, userkycdb.ErrorKYCNotFound) {
 				authlog.LogAuth(createdUser.ID,  err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get kyc record"})
 				return
@@ -550,14 +549,14 @@ func ForgetPwd(c *gin.Context) {
 
 	// check if user exists by email
 	user, err := authdb.FindCreatedUserByEmail(forgetPwdData.Email)
-	if err != nil && errors.Is(err, ErrorGettingUser) {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}else if err != nil && errors.Is(err, ErrorUserNotFound) {
-		c.JSON(http.StatusOK, gin.H{"message": "A password reset link has been sent to your email address."})
+	if err != nil {
+		if errors.Is(err, authdb.ErrorUserNotFound) {
+			c.JSON(http.StatusOK, gin.H{"message": "A password reset link has been sent to your email address."})
+		}else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
-
 	// generate a secure token
 	newToken, err := token.GenerateSecureToken()
 	if err != nil {
@@ -589,45 +588,54 @@ func ForgetPwd(c *gin.Context) {
 }
 
 func ResetPwd(c *gin.Context) {
-	var req ResetPwdData
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid request"})
-		return
-	}
+    var req ResetPwdData
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request format"}) 
+        return
+    }
 
-	// check if token exists
-	getToken, err := authdb.FindResetToken(req.Token)
-	if err != nil{
-		if !errors.Is(err, authdb.ErrorResetTokenNotFound) {
-			fmt.Sprintf("CRITICAL: database request to get reset token failed with error: %w", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "database operation failed"})
-		} else {
-			c.JSON(http.StatusNotFound, gin.H{"error": "token not found"})
-		}
-		return
-	}
+    // 1. Check if token exists
+    getToken, err := authdb.FindResetToken(req.Token)
+    if err != nil {
+        if errors.Is(err, authdb.ErrorResetTokenNotFound) {
+            c.JSON(http.StatusNotFound, gin.H{"error": "token is invalid or has expired"}) 
+        } else {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "database operation failed"})
+        }
+        return
+    }
 
-	var updateData = make(map[string]interface{})
-	// if exists, update user with new hashed password
-	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
-	if err != nil {
-		authlog.LogAuth(getToken.UserID, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash password"})
-		return
-	}
-	updateData["password"] = string(hashedPwd)
+    // --- 2. CHECK FOR TOKEN EXPIRATION (THE FIX) ---
+    // getToken.ExpiresAt is assumed to be a time.Time value
+    if time.Now().After(getToken.ExpiresAt) {
+        authdb.DeleteResetToken(getToken.Token) 
+        
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "token has expired"})
+        return
+    }
 
-	// delete token record
-	if err := authdb.DeleteResetToken(getToken.Token); err != nil {
-		authlog.LogAuth(getToken.UserID, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "database operation failed"})
-		return
-	}
+    // 3. Hash New Password
+    var updateData = make(map[string]interface{})
+    hashedPwd, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+    if err != nil {
+        authlog.LogAuth(getToken.UserID, err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash password"})
+        return
+    }
+    updateData["password"] = string(hashedPwd)
 
-	if err := authdb.UpdateCreatedUser(getToken.UserID, updateData); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update record with new password"})
-		return
-	}
+    // 4. Delete token record
+    if err := authdb.DeleteResetToken(getToken.Token); err != nil {
+        // Log the failure but continue, as the password change is more important
+        authlog.LogAuth(getToken.UserID, fmt.Errorf("failed to delete reset token: %w", err))
+        // Do NOT return here unless the error is severe enough to stop the process
+    }
 
-	c.JSON(http.StatusOK, gin.H{"message": "password updated successfully"})
+    // 5. Update user with new password
+    if err := authdb.UpdateCreatedUser(getToken.UserID, updateData); err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update record with new password"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "password updated successfully"})
 }

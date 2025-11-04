@@ -10,14 +10,17 @@ import (
 	"context"
 	"github.com/hibiken/asynq"
 	"github.com/oladev/ufinda_v0.01/internal/db"
-	"github.com/oladev/ufinda_v0.01/internal/routes/auth/client"
-	"github.com/oladev/ufinda_v0.01/internal/routes/kyc/client"
+	"github.com/oladev/ufinda_v0.01/internal/routes/auth"
+	"github.com/oladev/ufinda_v0.01/internal/routes/kyc/user"
+	"github.com/oladev/ufinda_v0.01/internal/routes/kyc/vendor"
 	"github.com/oladev/ufinda_v0.01/internal/routes/hostel"
 	"github.com/oladev/ufinda_v0.01/internal/webhooks"
+	"github.com/oladev/ufinda_v0.01/internal/sockets/kyc"
 
 	// "uFinda/internal/sockets"
 )
 
+var wsHub = hub.NewHub()
 
 func main() {
 	if _, err := os.Stat(".env"); err == nil {
@@ -39,6 +42,7 @@ func main() {
 	db.InitDB()
 
 	ctx := context.Background()
+	go wsHub.Run()
 
 	// Connect to Redis for both the API and the Asynq client
 	redisOpt := &redis.Options{
@@ -73,10 +77,16 @@ func main() {
 	// Public endpoints
 	auth.RegisterAuth(r, cld)
 	userkyc.RegisterKYC(r, cld)
-	webhook.RegisterWebhooks(r)
+	vendorkyc.RegisterKYC(r, cld)
+	webhook.RegisterWebhooks(r, wsHub)
 	
 	// Pass the Cloudinary client and the Asynq client to the hostel registration
 	hostel.RegisterHostel(r, asynqClient, cld)
+
+	// hub connection
+	r.GET("/ws", func(c *gin.Context) {
+		hub.WSHandler(wsHub, c)
+	})
 
 	// Start the Gin router
 	// r.Run(":8080")

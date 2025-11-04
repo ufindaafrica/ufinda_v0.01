@@ -11,39 +11,21 @@ import (
     "github.com/oladev/ufinda_v0.01/internal/db/auth"
     "github.com/google/uuid"
     "github.com/oladev/ufinda_v0.01/internal/logs/kyc"
-    "github.com/oladev/ufinda_v0.01/internal/db/kyc"
+    "github.com/oladev/ufinda_v0.01/internal/db/kyc/user"
 )
 
 func UserKYCHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
     return func(c *gin.Context) {
         // 1. Get the trusted user ID from the context
-        id, exists := c.Get("id")
+        user, exists := c.Get("user")
         if !exists {
-            c.JSON(http.StatusInternalServerError, gin.H{"error": "user ID not found in context"})
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
             return
         }
 
-        userID, ok := id.(string)
+        getUser, ok := user.(*db.User)
         if !ok {
-            c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid id type"})
-            return
-        }
-
-        // 2. Find the user based on the trusted ID
-        createdUser, err := authdb.FindCreatedUserByID(userID)
-        if err != nil {
-            if errors.Is(err, authdb.ErrorUserNotFound) {
-                c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-            } else {
-                // Log the user retrieval failure
-                kyclog.LogKYC(userID, fmt.Errorf("error getting user: %w", err))
-                c.JSON(http.StatusInternalServerError, gin.H{"error": "error getting user"})
-            }
-            return
-        }
-
-        if createdUser.Role != "user" {
-            c.JSON(http.StatusForbidden, gin.H{"error": "access not granted"})
+            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user type"})
             return
         }
 
@@ -53,8 +35,7 @@ func UserKYCHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
         faculty := c.PostForm("faculty")
         matric := c.PostForm("matric")
         aboutMe := c.PostForm("about_me")
-        fmt.Sprintf("this is the aboutme: %s", aboutMe)
-        profilePic, err := c.FormFile("profile_pic")
+        profilePic, err := c.FormFile("profile_img")
         
         // Initialized to an empty struct (zero value), representing no uploaded file yet.
         var uploadedFile db.UploadedFile 
@@ -71,7 +52,7 @@ func UserKYCHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
             } else {
                 defer file.Close() // Ensure the file is closed
 
-                url, publicID, uploadErr := kycdb.UploadProfileImage(cld, file, profilePic.Filename)
+                url, publicID, uploadErr := userkycdb.UploadProfileImage(cld, file, profilePic.Filename)
                 if uploadErr != nil {
                     imageUploadError = fmt.Errorf("failed to save profile image to cloud: %w", uploadErr)
                 } else {
@@ -90,16 +71,16 @@ func UserKYCHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
         
         if imageUploadError != nil {
             // Log the image upload error
-            kyclog.LogKYC(userID, imageUploadError)
+            kyclog.LogKYC(getUser.ID, imageUploadError)
         }
 
         // 4. Check if KYC exists
-        _, err = kycdb.FindUserKYC(userID)
+        _, err = userkycdb.FindUserKYC(getUser.ID)
         isKYCFound := err == nil
         
-        if err != nil && !errors.Is(err, kycdb.ErrorKYCNotFound) {
+        if err != nil && !errors.Is(err, userkycdb.ErrorKYCNotFound) {
             // Log database/fetching issue
-            kyclog.LogKYC(userID, fmt.Errorf("database error fetching existing KYC: %w", err))
+            kyclog.LogKYC(getUser.ID, fmt.Errorf("database error fetching existing KYC: %w", err))
             c.JSON(http.StatusInternalServerError, gin.H{"error": "database error fetching kyc"})
             return
         }
@@ -137,13 +118,13 @@ func UserKYCHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
         if isKYCFound {
             // --- UPDATE Existing KYC (PATCH) ---
             // Pass the map as the update data to UpdateUserKYC
-            opErr = kycdb.UpdateUserKYC(userID, updateData) 
+            opErr = userkycdb.UpdateUserKYC(getUser.ID, updateData) 
             message = "KYC updated successfully"
         } else {
             // --- CREATE New KYC (POST) ---
             // For creation, we need the full struct, so we merge the map into a new struct
             newKYC := db.UserKYC{
-                UserID: createdUser.ID,
+                UserID: getUser.ID,
             }
             if level != "" && dept != "" && faculty != "" && matric != "" {
                 newKYC.IsStudent = true
@@ -166,13 +147,13 @@ func UserKYCHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 
             newKYC.ID = uuid.New()
 
-            opErr = kycdb.CreateUserKYC(newKYC)
+            opErr = userkycdb.CreateUserKYC(newKYC)
             message = "KYC created successfully"
         }
 
         // 6. Handle the result of the update/create operation
         if opErr != nil {
-            kyclog.LogKYC(userID, fmt.Errorf("kyc %s operation failed: %w", ternary(isKYCFound, "update", "create"), opErr))
+            kyclog.LogKYC(getUser.ID, fmt.Errorf("kyc %s operation failed: %w", ternary(isKYCFound, "update", "create"), opErr))
             c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save KYC data"})
             return
         }
@@ -180,7 +161,7 @@ func UserKYCHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
         // update verification as successful
         data := make(map[string]interface{})
         data["is_verified"] = true
-        if err := authdb.UpdateCreatedUser(userID, data); err != nil {
+        if err := authdb.UpdateCreatedUser(getUser.ID, data); err != nil {
             fmt.Sprintf("CRITICAL: failed to update user data: %w", err)
         }
 

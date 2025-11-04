@@ -13,8 +13,9 @@ import (
 	"github.com/hibiken/asynq"
 	"github.com/oladev/ufinda_v0.01/internal/db"
 	"github.com/oladev/ufinda_v0.01/internal/db/hostel"
-	"github.com/oladev/ufinda_v0.01/internal/db/auth"
+	"github.com/oladev/ufinda_v0.01/internal/logs/auth"
 	"github.com/oladev/ufinda_v0.01/internal/token"
+	"github.com/google/uuid"
 	"github.com/oladev/ufinda_v0.01/internal/tasks/hostel"
 	"github.com/oladev/ufinda_v0.01/internal/logs/hostel"
 )
@@ -22,30 +23,20 @@ import (
 
 func CreateHostelHandler(asynqClient *asynq.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id, ok := c.Get("id")
-		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
-			return
-		}
+		user, exists := c.Get("user")
+        if !exists {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+            return
+        }
 
-		userID, ok := id.(string)
-		if !ok {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid id type"})
-			return
-		}
+        getUser, ok := user.(*db.User)
+        if !ok {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user type"})
+            return
+        }
 
-		user, err := authdb.FindCreatedUserByID(userID)
-		if err != nil {
-			if errors.Is(err, authdb.ErrorUserNotFound) {
-				c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
-			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "error getting user"})
-			}
-			return
-		}
-
-		if user.Role != "vendor" || !user.IsVerified {
-			hostellog.LogHostel(user.ID, nil, fmt.Errorf("user not verified"))
+		if !getUser.IsVerified {
+			hostellog.LogHostel(getUser.ID, nil, fmt.Errorf("user not verified"))
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "not verified"})
 			return
 		}
@@ -91,14 +82,14 @@ func CreateHostelHandler(asynqClient *asynq.Client) gin.HandlerFunc {
 
 		hostelID, err := token.GenerateRandomID("hostel", checkUniquenessFunc)
 		if err != nil {
-			hostellog.LogHostel(user.ID, nil, fmt.Errorf("failed to generate hostel id: %w", err))
+			hostellog.LogHostel(getUser.ID, nil, fmt.Errorf("failed to generate hostel id: %w", err))
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate id"})
 			return
 		}
 
 		newHostel := db.Hostel{
 			ID: hostelID,
-			VendorID:         user.ID,
+			VendorID:         getUser.ID,
 			TotalPrice:       totalPrice,
 			Location:         c.PostForm("location"),
 			LandlordResides:  c.PostForm("landlord_resides"),
@@ -122,7 +113,7 @@ func CreateHostelHandler(asynqClient *asynq.Client) gin.HandlerFunc {
 		// Prepare payload for background task
 		payload, err := json.Marshal(tasks.HostelMediaUploadPayload{
 			HostelID:       hostelID,
-			VendorID: 		user.ID,
+			VendorID: 		getUser.ID,
 			ImageFilesData: tasks.FilesToBytes(imageHeaders),
 			VideoFilesData: tasks.FilesToBytes(videoHeaders),
 		})
@@ -150,30 +141,20 @@ func UpdateHostelHandler() gin.HandlerFunc {
         hostelID := c.Param("id")
 
         // 1. Verify that the user is a vendor and KYC verified
-        id, ok := c.Get("id")
-        if !ok {
+        user, exists := c.Get("user")
+        if !exists {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
             return
         }
 
-		userID, ok := id.(string)
-		if !ok {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid id type"})
-			return
-		}
-
-        user, err := authdb.FindCreatedUserByID(userID)
-        if err != nil {
-            if errors.Is(err, authdb.ErrorUserNotFound) {
-                c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
-            } else {
-                c.JSON(http.StatusInternalServerError, gin.H{"error": "error getting user"})
-            }
+        getUser, ok := user.(*db.User)
+        if !ok {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user type"})
             return
         }
         
-        if user.Role != "vendor" || !user.IsVerified {
-            hostellog.LogHostel(userID, &hostelID, fmt.Errorf("vendor not verified"))
+        if !getUser.IsVerified {
+            hostellog.LogHostel(getUser.ID, &hostelID, fmt.Errorf("vendor not verified"))
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "not authorized or kyc not verified"})
             return
         }
@@ -190,9 +171,16 @@ func UpdateHostelHandler() gin.HandlerFunc {
         }
 
         // 3. Verify the logged-in user owns the hostel
-        if existingHostel.VendorID != userID {
-            hostellog.LogHostel(userID, &existingHostel.ID, fmt.Errorf("user not owner of hostel"))
-			c.JSON(http.StatusForbidden, gin.H{"error": "unauthorized"})
+        if existingHostel.VendorID != getUser.ID {
+			logData := authlog.Logs["3"]
+			formattedMessage := fmt.Sprintf(logData.Message, "user tries to update hostel")
+            logEntry := db.SecurityLog{
+                ID: uuid.New(),
+                Log:   formattedMessage,
+                Level: logData.Level,
+            }
+            authlog.SecurityLog(logEntry)
+			c.JSON(http.StatusForbidden, gin.H{"error": "no access"})
             return
         }
 
@@ -249,30 +237,20 @@ func DeleteHostelHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		hostelID := c.Param("id")
 		// 1. Verify that the user is a vendor and KYC verified
-		id, ok := c.Get("id")
-		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
-			return
-		}
+		user, exists := c.Get("user")
+        if !exists {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+            return
+        }
 
-		userID, ok := id.(string)
-		if !ok {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid id type"})
-			return
-		}
+        getUser, ok := user.(*db.User)
+        if !ok {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user type"})
+            return
+        }
 
-		user, err := authdb.FindCreatedUserByID(userID)
-		if err != nil {
-			if errors.Is(err, authdb.ErrorUserNotFound) {
-				c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
-			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "error getting user"})
-			}
-			return
-		}
-			
-		if user.Role != "vendor" || !user.IsVerified {
-			hostellog.LogHostel(userID, &hostelID, fmt.Errorf("vendor not verified"))
+		if !getUser.IsVerified {
+			hostellog.LogHostel(getUser.ID, &hostelID, fmt.Errorf("vendor not verified"))
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "not authorized or kyc not verified"})
 			return
 		}
@@ -289,8 +267,15 @@ func DeleteHostelHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 		}
 
 		// 3. Verify the logged-in user owns the hostel
-		if existingHostel.VendorID != userID {
-			hostellog.LogHostel(userID, &hostelID, fmt.Errorf("user not owner of hostel"))
+		if existingHostel.VendorID != getUser.ID {
+			logData := authlog.Logs["3"]
+			formattedMessage := fmt.Sprintf(logData.Message, "user tries to delete hostel")
+            logEntry := db.SecurityLog{
+                ID: uuid.New(),
+                Log:   formattedMessage,
+                Level: logData.Level,
+            }
+            authlog.SecurityLog(logEntry)
 			c.JSON(http.StatusForbidden, gin.H{"error": "unauthorized"})
 			return
 		}

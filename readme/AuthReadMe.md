@@ -467,3 +467,109 @@ No request body is required.
 | `500 Internal Server Error` | An unexpected server error occurred (e.g., **database error**, **asset deletion failure**, or **KYC ID generation failure**). |
 
 -----
+
+I can certainly generate professional API documentation for your password management endpoints based on the structure you provided.
+
+Here is the documentation for the `ForgetPwd` and `ResetPwd` endpoints, detailing the request/response schema and the internal workflow.
+
+-----
+
+### Forget Password API
+
+This endpoint allows a user to initiate the password reset process by submitting their email address.
+
+#### POST `[BASE_URL]/auth/forget-pwd`
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `[BASE_URL]/auth/forget-pwd` | Initiates the process to send a secure password reset link to the user's email. |
+
+#### Request Body
+
+The request body must be a JSON object containing the user's registered email address.
+
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+#### Workflow
+
+1.  **Validation**: The endpoint validates the request body for a valid email format.
+2.  **User Check (Silent Success)**: It attempts to find a created user account associated with the email.
+      * *If the user is **not found**,* it returns a generic success message to prevent user enumeration attacks.
+      * *If the user is **found**,* it proceeds to token generation.
+3.  **Token Generation**: A cryptographically secure, unique token is generated.
+4.  **Token Storage**: The new token is stored in the database along with the `UserID` and an expiry time of **15 minutes**.
+5.  **Email Delivery**: The secure password reset link (containing the generated token) is sent to the user's email address.
+
+#### Responses
+
+| Status Code | Description |
+| :--- | :--- |
+| `200 OK` | The process was initiated successfully, and a reset link has been sent to the email address on file (if it exists). |
+| `400 Bad Request` | The request body is invalid or malformed. |
+| `500 Internal Server Error` | An unexpected server error occurred (e.g., failed to generate the token, failed to save the token, or failed email delivery). |
+
+**Success Body**
+
+A generic success message is returned whether the email is found or not for security purposes.
+
+```json
+{
+  "message": "A password reset link has been sent to your email address."
+}
+```
+
+-----
+
+### Reset Password API
+
+This endpoint finalizes the password reset process using the secure token received via email and updates the user's password.
+
+#### POST `[BASE_URL]/auth/reset-pwd`
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `[BASE_URL]/auth/reset-pwd` | Accepts a reset token and a new password to update the user's credentials. |
+
+#### Request Body
+
+The request body must be a JSON object containing the secure token and the new password.
+
+```json
+{
+  "token": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
+  "new_password": "YourStrongNewPassword123!"
+}
+```
+
+#### Workflow
+
+1.  **Validation**: The endpoint validates the request body for the presence of the token and a password.
+2.  **Token Lookup**: It attempts to find the record associated with the submitted token in the database.
+3.  **Token Validation**: The system verifies that the token has **not expired** and immediately deletes the token from database.
+4.  **Password Hashing**: The `new_password` is securely hashed using `bcrypt`.
+5.  **User Update**: The user's database record is updated with the new hashed password.
+6.  **Token Deletion**: The used token record is immediately deleted from the database to prevent replay attacks.
+
+#### Responses
+
+| Status Code | Description |
+| :--- | :--- |
+| `200 OK` | The password was successfully updated, and the token was invalidated. |
+| `400 Bad Request` | The request body is invalid or malformed. |
+| `403 Unauthorized` | The token has expired. |
+| `404 Not Found` | The submitted token is invalid, expired, or was already used. |
+| `500 Internal Server Error` | An unexpected server error occurred (e.g., failed database operation, failed password hashing). |
+
+**Success Body**
+
+```json
+{
+  "message": "password updated successfully"
+}
+```
+
+------

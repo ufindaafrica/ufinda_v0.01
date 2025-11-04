@@ -112,3 +112,68 @@ type ResetPwdData struct {
 	ExpiresAt time.Time `json:"expires_at"`
 	CreatedAt time.Time `json:"created_at,omitempty"`
 }
+
+type DojahWebhookPayload struct {
+	ReferenceID        string          `json:"reference_id"` // This is your User ID
+	VerificationStatus string          `json:"verification_status"`
+	VerificationURL    string          `json:"verification_url"`
+	
+	NINValueSubmitted  string          `json:"value"` 
+	VerificationMode   string          `json:"verification_mode"` // e.g., "OTP" or "LIVENESS"
+	Status             bool            `json:"status"` // Overall success status of the transaction
+	Metadata           WebhookMetadata `json:"metadata"`
+	Data               WebhookData     `json:"data"`
+}
+
+type GovernmentData struct {
+	Data struct {
+		NIN NINData `json:"nin"`
+	} `json:"data"`
+}
+
+type WebhookData struct {
+	GovernmentData GovernmentData `json:"government_data"`
+}
+
+type NINEntity struct {
+	FirstName       string `json:"first_name"`
+	LastName        string `json:"last_name"`
+	DateOfBirth     string `json:"date_of_birth"` 
+	NIN             string `json:"nin"`          
+	BirthState      string `json:"birth_state"`
+	BirthCountry    string `json:"birth_country"`
+	ResidenceState  string `json:"residence_state"`
+	Gender          string `json:"gender"`
+}
+
+type NINData struct {
+	Entity NINEntity `json:"entity"`
+}
+
+type WebhookMetadata struct {
+	IpInfo IpInfo `json:"ipinfo"`
+	UserID string `json:"user_id"`
+}
+
+type IpInfo struct {
+	StateOfCall string `json:"region_name"`
+	CountryOfCall string `json:"country"`
+}
+
+type VendorKYC struct {
+	ID uuid.UUID `json:"id"`
+	UserID string `json:"user_id"`
+	NIN string `json:"nin"`
+	IsVerified bool `json:"is_verified"`
+	AboutMe string `json:"about_me"`
+	ProfileImg UploadedFile `json:"profile_img"`
+	Address string `json:"address"`
+	Status string `json:"status"`
+	VerificationMode string `json:"verification_mode"`
+	VerificationLink string `json:"verification_link"`
+	Gender string `json:"gender"`
+	DOB string `json:"dob"`
+	StateOfOrigin string `json:"state_of_origin"`
+	Nationality string `json:"nationality"`
+	StateOfResidence string `json:"state_of_residence"`
+}

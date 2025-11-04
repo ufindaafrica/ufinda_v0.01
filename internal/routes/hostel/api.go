@@ -9,7 +9,7 @@ import (
 
 func RegisterHostel(r *gin.Engine, asynqClient *asynq.Client, cld *cloudinary.Cloudinary) {
 	hostelApis := r.Group("/hostels")
-	hostelApis.Use(authmiddleware.AuthMiddleware())
+	hostelApis.Use(auth.VendorAuthMiddleware())
 	{
 		// create hostel api
 		hostelApis.POST("/create", MaxBytesMiddleware(25<<20), CreateHostelHandler(asynqClient))
