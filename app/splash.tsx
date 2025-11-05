@@ -6,7 +6,7 @@ export default function Splash() {
     return (
         <View style={splashStyle.mainview}>
             <ImageBackground style={splashStyle.logoview}>
-                <Image source={images.logo}></Image>
+                <Image source={images.logo} style={splashStyle.img}></Image>
             </ImageBackground>
         </View>
     )

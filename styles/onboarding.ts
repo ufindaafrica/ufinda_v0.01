@@ -29,25 +29,20 @@ export const onboardingStyles = StyleSheet.create({
     },
 
     textView: {
-        justifyContent: "center",
-        alignItems: "center",
-        width: "72%"
+        justifyContent: "space-between",
+        alignItems: "center"
     },
 
     header: {
-        fontFamily: fonts.bold,
-        fontSize: 28,
         textAlign: "center",
-        lineHeight: 36,
-        marginBottom: 10,
-        color: "#101010"
+        color: "#101010",
+        width: 240
     },
 
     regular: {
-        fontFamily: fonts.light,
-        fontSize: 14,
         textAlign: "center",
-        color: "#546881"
+        color: "#546881",
+        width: 278
     },
 
     dots: {
@@ -58,16 +53,41 @@ export const onboardingStyles = StyleSheet.create({
 
     button: {
         backgroundColor: "#101010",
-        width: "85%",
-        height: "5%",
-        borderRadius: 10,
+        width: 358,
+        height: 44,
+        borderRadius: 8,
         justifyContent: "center",
-        alignItems: "center"
+        alignItems: "center",
+        padding: 10
     },
 
     buttonText: {
         color: "#f5f5f5",
-        fontFamily: fonts.regular,
-        fontSize: 16
+    },
+
+    img: {
+        width: 170,
+        height: 31.72
+    },
+
+    onImg: {
+        width: 390,
+        height: 420
+    },
+
+    onImg3: {
+        alignSelf: "center",
+        resizeMode: "center"
+    },
+
+    centerImg: {
+        alignSelf: "center"
+    },
+
+    bottomV: {
+        width: 358,
+        height: 198,
+        justifyContent: "space-between",
+        alignItems: "center"
     }
 })

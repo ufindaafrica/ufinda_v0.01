@@ -6,7 +6,7 @@ export const images = {
     on3: require("../assets/images/on3.png"),
     blackDot: require("../assets/images/blackDot.png"),
     dot: require("../assets/images/dot.png"),
-    uFindaText: require("../assets/images/dt.png"),
+    uFindaText: require("../assets/images/uFindaText.png"),
     inactiveAdd: require("../assets/images/add.png"),
     archiveAdd: require("../assets/images/archive-add.png"),
     arrowDown: require("../assets/images/arrowDown.png"),

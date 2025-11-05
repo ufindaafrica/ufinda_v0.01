@@ -1,4 +1,5 @@
 import { Inter_300Light, Inter_400Regular, Inter_700Bold, useFonts } from "@expo-google-fonts/inter";
+import { useFonts as useRobotoFonts, Roboto_700Bold, Roboto_400Regular } from "@expo-google-fonts/roboto"
 import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
@@ -16,6 +17,11 @@ export default function Index() {
     Inter_700Bold,
     Inter_400Regular,
     Inter_300Light,
+  })
+
+  const [robotoFontsLoaded] = useRobotoFonts({
+    Roboto_700Bold,
+    Roboto_400Regular
   })
 
   useEffect(() => {
@@ -48,7 +54,8 @@ export default function Index() {
         // router.replace("/auth/login")
         // router.replace("/(tabs)/home")
         // router.replace("/auth/pic")
-        router.replace("/auth/login")
+        // router.replace("/auth/login")
+        router.replace("/onboarding")
       } else {
         // router.replace("/(tabs)/home")
         // router.replace("/auth/mode")
@@ -57,7 +64,7 @@ export default function Index() {
   }, [splashScreen, firstOpen]);
 
   
-  if (!fontsLoaded || firstOpen === null) return null
+  if (!fontsLoaded || !robotoFontsLoaded || firstOpen === null) return null
 
   
   if (splashScreen) return <Splash />

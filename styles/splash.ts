@@ -15,5 +15,9 @@ export const splashStyle = StyleSheet.create({
         borderRadius: 150,
         justifyContent: "center",
         alignItems: "center"
+    },
+    img: {
+        width: 25.14,
+        height: 57.03
     }
 })
