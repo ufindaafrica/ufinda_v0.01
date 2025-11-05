@@ -1,4 +1,5 @@
 import { selectStyles } from "@/styles/componentStyles/select"
+import { roboto } from "@/styles/globals"
 import { Image, Text, TouchableOpacity } from "react-native"
 
 type selectProps = {
@@ -20,7 +21,7 @@ export default function Select({ text, icon, selected, selectFun, clickable }: s
 
             <Image source={icon} style={selectStyles.icon} />
 
-            <Text style={[selectStyles.text, selected ? selectStyles.activeText : null]}>{text}</Text>
+            <Text style={[selectStyles.text, selected ? selectStyles.activeText : null, roboto.mediumEmphasizedBold]}>{text}</Text>
 
         </TouchableOpacity>
     )

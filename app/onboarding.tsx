@@ -86,7 +86,7 @@ export default function Onboarding() {
                         style={onboardingStyles.button}
                         onPress={() => router.replace("/auth/mode")}
                     >
-                        <Text style={[onboardingStyles.buttonText, roboto.bodyMedium]}>Get Started</Text>
+                        <Text style={[onboardingStyles.buttonText, roboto.mediumEmphasizedBold]}>Get Started</Text>
                     </TouchableOpacity>
 
                 </View>

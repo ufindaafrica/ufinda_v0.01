@@ -1,11 +1,12 @@
 import Select from "@/components/select";
-import { globals } from "@/styles/globals";
+import { globals, roboto } from "@/styles/globals";
 import { modeStyles } from "@/styles/mode";
 import { useState } from "react";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Secure from "expo-secure-store"
 import { router } from "expo-router";
+import BackArrow from "@/components/back";
 
 
 export default function Mode () {
@@ -39,17 +40,18 @@ export default function Mode () {
     return (
         <SafeAreaView style={[globals.authContainer, globals.container]}>
 
+            <View>
+                <BackArrow backFun={() => router.back()} />
+            </View>
+
             <View style={modeStyles.textView}>
-                <Text style={modeStyles.headerText}>Let's get you started!</Text>
-                <Text style={modeStyles.pText}>Are you a</Text>
+                <Text style={roboto.titleLarge}>Let's get you started!</Text>
+                <Text style={roboto.bodyLarge}>Are you a</Text>
             </View>
 
             <View style={modeStyles.selectMode}>
                 <Select text={"Student"} selected={student} selectFun={pickStudent} />
                 <Select text={"Agent/Vendor"} selected={agent} selectFun={pickAgent} />
-            </View>
-
-            <View style={modeStyles.selectMode}>
                 <Select text={"Continue"} selected={true} clickable={picked} selectFun={setMode} />
             </View>
         </SafeAreaView>

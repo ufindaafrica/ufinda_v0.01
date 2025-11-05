@@ -9,7 +9,7 @@ type BackArrowProps = {
 export default function BackArrow({ backFun }: BackArrowProps) {
 
     return (
-        <TouchableOpacity onPress={backFun}>
+        <TouchableOpacity onPress={backFun} style={backStyles.arrowV}>
             <Image source={images.arrowBack} style={backStyles.img} />
         </TouchableOpacity>
     )

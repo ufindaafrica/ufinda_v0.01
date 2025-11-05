@@ -108,6 +108,18 @@ export const roboto = StyleSheet.create({
         lineHeight: 18
     },
 
+    mediumEmphasized: {
+        fontFamily: robotoFonts.regular,
+        fontSize: 12,
+        lineHeight: 16
+    },
+
+    mediumEmphasizedBold: {
+        fontFamily: robotoFonts.bold,
+        fontSize: 12,
+        lineHeight: 16
+    }
+
 })
 
 export const globals = StyleSheet.create({
@@ -122,7 +134,7 @@ export const globals = StyleSheet.create({
     },
 
     authContainer: {
-        padding: 24
+        padding: 16
     },
 
     homeContainer: {

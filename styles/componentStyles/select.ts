@@ -1,12 +1,11 @@
 import { StyleSheet } from "react-native";
-import { fonts } from "../globals";
 
 
 export const selectStyles = StyleSheet.create({
 
     box: {
         width: "100%",
-        height: 50,
+        height: 44,
         borderColor: "#008000",
         borderWidth: 1.5,
         borderRadius: 15,
@@ -16,8 +15,7 @@ export const selectStyles = StyleSheet.create({
     },
 
     text: {
-        color: "#008000",
-        fontFamily: fonts.regular
+        color: "#008000"
     },
 
     activeBox: {
