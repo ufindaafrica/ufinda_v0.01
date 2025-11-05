@@ -1,119 +1,3 @@
-/* @import 'main.css';
-
-.herosection{
-    margin-top: 80px;
-    box-sizing: border-box;
-    width: 100%;
-    justify-content:  center;
-    align-items: center;
-    text-align: center;
-    background: linear-gradient(to bottom, var(--color-white) 0%, var(--color-gradient1) 50%, var(--color-gradient2) 75%)
-}
-
-.banner {
-    font-size: var(--banner-text);
-    color: var(--on-primary-container);
-    padding: 8px 24px;
-    border-radius: 30px;
-    background-color: var(--color-gradient2);
-    width: 404px;
-    margin: 0 auto 8px;
-}
-.bannerheading {
-    font-size: var(--hero-heading);
-    color: var(--color-black);
-    margin: 0;
-}
-.herotext {
-    width: 80%;
-    color: var(--color-grey);
-    margin: 16px auto 32px;
-    font-size: var(--paragraph);
-}
-.heroimage {
-    width: 810px;
-    height: 500px;
-    margin: 32px auto 0;
-}
-.image {
-    object-fit: contain;
-    width: 100%;
-    height: auto;
-    
-}
-.herobtns {
-    display: flex;
-    gap: 16px;
-    margin: 32px 0 0;
-    justify-self: center;
-}
-.btns{
-    display: flex;
-    gap: 8px;
-    align-items:center;
-}
-@media (max-width: 1024px){
-    .bannerheading {
-        font-size: 40px;
-    }
-    .herotext {
-        width: 100%;
-    }
-    .heroimage {
-        width: 80%;
-        height: auto;
-    }
-}
-@media (max-width: 768px){
-    .bannerheading {
-        font-size: 32px;       
-    }
-    .herotext {
-        width: 100%;
-        text-align: left;
-    }
-    .heroimage {
-        width: 100%;
-        height: auto;
-    }
-    .herobtns {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    }
-    .herosection {
-        margin-top: 80px;
-        background: linear-gradient(to bottom, var(--color-white) 0%, var(--color-gradient1) 60%, var(--color-gradient2) 90%)
-    }
-}
-@media (max-width: 480px) {
-    .herosection {
-        margin-top: 60px;
-        text-align: left;
-        background: var(--color-white) !important;
-    }
-    .herotext {
-        font-size: var(--paragraph-small);
-        margin-top: 8px
-    }
-    .bannerheading {
-        font-size: 28px;
-        font-weight: bold;
-    }
-    .banner{
-        display: none;
-    }
-    .heroimage {
-        width: 100%;
-        height: auto;
-        margin-top: 32px;
-    }
-    .herobtns {
-        grid-template-columns: 1fr;
-        width: 100%;
-    }
-} */
-
 @import 'main.css';
 
 .herosection {
@@ -234,7 +118,7 @@
 
     .herotext {
         width: 100%;
-        text-align: left;
+        
     }
 
     .heroimage {
@@ -257,7 +141,7 @@
 @media (max-width: 480px) {
     .herosection {
         margin-top: 60px;
-        text-align: left;
+        text-align: center;
         background: var(--color-white) !important;
     }
 

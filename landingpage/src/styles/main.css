@@ -82,7 +82,11 @@ body {
     margin: 8px auto 0;
     color: var(--color-grey);
 }
-
+p {
+    font-size: 15px !important;
+    font-family: Verdana, Geneva, Tahoma, sans-serif !important;
+    text-align: left !important;
+}
 /* ====== RESPONSIVE ====== */
 @media (max-width: 1024px) {
     .pageheading {
@@ -109,19 +113,19 @@ body {
     .pagepara {
         font-size: var(--paragraph);
         width: 100%;
-        text-align: left;
+        text-align: center;
     }
     .pageheading{
         font-size: var(--heading-medium);
         margin-top: -4px !important;
         margin-bottom: 8px !important;
         font-weight: 500;
-        text-align: left;
+        text-align: center;
         width: 100%;
     }
     .pagetitle {
         font-size: 12px;
-        text-align: left;
+        text-align: center;
     }
 }
 
@@ -135,13 +139,11 @@ body {
     }
     .pageheading{
         font-size: var(--heading-medium);
-        text-align: left !important;
         font-weight: 600;
         width: 100%;
     }
     .pagetitle {
         font-size: 12px;
-        text-align: left;
         font-weight: 500;
     }
 }
