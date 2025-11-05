@@ -19,11 +19,12 @@ export const selectStyles = StyleSheet.create({
     },
 
     activeBox: {
-        backgroundColor: "#008000"
+        backgroundColor: "#006000",
+        borderWidth: 0
     },
 
     activeText: {
-        color: "#f5f5f5"
+        color: "#fcfcfc"
     },
 
     clickable: {
