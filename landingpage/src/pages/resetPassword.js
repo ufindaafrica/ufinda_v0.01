@@ -5,7 +5,6 @@ import axios from 'axios'
 import { Eye, EyeOff } from 'lucide-react'
 import '../styles/resetPassword.css'
 import Background from '../assets/Backgroundimage'
-import onReset from '../assets/Onreset'
 import onSuccess from '../assets/Onsuccess'
 
 const ResetPassword = () => {
@@ -29,7 +28,7 @@ const ResetPassword = () => {
     const [passwordStrength, setPasswordStrength] = useState({
         level: "",
         progress: 0,
-        color: ''
+        colorClass: ''
     });
 
     useEffect(() => {
@@ -49,18 +48,18 @@ const ResetPassword = () => {
         if (/[0-9]/.test(password)) score++;
         if (/[^A-Za-z0-9]/.test(password)) score++;
 
-        let level = 'weak';
-        let color = 'bg-red-500';
+        let level = 'Weak';
+        let colorClass = 'progress-weak';
         if (score >= 5) {
             level = 'Strong';
-            color = 'bg-green-500';
+            colorClass = 'progress-strong';
         } else if (score >= 3) {
             level = 'Medium';
-            color = 'bg-yellow-500';
+            colorClass = 'progress-medium';
         }
 
         const progress = (score / 5) * 100;
-        return {level, progress, color};
+        return {level, progress, colorClass};
     };
 
     const validatePasswordStrength = (password) => {
@@ -68,16 +67,16 @@ const ResetPassword = () => {
             return 'Password must be at least 8 characters long.';
         }
         if (!/[A-Z]/.test(password)) {
-            return 'password must conatin at least one upperCase letter.'
+            return 'Password must contain at least one uppercase letter.';
         }
         if (!/[a-z]/.test(password)) {
-            return 'password must conatin at least one lowerCase letter.'
+            return 'Password must contain at least one lowercase letter.';
         }
         if (!/[0-9]/.test(password)) {
-            return 'password must conatin at least one number.'
+            return 'Password must contain at least one number.';
         }
-        if (!/[A-Za-z0-9]/.test(password)) {
-            return 'password must conatin at least one special character.'
+        if (!/[^A-Za-z0-9]/.test(password)) {
+            return 'Password must contain at least one special character.';
         }
         return null;
     };
@@ -118,6 +117,8 @@ const ResetPassword = () => {
             return;
         }
 
+        setLoading(true);
+
         try {
             const response = await axios.post(process.env.BACKEND_URI, {
                 Token: token,
@@ -142,15 +143,15 @@ const ResetPassword = () => {
 
     if (isSuccess) {
         return (
-            <div className='min-h-screen flex items-center justify-center bg-gray-100 px-3'>
-                <div className='bg-white shadow-md rounded-2xl p-8 w-full max-w-md text-center'>
+            <div className='success-container'>
+                <div className='success-inner'>
                     <img
                       src={onSuccess}
-                      alt="a key and a hour glass"
-                      className='mx-auto mb-4'
+                      alt="a key and an hourglass"
+                      className='success-img'
                       width={200}/>
-                    <h2 className='text-2xl font-semibold mb-2'>Password changed Succesfully</h2>
-                    <p className='text-gray-600 mb-6'>Your password reset was succesful, please go back to the app to login</p>
+                    <h2 className='success-title'>Password changed Successfully</h2>
+                    <p className='success-text'>Your password reset was successful, please go back to the app to login</p>
                 </div>
             </div>
         )
@@ -161,71 +162,72 @@ const ResetPassword = () => {
             <img src={Background} alt="image shows a 3d render" className="reset-bg" />
         </div>
         <div className='reset-l'>
-            <img src={onReset} alt="image shows a  padlock illustration" className="reset-l-img/>
-            <h2 className='reset-title'>Reset Your Password</h2>
+            <h2 className='reset-title'>Set new password</h2>
+            <p className='reset-subtitle'>Must be at least 8 characters.</p>
             {status.message && (
                 <p className={`reset-para ${status.type === 'error' ? 'error-msg' : 'success'}`}>
                     {status.message}
                 </p>
             )}
 
-            <form onSubmit={handleSubmit} className='space-y-5'>
+            <form onSubmit={handleSubmit} className='reset-form'>
                 {/* new password */}
                 <div className="password-form">
-                    <label className='block text-gray'>New password</label>
+                    <label className='reset-label'>Password</label>
                       <input
                           type={showPassword.newPassword ? "text" : "password"}
                           name="newPassword"
                           value={formData.newPassword}
                           onChange={handleChange}
                           required
-                          className='w-full border border-gray-300 rounded-lg px-3 py2 pr-10 focus:ring-blue-400'
+                          className='reset-input'
                       />
                       <button
                           type='button'
                           onClick={() => toggleVisibility('newPassword')}
-                          className='absolute right-3 top-8 text-gray-500'>
-                          {showPassword.newPassword ? <EyeOff size={24} /> : <Eye size={20} />}
+                          className='eye-button'>
+                          {showPassword.newPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                       </button>
                 </div>
 
                 {formData.newPassword && (
-                    <div className="mt-2">
-                        <div className='w-full bg-gray-200 rounded-full h-2.5'>
+                    <div className="progress-wrapper">
+                        <div className='progress-container'>
                             <div
-                              className={`h-2.5 rounded-full ${passwordStrength.color}`}
+                              className={`progress-bar ${passwordStrength.colorClass}`}
                               style={{ width: `${passwordStrength.progress}%` }}></div>
                         </div>
-                        <p className='text-sm text-gray-600 mt-1'>{passwordStrength.level}</p>
+                        <p className='progress-level'>{passwordStrength.level}</p>
                     </div>
                 )}
 
                 {/* confirm new password */}
-                <div className="relative">
-                    <label className='block text-gray-600 mb-1'>Confirm Password</label>
+                <div className="password-form">
+                    <label className='reset-label'>Confirm password</label>
                     <input
                       type={showPassword.confirmPassword ? "text" : "password"}
                       name="confirmPassword"
                       value={formData.confirmPassword}
                       onChange={handleChange}
                       required
-                      className='w-full border-gray-300 rounded-lg px-3 py-2 pr-10 focus:ring-2 focus:ring-blue-400' 
+                      className='reset-input' 
                     />
                     <button
                         type='button'
-                        onClick={() => toggleVisibility('newPassword')}
-                        className='absolute right-3 top-8 text-gray-500'>
-                        {showPassword.newPassword ? <EyeOff size={24} /> : <Eye size={20} />}
+                        onClick={() => toggleVisibility('confirmPassword')}
+                        className='eye-button'>
+                        {showPassword.confirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                     </button>
                 </div>
 
                 <Button
                   type="submit"
                   disabled={loading || !token}
-                  className='w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-all'
+                  className='reset-button'
                 >
-                    {loading ? "updating..." : "Reset Password"}
+                    {loading ? "updating..." : "Reset password"}
                 </Button>
+                <a href="/login" className="reset-back">&lt; Back to log in</a>
             </form>
         </div>
     </div>
