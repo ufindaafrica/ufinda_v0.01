@@ -1,4 +1,5 @@
 import { inputStyles } from "@/styles/componentStyles/input";
+import { roboto } from "@/styles/globals";
 import { forwardRef, useState } from "react";
 import { Image, ReturnKeyTypeOptions, Text, TextInput, TextInputProps, TouchableOpacity, View } from "react-native";
 
@@ -20,13 +21,13 @@ const Input = forwardRef<TextInput, inputProps>(({ label, hint, onFocus, onSubmi
 
     return (
         <View>
-            <Text style={inputStyles.label}>{label}</Text>
+            <Text style={[inputStyles.label, roboto.bodySmallBold]}>{label}</Text>
 
             <View style={[inputStyles.inputV, focused ? inputStyles.focusedInputBox : null, invalid && inputStyles.invalidInputBox]}>
 
             <TextInput
                 ref={ref}
-                style={[inputStyles.gen, icon && inputStyles.genIcon]}
+                style={[inputStyles.gen, icon && inputStyles.genIcon, roboto.bodyMedium, inputStyles.txtColor]}
                 placeholder={hint}
                 placeholderTextColor={"#c7c7cc"}
                 onChange={() => {

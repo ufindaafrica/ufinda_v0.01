@@ -6,47 +6,42 @@ export const signupStyles = StyleSheet.create({
 
     firstInputLine: {
         flexDirection: "row",
-    },
-
-    break: {
-        width: "3%"
+        justifyContent: "space-between"
     },
 
     headerText: {
-        fontFamily: fonts.regular,
-        fontSize: 28
+        width: 139,
+        height: 24,
     },
 
     pText: {
-        fontFamily: fonts.light,
-        fontSize: 18
+        width: 259,
+        height: 40,
+        paddingTop: 8
     },
 
     main: {
-        padding: 24,
+        padding: 16,
         height: "100%",
         justifyContent: "space-between"
     },
 
     eachName: {
-        flexGrow: 1,
         width: 150
     },
 
     policyView: {
         flexDirection: "row",
-        maxWidth: "100%",
+        width: 340,
         flexWrap: "wrap",
         alignContent: "center",
-        justifyContent: "center"
-    },
-
-    policyText: {
-        fontFamily: fonts.light
+        justifyContent: "center",
+        alignSelf: "center",
+        paddingTop: 8
     },
 
     continueView: {
-        paddingTop: 10
+        paddingTop: 16
     },
 
     keyboardVisible: {
@@ -54,38 +49,35 @@ export const signupStyles = StyleSheet.create({
     },
 
     layoutPadding: {
-        paddingTop: 36
+        paddingTop: 16
     },
 
     formPadding: {
-        paddingTop: 24
+        paddingTop: 16
     },
 
     passwordCheck: {
         flexDirection: "row",
-        padding: 3,
+        paddingBottom: 4,
         alignItems: "center"
     },
 
     passText: {
-        fontFamily: fonts.regular,
         color: "#bf0000"
     },
 
     validPassText: {
-        fontFamily: fonts.light,
         color: "#008000"
     },
 
     mediumPassText: {
-        fontFamily: fonts.light,
         color: "#cccc00"
     },
 
     icon: {
         marginRight: 5,
-        height: 12,
-        width: 12
+        height: 16,
+        width: 16
     },
 
     altV: {
@@ -143,6 +135,14 @@ export const signupStyles = StyleSheet.create({
         width: "100%",
         alignItems: "center",
         justifyContent: "center"
+    },
+
+    passwordCheckV: {
+        paddingTop: 7
+    },
+
+    policyPadding: {
+        paddingTop: 8
     }
 
 })

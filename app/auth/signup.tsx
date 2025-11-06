@@ -8,7 +8,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 import React, { useEffect, useRef, useState } from "react";
 import { images } from "@/constants/images";
 import { router } from "expo-router";
-import { globals } from "@/styles/globals";
+import { colors, globals, roboto } from "@/styles/globals";
 import { signUp } from "@/services/signUp";
 import * as SecureStore from "expo-secure-store"
 import Loader from "@/components/loader";
@@ -60,8 +60,8 @@ export default function SignUp() {
     const validIcon = images.check
     const midIcon = images.alertCircle
 
-    const [secureIcon, setSecureIcon] = useState(images.openEyeDefault)
-    const [securePass, setSecurePass] = useState(false)
+    const [secureIcon, setSecureIcon] = useState(images.closedEyeDefault)
+    const [securePass, setSecurePass] = useState(true)
 
     const [formIncomplete, setFormIncomplete] = useState(true)
 
@@ -169,8 +169,14 @@ export default function SignUp() {
     }
 
     const [loaderVisible, setLoaderVisible] = useState(false)
+    const firstLoad = useRef(true)
 
     useEffect(() => {
+        if (firstLoad.current) {
+            firstLoad.current = false
+            return
+        }
+
         if (loaderVisible) {
             setFormIncomplete(true)
         } else {
@@ -210,8 +216,8 @@ export default function SignUp() {
                     <BackArrow backFun={() => router.back()} />
 
                     <View style={signupStyles.layoutPadding}>
-                        <Text style={signupStyles.headerText}>Create Account</Text>
-                        <Text style={signupStyles.pText}>Please enter your personal details to complete your profile</Text>
+                        <Text style={[signupStyles.headerText, roboto.titleLargeBold]}>Create Account</Text>
+                        <Text style={[signupStyles.pText, roboto.bodyLarge]}>Please enter your personal details to complete your profile</Text>
                     </View>
 
                     <View style={[signupStyles.firstInputLine, signupStyles.layoutPadding]}>
@@ -226,7 +232,6 @@ export default function SignUp() {
                                     setFirstName(text)
                                 }} />
                         </View>
-                        <View style={signupStyles.break}></View>
                         <View style={signupStyles.eachName}>
                             <Input
                                 ref={lastNameRef}
@@ -252,7 +257,6 @@ export default function SignUp() {
                     </View>
 
                     <View style={signupStyles.formPadding}>
-
                         <Input
                             ref={phoneRef}
                             label="Phone (eg. 08000000000)"
@@ -282,35 +286,35 @@ export default function SignUp() {
                     </View>
 
                     {
-                        password == "" ? null : <View>
+                        password == "" ? null : <View style={signupStyles.passwordCheckV}>
                             <View style={signupStyles.passwordCheck}>
                                 <Image
                                     source={
                                         passwordStrength == "low" ? defaultIcon : passwordStrength == "medium" ? midIcon : validIcon
                                     }
                                     style={signupStyles.icon} />
-                                <Text style={[signupStyles.passText, passwordStrength == "medium" ? signupStyles.mediumPassText : passwordStrength == "strong" ? signupStyles.validPassText : null]}>Password strength: {passwordStrength}</Text>
+                                <Text style={[signupStyles.passText, passwordStrength == "medium" ? signupStyles.mediumPassText : passwordStrength == "strong" ? signupStyles.validPassText : null, roboto.bodySmall]}>Password strength: {passwordStrength}</Text>
                             </View>
 
                             <View style={signupStyles.passwordCheck}>
                                 <Image
                                     source={specialChar ? validIcon : defaultIcon}
                                     style={signupStyles.icon} />
-                                <Text style={[signupStyles.passText, specialChar && signupStyles.validPassText]}>At least 1 special character</Text>
+                                <Text style={[signupStyles.passText, specialChar && signupStyles.validPassText, roboto.bodySmall]}>At least 1 special character </Text>
                             </View>
 
                             <View style={signupStyles.passwordCheck}>
                                 <Image
                                     source={includesNum ? validIcon : defaultIcon}
                                     style={signupStyles.icon} />
-                                <Text style={[signupStyles.passText, includesNum && signupStyles.validPassText]}>Includes a number</Text>
+                                <Text style={[signupStyles.passText, includesNum && signupStyles.validPassText, roboto.bodySmall]}>Includes a number</Text>
                             </View>
 
                             <View style={signupStyles.passwordCheck}>
                                 <Image
                                     source={allCases ? validIcon : defaultIcon}
                                     style={signupStyles.icon} />
-                                <Text style={[signupStyles.passText, allCases && signupStyles.validPassText]}>Lower case and upper case letters</Text>
+                                <Text style={[signupStyles.passText, allCases && signupStyles.validPassText, roboto.bodySmall]}>Lower case and upper case letters</Text>
                             </View>
                         </View>
                     }
@@ -335,7 +339,7 @@ export default function SignUp() {
                                 <Image
                                     source={passwordMatch ? validIcon : defaultIcon}
                                     style={signupStyles.icon} />
-                                <Text style={[signupStyles.passText, passwordMatch && signupStyles.validPassText]}>{passwordMatch ? "Matches password" : "Not the same as password"}</Text>
+                                <Text style={[signupStyles.passText, passwordMatch && signupStyles.validPassText, roboto.bodySmall]}>{passwordMatch ? "Matches password" : "Not the same as password"}</Text>
                             </View>
                         </View>
                     }
@@ -346,14 +350,14 @@ export default function SignUp() {
                         </View>
                     </View>
 
-                    <View style={signupStyles.formPadding}>
-                        <View style={signupStyles.policyView}>
-                            <Text style={signupStyles.policyText}>By registering, you have accepted our </Text>
-                            <Text style={signupStyles.policyText}>terms and conditions</Text>
-                            <Text style={signupStyles.policyText}> and our </Text>
-                            <Text style={signupStyles.policyText}>data policy.</Text>
-                        </View>
+
+                    <View style={signupStyles.policyView}>
+                        <Text style={[roboto.bodySmall, colors.grays]}>By registering, you have accepted our </Text>
+                        <Text style={[roboto.bodySmall, colors.foundationWarningDark]}>Terms and Conditions</Text>
+                        <Text style={[roboto.bodySmall, colors.grays]}> and our </Text>
+                        <Text style={[roboto.bodySmall, colors.foundationWarningDark]}>Data Policy.</Text>
                     </View>
+
 
                     {
                         loaderVisible ? <Loader /> : null

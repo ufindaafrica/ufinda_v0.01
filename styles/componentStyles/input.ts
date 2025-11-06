@@ -5,7 +5,6 @@ import { fonts } from "../globals";
 export const inputStyles = StyleSheet.create({
 
     gen: {
-        fontFamily: fonts.regular,
         width: "100%"
     },
 
@@ -16,22 +15,22 @@ export const inputStyles = StyleSheet.create({
     inputV: {
         width: "100%",
         borderWidth: 1,
+        borderColor: "#c7c7cc",
         borderRadius: 10,
-        color: "#008000",
+        color: "#006000",
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingRight: 5
+        paddingRight: 5,
+        height: 44
     },
 
     focusedInputBox: {
-        borderColor: "#008000"
+        borderColor: "#006000"
     },
 
     label: {
-        fontSize: 16,
-        fontFamily: fonts.regular,
-        paddingBottom: 3
+        paddingBottom: 4
     },
 
     invalidInputBox: {
@@ -41,6 +40,18 @@ export const inputStyles = StyleSheet.create({
     icon: {
         height: 20,
         width: 20
+    },
+
+    txtColor: {
+        color: "#000000"
+    },
+
+    invalidTxtColor: {
+        color: "#bf0000"
+    },
+
+    validTxtColor: {
+        color: "#008000"
     }
 
 })

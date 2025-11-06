@@ -15,7 +15,8 @@ export const selectStyles = StyleSheet.create({
     },
 
     text: {
-        color: "#008000"
+        color: "#008000",
+        alignSelf: "center"
     },
 
     activeBox: {
@@ -24,7 +25,8 @@ export const selectStyles = StyleSheet.create({
     },
 
     activeText: {
-        color: "#fcfcfc"
+        color: "#fcfcfc",
+        alignSelf: "center"
     },
 
     clickable: {

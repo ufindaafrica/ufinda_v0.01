@@ -1,12 +1,11 @@
 import { StyleSheet } from "react-native";
-import { fonts } from "../globals";
 
 
 export const errorModalStyles = StyleSheet.create({
     main: {
-        height: 250,
-        width: 300,
-        justifyContent: 'center',
+        height: 243,
+        width: 243,
+        justifyContent: 'space-evenly',
         alignItems: 'center',
         backgroundColor: "#f5f5f5",
         borderRadius: 15,
@@ -15,7 +14,8 @@ export const errorModalStyles = StyleSheet.create({
     },
 
     buttonV: {
-        width: "60%"
+        width: 76,
+        height: 44
     },
 
     mainV: {
@@ -28,11 +28,13 @@ export const errorModalStyles = StyleSheet.create({
     },
 
     text: {
-        fontFamily: fonts.regular,
-        paddingVertical: 15,
         overflow: "scroll",
         width: "90%",
-        textAlign: "center",
-        fontSize: 16
+        textAlign: "center"
+    },
+
+    icon: {
+        width: 80,
+        height: 80
     }
 })

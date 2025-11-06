@@ -45,8 +45,8 @@ export default function Mode () {
             </View>
 
             <View style={modeStyles.textView}>
-                <Text style={roboto.titleLarge}>Let's get you started!</Text>
-                <Text style={roboto.bodyLarge}>Are you a</Text>
+                <Text style={[roboto.titleLargeBold, { height: 24, width: 187}]}>Let's get you started!</Text>
+                <Text style={[roboto.bodyLarge, { height: 20, width: 259, color: "#8e8e93" }]}>Are you a</Text>
             </View>
 
             <View style={modeStyles.selectMode}>

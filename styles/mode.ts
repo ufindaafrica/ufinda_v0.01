@@ -8,7 +8,7 @@ export const modeStyles = StyleSheet.create({
 
     selectMode: {
         paddingTop: 12,
-        height: "25%",
+        height: 150,
         justifyContent: "space-between"
     }
 })

@@ -98,7 +98,7 @@ export const roboto = StyleSheet.create({
 
     bodySmall: {
         fontFamily: robotoFonts.regular,
-        fontSize: 10,
+        fontSize: 11,
         lineHeight: 18
     },
 
@@ -142,3 +142,13 @@ export const globals = StyleSheet.create({
         backgroundColor: "#f5f5f5"
     }
 });
+
+export const colors = StyleSheet.create({
+    grays: {
+        color: "#8e8e93"
+    },
+
+    foundationWarningDark: {
+        color: "#008000"
+    }
+})
