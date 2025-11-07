@@ -1,4 +1,4 @@
-package hostel
+package vendorhostel
 
 import (
 	"net/http"

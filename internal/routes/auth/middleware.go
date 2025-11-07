@@ -111,11 +111,13 @@ func UserAuthMiddleware() gin.HandlerFunc {
                 authlog.LogAuth(claims.UserID, fmt.Errorf("error getting user: %w", err))
                 c.JSON(http.StatusInternalServerError, gin.H{"error": "error getting user"})
             }
+            c.Abort()
             return
         }
 
         if createdUser.Role != "user" {
             c.JSON(http.StatusForbidden, gin.H{"error": "access not granted"})
+            c.Abort()
             return
         }
 
@@ -171,11 +173,13 @@ func VendorAuthMiddleware() gin.HandlerFunc {
                 authlog.LogAuth(claims.UserID, fmt.Errorf("error getting user: %w", err))
                 c.JSON(http.StatusInternalServerError, gin.H{"error": "error getting user"})
             }
+            c.Abort()
             return
         }
         
         if createdUser.Role != "vendor" {
             c.JSON(http.StatusForbidden, gin.H{"error": "access not granted"})
+            c.Abort()
             return
         }
 

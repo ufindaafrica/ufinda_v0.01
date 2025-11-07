@@ -8,7 +8,7 @@ import (
 	"github.com/oladev/ufinda_v0.01/internal/db/kyc/vendor"
 	"log"
 	"errors"
-	"strings"
+	// "strings"
 	"github.com/google/uuid"
 	// "net/http"
 )
@@ -94,9 +94,9 @@ func HandleVerificationPayload(payload db.DojahWebhookPayload, h *hub.Hub) {
     if !userLookupErr && result.Status == "Completed" {
         isNameValid := getUser.FirstName == result.FirstName && getUser.LastName == result.LastName
         // Note: Use StateOfResidence for consistent checking unless you specifically need StateOfCall
-        IsVerifiedResidence := strings.ToLower(result.ResidenceState) == "osun" || strings.ToLower(result.CountryOfCall) == "nigeria"
+        // IsVerifiedResidence := strings.ToLower(result.ResidenceState) == "osun" || strings.ToLower(result.CountryOfCall) == "nigeria" || strings.ToLower(result.StateOfCall) == "osun"
         
-        if isNameValid && IsVerifiedResidence {
+        if isNameValid {
             finalStatus = "SUCCESS"
             message = "User KYC successfully verified."
         } else {
@@ -111,9 +111,9 @@ func HandleVerificationPayload(payload db.DojahWebhookPayload, h *hub.Hub) {
     
     // Prepare the final data structure (MUST include the determined finalStatus)
     kycdata := db.VendorKYC {
-        ID:               uuid.New(), // UUID should probably only be generated on Create
+        ID:               uuid.New(),
         UserID:           result.UserID,
-        Status:           finalStatus, // <-- CRITICAL: Use the computed finalStatus here
+        Status:           finalStatus,
         NIN:              result.NIN,
         VerificationMode: result.VerificationMode,
         VerificationLink: result.VerificationLink,
@@ -122,7 +122,6 @@ func HandleVerificationPayload(payload db.DojahWebhookPayload, h *hub.Hub) {
         StateOfOrigin:    result.BirthState,
         Nationality:      result.BirthCountry,
         StateOfResidence: result.ResidenceState,
-        // Add timestamps and other computed fields as needed
     }
 
     log.Printf("DB ACTION: Saving final status for User %s: %s", result.UserID, finalStatus)

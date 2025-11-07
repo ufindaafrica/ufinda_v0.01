@@ -13,9 +13,11 @@ import (
 	"github.com/oladev/ufinda_v0.01/internal/routes/auth"
 	"github.com/oladev/ufinda_v0.01/internal/routes/kyc/user"
 	"github.com/oladev/ufinda_v0.01/internal/routes/kyc/vendor"
-	"github.com/oladev/ufinda_v0.01/internal/routes/hostel"
+	"github.com/oladev/ufinda_v0.01/internal/routes/hostel/vendor"
+	"github.com/oladev/ufinda_v0.01/internal/routes/hostel/user"
 	"github.com/oladev/ufinda_v0.01/internal/webhooks"
 	"github.com/oladev/ufinda_v0.01/internal/sockets/kyc"
+
 
 	// "uFinda/internal/sockets"
 )
@@ -81,7 +83,8 @@ func main() {
 	webhook.RegisterWebhooks(r, wsHub)
 	
 	// Pass the Cloudinary client and the Asynq client to the hostel registration
-	hostel.RegisterHostel(r, asynqClient, cld)
+	vendorhostel.RegisterHostel(r, asynqClient, cld)
+	userhostel.RegisterApi(r)
 
 	// hub connection
 	r.GET("/ws", func(c *gin.Context) {

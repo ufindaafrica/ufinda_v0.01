@@ -1,3 +1,5 @@
+# HOSTEL APIs: *VENDOR*
+
 ## Base URL
 The base URL for all API requests:
 
@@ -7,8 +9,6 @@ The base URL for all API requests:
 | **Local Dev** | `http://localhost:8080` |
 
 -----
-
-# HOSTEL APIs: *VENDOR*
 
 ### POST `[BASE_URL]/hostel/create`
 
@@ -87,11 +87,6 @@ This endpoint requires an `Authorization` header with a valid vendor access toke
 | `500 Internal Server Error` | An unexpected server error occurred (e.g., a database connection issue or a problem retrieving user data). |
 
 --------
-
-Here is the documentation for the `UpdateHostelHandler` endpoint, formatted similarly to your previous API documentation.
-
------
-
 
 ### PATCH `/hostel/:id`
 
