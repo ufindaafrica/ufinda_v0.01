@@ -1,8 +1,8 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import axios from "axios";
-import ResetPassword from "../ResetPassword";
+import ResetPassword from "..pages/ResetPassword.js";
 
 jest.mock("axios", () => ({
   post: jest.fn(),

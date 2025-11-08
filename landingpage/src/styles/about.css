@@ -31,12 +31,12 @@
         height: 398px;
     }
     .about-title {
-            text-align: left !important;
+            text-align: center !important;
         }
 }
 @media (max-width: 480px) {
     .aboutsection h3, .aboutsection h1 {
-            text-align: left !important;
+            text-align: center !important;
         }
     .splash {
         width: 300px;

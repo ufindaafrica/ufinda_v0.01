@@ -93,7 +93,7 @@ p {
         font-size: 36px;
     }
     .pagepara {
-        margin-top: 4px;
+        margin-top: 16px;
         font-size: var(--paragraph);
         text-wrap: wrap;
         width: 100%;

@@ -4,8 +4,9 @@ import { useSearchParams } from 'react-router-dom'
 import axios from 'axios'
 import { Eye, EyeOff } from 'lucide-react'
 import '../styles/resetPassword.css'
-import Background from '../assets/Backgroundimage'
-import onSuccess from '../assets/Onsuccess'
+import Background from '../assets/Backgroundimage.jpg'
+import onSuccess from '../assets/Onsuccess.png'
+import onReset from '../assets/Onreset.png'
 
 const ResetPassword = () => {
     const [searchParams] = useSearchParams();
@@ -159,11 +160,12 @@ const ResetPassword = () => {
   return (
     <div className='reset-container'>
         <div className="reset-r">
-            <img src={Background} alt="image shows a 3d render" className="reset-bg" />
+            <img src={Background} alt="shows a 3d render" className="reset-bg" />
         </div>
         <div className='reset-l'>
+            <img src={onReset} alt="display a padlock" className="reset-img"/>
             <h2 className='reset-title'>Set new password</h2>
-            <p className='reset-subtitle'>Must be at least 8 characters.</p>
+            <p className='reset-subtitle'>Enter a new password</p>
             {status.message && (
                 <p className={`reset-para ${status.type === 'error' ? 'error-msg' : 'success'}`}>
                     {status.message}
@@ -174,20 +176,23 @@ const ResetPassword = () => {
                 {/* new password */}
                 <div className="password-form">
                     <label className='reset-label'>Password</label>
-                      <input
+                    <div className="reset-input">
+                        <input
                           type={showPassword.newPassword ? "text" : "password"}
                           name="newPassword"
                           value={formData.newPassword}
                           onChange={handleChange}
                           required
-                          className='reset-input'
+                          className='input'
                       />
                       <button
                           type='button'
                           onClick={() => toggleVisibility('newPassword')}
                           className='eye-button'>
-                          {showPassword.newPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                          {showPassword.newPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
+                    </div>
+                      
                 </div>
 
                 {formData.newPassword && (
@@ -204,20 +209,22 @@ const ResetPassword = () => {
                 {/* confirm new password */}
                 <div className="password-form">
                     <label className='reset-label'>Confirm password</label>
-                    <input
-                      type={showPassword.confirmPassword ? "text" : "password"}
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      required
-                      className='reset-input' 
-                    />
-                    <button
-                        type='button'
-                        onClick={() => toggleVisibility('confirmPassword')}
-                        className='eye-button'>
-                        {showPassword.confirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                    </button>
+                      <div className='reset-input'>
+                          <input
+                              type={showPassword.confirmPassword ? "text" : "password"}
+                              name="confirmPassword"
+                              value={formData.confirmPassword}
+                              onChange={handleChange}
+                              required
+                              className='input'
+                          />
+                          <button
+                              type='button'
+                              onClick={() => toggleVisibility('confirmPassword')}
+                              className='eye-button'>
+                              {showPassword.confirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                    </div>
                 </div>
 
                 <Button
@@ -227,7 +234,6 @@ const ResetPassword = () => {
                 >
                     {loading ? "updating..." : "Reset password"}
                 </Button>
-                <a href="/login" className="reset-back">&lt; Back to log in</a>
             </form>
         </div>
     </div>

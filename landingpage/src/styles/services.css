@@ -302,19 +302,23 @@
     .stepL {
         max-width: 100%;
         margin: 16px 0;
-        text-align: left;
+        text-align: center;
     }
     .stepsec {
         gap: 16px;
         margin-top: 0;
     }.Bstep {
         margin-top: 8px;
+        text-align: center;
     }
     
     .cardtext {
         font-size: var(--paragraph-small);
-        text-align: left;
+        text-align: left !important;
         margin: 0;
+    }
+    .cardtitle {
+        text-align: center !important;
     }
     .workbtn {
         width: calc(100% - 32px);
@@ -328,6 +332,7 @@
     }
     .step p{
         margin-top: 8px;
+        text-align: center !important;
     }
 }
 
@@ -377,6 +382,7 @@
     }
     .servicebox {
         padding: 12px;
+        background-color: var(--color-white);
     }
     .servicebox h2 {
         font-size: var(--paragraph);

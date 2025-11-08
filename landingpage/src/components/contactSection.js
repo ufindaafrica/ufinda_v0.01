@@ -65,9 +65,9 @@ const ContactSection = () => {
             <div className="others">
               <div className="label socialLabel">Our Socials</div>
                 <div className="socials gridspan">
-                  <FaInstagram  style={{fontSize: '24px'}}/>
-                  <FaLinkedinIn  style={{fontSize: '24px'}}/>
-                  <FaFacebookF  style={{fontSize: '24px'}}/>
+                  <FaInstagram  style={{fontSize: '18px'}}/>
+                  <FaLinkedinIn  style={{fontSize: '18px'}}/>
+                  <FaFacebookF  style={{fontSize: '18px'}}/>
                 </div>
               </div>
             </div>
@@ -75,7 +75,7 @@ const ContactSection = () => {
         <form onSubmit={handleSubmit}>
           <input type="text" id="subject" name="subject" placeholder="subject" value={subject} onChange={(e) => setSubject(e.target.value)} className={subjectErr ? 'Field cannot be empty' : ''}/>
           <textarea type="text" id="message" name="message" placeholder="Message" value={message} onChange={(e) => setMessage(e.target.value)} className={messageErr ? 'Field cannot be empty' : ''} />
-          <Button type="submit" className="sendmail">Send</Button>
+          <a href='mailto:support@ufinda.org'><Button type="submit" className="sendmail">Send</Button></a>
         </form>
         <div id="toast" className={showToast ? 'show': ''}>Message sent successfully!</div>
       </div>

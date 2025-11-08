@@ -147,7 +147,7 @@
 
     .herotext {
         font-size: var(--paragraph-small);
-        margin-top: 8px
+        margin-top: 24px;
     }
 
     .bannerheading {
