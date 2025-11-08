@@ -1,80 +1,104 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter } from "react-router-dom";
 import axios from "axios";
-import ResetPassword from "../pages/resetPassword";
+import ResetPassword from "../ResetPassword";
 
-// Mock axios
-jest.mock("axios");
+jest.mock("axios", () => ({
+  post: jest.fn(),
+}));
+
+const renderComponent = (token = "mock-token") => {
+  // simulate ?token=mock-token in URL
+  window.history.pushState({}, "", `/reset-password?token=${token}`);
+
+  return render(
+    <MemoryRouter>
+      <ResetPassword />
+    </MemoryRouter>
+  );
+};
 
 describe("ResetPassword Component", () => {
   beforeEach(() => {
-    axios.post.mockResolvedValue({
-      data: { message: "Password updated successfully" },
-    });
-  });
-
-  afterEach(() => {
     jest.clearAllMocks();
   });
 
-  test("renders form correctly with token available, handles input, strength meter, submission, and shows success screen", async () => {
-    // Mockurl with token: ufinda/reset?token=access-token
-    render(
-      <MemoryRouter initialEntries={["/reset?token=access-token"]}>
-        <Routes>
-          <Route path="/reset" element={<ResetPassword />} />
-        </Routes>
-      </MemoryRouter>
-    );
+  test("renders reset password form correctly", () => {
+    renderComponent();
 
-    //Checking form for error (token is available)
-    expect(screen.getByText("Reset your Password")).toBeInTheDocument();
-    expect(
-      screen.queryByText("Invalid or missing reset token")
-    ).not.toBeInTheDocument();
+    expect(screen.getByText(/Set new password/i)).toBeInTheDocument();
+    expect(screen.getByText(/Must be at least 8 characters/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Reset password/i })).toBeInTheDocument();
+  });
 
-    const newPasswordInput = screen.getByLabelText("New Password");
-    const confirmPasswordInput = screen.getByLabelText("Confirm Password");
-    const submitButton = screen.getByRole("button", {
-      name: /Reset password/i,
-    });
+  test("shows error if passwords do not match", async () => {
+    renderComponent();
 
-    // Checking password validation
-    fireEvent.change(newPasswordInput, {
-      target: { value: "StrongPass1" },
-    });
-    fireEvent.change(confirmPasswordInput, {
-      target: { value: "StrongPass1" },
-    });
+    const newPasswordInput = screen.getByLabelText(/Password/i);
+    const confirmPasswordInput = screen.getByLabelText(/Confirm password/i);
+    const submitButton = screen.getByRole("button", { name: /Reset password/i });
 
-    // Testing strength meter real time update
-    await waitFor(() => {
-      expect(screen.getByText("Strong")).toBeInTheDocument();
-    });
-
-    // Testing password visibilty toggle button
-    const toggleNewPwd = screen.getAllByRole("button", { name: "" })[0];
-    fireEvent.click(toggleNewPwd);
-    expect(newPasswordInput.type).toBe("text");
-
-    // Submitting the form
-    expect(submitButton).not.toBeDisabled();
+    fireEvent.change(newPasswordInput, { target: { value: "Password123!" } });
+    fireEvent.change(confirmPasswordInput, { target: { value: "Mismatch123!" } });
     fireEvent.click(submitButton);
 
-    // Testing API call and success screen
-    await waitFor(() => {
-      expect(screen.getByText("Password Changed!")).toBeInTheDocument();
+    expect(await screen.findByText(/Passwords do not match/i)).toBeInTheDocument();
+  });
+
+  test("shows validation error for weak password", async () => {
+    renderComponent();
+
+    const newPasswordInput = screen.getByLabelText(/Password/i);
+    const confirmPasswordInput = screen.getByLabelText(/Confirm password/i);
+    const submitButton = screen.getByRole("button", { name: /Reset password/i });
+
+    fireEvent.change(newPasswordInput, { target: { value: "abc" } });
+    fireEvent.change(confirmPasswordInput, { target: { value: "abc" } });
+    fireEvent.click(submitButton);
+
+    expect(await screen.findByText(/Password must be at least 8 characters/i)).toBeInTheDocument();
+  });
+
+  test("shows success message on successful password reset", async () => {
+    axios.post.mockResolvedValueOnce({
+      data: { message: "Password reset successfully" },
     });
-    expect(
-    screen.getByText("You have successfully reset your password")
-    ).toBeInTheDocument();
-    expect(axios.post).toHaveBeenCalledWith(
-      "http://localhost:8000/reset-password",
-      { token: "access-token", newPassword: "StrongPass1" }
-    );
-    expect(
-    screen.getByRole("link", { name: "Login now" })
-    ).toBeInTheDocument();
+
+    renderComponent();
+
+    const newPasswordInput = screen.getByLabelText(/Password/i);
+    const confirmPasswordInput = screen.getByLabelText(/Confirm password/i);
+    const submitButton = screen.getByRole("button", { name: /Reset password/i });
+
+    fireEvent.change(newPasswordInput, { target: { value: "StrongPass123!" } });
+    fireEvent.change(confirmPasswordInput, { target: { value: "StrongPass123!" } });
+    fireEvent.click(submitButton);
+
+    expect(await screen.findByText(/Password changed Successfully/i)).toBeInTheDocument();
+  });
+
+  test("shows error message on failed API request", async () => {
+    axios.post.mockRejectedValueOnce({
+      response: { data: { error: "Invalid token" } },
+    });
+
+    renderComponent();
+
+    const newPasswordInput = screen.getByLabelText(/Password/i);
+    const confirmPasswordInput = screen.getByLabelText(/Confirm password/i);
+    const submitButton = screen.getByRole("button", { name: /Reset password/i });
+
+    fireEvent.change(newPasswordInput, { target: { value: "StrongPass123!" } });
+    fireEvent.change(confirmPasswordInput, { target: { value: "StrongPass123!" } });
+    fireEvent.click(submitButton);
+
+    expect(await screen.findByText(/Invalid token/i)).toBeInTheDocument();
+  });
+
+  test("displays invalid token message if token is missing", () => {
+    renderComponent(null);
+
+    expect(screen.getByText(/Invalid or missing token/i)).toBeInTheDocument();
   });
 });
