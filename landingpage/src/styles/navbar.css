@@ -36,7 +36,7 @@
 }
 
 .link {
-  font-size: var(--paragraph);
+  font-size: var(--paragraph-small);
   color: var(--color-grey);
   text-decoration: none;
   font-weight: 400;
@@ -125,14 +125,13 @@
     display: none;
     flex-direction: column;
     position: absolute;
-    top: 80px;
+    top: 40px;
     right: 0;
     width: 100%;
     box-sizing: border-box;
     background-color: var(--color-background);
-    padding: 20px 0;
-    gap: 16px;
-    text-align: right;
+    padding: 24px 16px;
+    gap: 32px;
     border-top: 1px solid #ddd;
     filter: var(--drop-shadow-color);
 
@@ -142,7 +141,12 @@
     display: flex;
     width: 100%;
   }
-
+  .nav-list li {
+    text-align: right;
+    width: 100%;
+    box-sizing: border-box;
+    border-bottom: 1px solid var(--color-grey);
+  }
   .dropdown-menu {
     position: static;
     border: none;
@@ -156,6 +160,7 @@
   }
   .services-link {
   width: 100%;
+  display: block;
   }
   .services-link:hover .dropdown-menu,
   .services-link:focus-within .dropdown-menu {
@@ -178,10 +183,8 @@
     top: 60px;
     text-align: right;
   }
-  .nav-list li {
-          border-bottom: 1px solid var(--color-grey);
-    text-align: right!important;
-    width: 100%;
+  .dropdown-menu li {
+    border-bottom: none !important;
   }
 }
 @media (hover: hover){

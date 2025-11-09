@@ -34,7 +34,11 @@ const ContactSection = () => {
     const encodedSubject = encodeURIComponent(subject);
     const encodedMessage = encodeURIComponent(message.replace(/\n/g, '%0D%0A'));
     const emailLink = `mailto:${encodedURI}?subject=${encodedSubject}&body=${encodedMessage}`;
-    window.location.href = emailLink;
+    // window.location.href = emailLink;
+
+    const link = document.createElement('a');
+    link.href = emailLink;
+    link.click()
 
     setShowToast(true);
     setTimeout(() => {

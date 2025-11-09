@@ -88,6 +88,7 @@
    font-size: var(--paragraph);
    color: var(--color-grey);
    height: auto;
+   text-align: center !important;
 }
 .demovideo {
     width: 811px;
@@ -174,6 +175,7 @@
     font-size: var(--paragraph);
     color: var(--color-grey);
     margin: 0;
+    text-align: center;
 }
 .background {
     width: 500px;
@@ -230,6 +232,7 @@
         grid-template-columns: 1fr 1fr 1fr;
         gap: 0px;
         padding: 8px;
+        
     }
     .steps {
         display: grid;
