@@ -215,26 +215,22 @@ a {
         color: var(--color-text);
     }
     .socialLabel {
-        display: none;
+        display: block;
     }
     .socials{
         gap: 40px;
-        font-size: 18px;
+        font-size: 16px;
         color: var(--color-black);
     }
     .gridspan{
         grid-column: span 2;
         justify-self: center;
     }
-    .socials {
-        margin: 0 auto;
-        display: none;
-    }
     .forminfo {
         display: grid;
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr 1fr;
         justify-items: left;
-        gap: 40px;
+        gap: 24px;
         margin: 24px 0 24px;
     }
     input::placeholder {
@@ -252,7 +248,7 @@ a {
         margin-right: 0;
     }
     .value {
-        font-size: 14px;
+        font-size: 12px;
         color: var(--color-black);
     }
 
@@ -265,7 +261,7 @@ a {
         text-align: left;
     }
     .value {
-        font-size: 16px;
+        font-size: 12px;
     }
     .para {
         font-size: var(--paragraph-x-small);
@@ -277,7 +273,7 @@ a {
         text-align: left;
     }
     .title {
-        font-size: 11px;
+        font-size: 12px;
         text-align: left;
     }
     input {
@@ -285,6 +281,20 @@ a {
     }
     #message {
     padding: 8px;
+    }
+    .forminfo {
+        grid-template-columns: 1fr 1fr;
+    }
+    .socials{
+        gap: 40px;
+	margin: 8px auto 0;
+    }
+    .socialLabel {
+	    text-align: center;
+    }
+    .gridspan {
+	    grid-column: span 2;
+	    margin-top: 16px;
     }
   
 }

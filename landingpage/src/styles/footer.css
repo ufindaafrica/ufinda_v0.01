@@ -32,8 +32,9 @@
 .footerLinks, .servicesLinks span {
     text-decoration: none;
     display: flex;
-    color: var(--color-grey);
-    font-size: var(--paragraph-small)
+    color: var(--color-black);
+    font-size: var(--paragraph-small);
+    text-align: center;
 }
 .sub-menu {
     display: flex;
@@ -111,6 +112,9 @@
     flex-direction: column;
     gap: 32px;
     text-align: center;
+  }
+  .footerLinks li {
+	  text-align: center !important;
   }
   .divider {
     width: 300px;

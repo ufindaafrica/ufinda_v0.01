@@ -29,7 +29,7 @@ const ContactSection = () => {
       return;
     }
 
-    const recipient = process.env.RECIPIENT_EMAIL;
+    const recipient = 'Barry@ufinda.org';
     const encodedURI = encodeURIComponent(recipient);
     const encodedSubject = encodeURIComponent(subject);
     const encodedMessage = encodeURIComponent(message.replace(/\n/g, '%0D%0A'));
@@ -62,7 +62,7 @@ const ContactSection = () => {
               <div className="label">Email</div>
               <div className="value">support@ufinda.org</div>
             </div>
-            <div className="others">
+            <div className="others gridspan">
               <div className="label socialLabel">Our Socials</div>
                 <div className="socials gridspan">
                   <FaInstagram  style={{fontSize: '18px'}}/>
@@ -75,7 +75,7 @@ const ContactSection = () => {
         <form onSubmit={handleSubmit}>
           <input type="text" id="subject" name="subject" placeholder="subject" value={subject} onChange={(e) => setSubject(e.target.value)} className={subjectErr ? 'Field cannot be empty' : ''}/>
           <textarea type="text" id="message" name="message" placeholder="Message" value={message} onChange={(e) => setMessage(e.target.value)} className={messageErr ? 'Field cannot be empty' : ''} />
-          <a href='mailto:support@ufinda.org'><Button type="submit" className="sendmail">Send</Button></a>
+          <Button type="submit" className="sendmail">Send</Button>
         </form>
         <div id="toast" className={showToast ? 'show': ''}>Message sent successfully!</div>
       </div>
