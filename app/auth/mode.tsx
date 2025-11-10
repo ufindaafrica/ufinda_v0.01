@@ -41,7 +41,7 @@ export default function Mode () {
         <SafeAreaView style={[globals.authContainer, globals.container]}>
 
             <View>
-                <BackArrow backFun={() => router.back()} />
+                <BackArrow backFun={() => router.replace("/onboarding")} />
             </View>
 
             <View style={modeStyles.textView}>

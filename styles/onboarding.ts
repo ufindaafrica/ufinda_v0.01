@@ -53,7 +53,7 @@ export const onboardingStyles = StyleSheet.create({
 
     button: {
         backgroundColor: "#101010",
-        width: 358,
+        width: "95%",
         height: 44,
         borderRadius: 8,
         justifyContent: "center",
@@ -85,9 +85,10 @@ export const onboardingStyles = StyleSheet.create({
     },
 
     bottomV: {
-        width: 358,
         height: 198,
         justifyContent: "space-between",
-        alignItems: "center"
+        alignItems: "center",
+        width: 358,
+        paddingHorizontal: 16
     }
 })
