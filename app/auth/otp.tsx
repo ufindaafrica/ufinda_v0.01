@@ -3,7 +3,7 @@ import OtpInput from "@/components/otpInput";
 import Select from "@/components/select";
 import { images } from "@/constants/images";
 import { resendOtp } from "@/services/resendOtp";
-import { globals } from "@/styles/globals";
+import { globals, roboto } from "@/styles/globals";
 import { otpStyles } from "@/styles/otp";
 import { Link, router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -60,9 +60,7 @@ export default function Otp() {
                 setErrorText(result[1])
                 setOtpArray(["", "", "", "", "", ""])
             } else {
-                setCorrectModal(true)
-                setCorrectText(result[1])
-                setNxtPage(true)
+                router.replace("/auth/pic")
             }
             
         }
@@ -124,15 +122,15 @@ export default function Otp() {
             </View>
 
             <View>
-                <Image source={images.otpPic} style={[otpStyles.main, otpStyles.img]} />
+                <Image source={images.otpPic} style={[{ marginTop: 8 }, otpStyles.img]} />
             </View>
 
             <View style={[otpStyles.main, otpStyles.otpPaddingHorizontal]}>
-                <Text style={otpStyles.headerText}>Code sent</Text>
-                <Text style={otpStyles.pText}>Please enter the code sent to your email.</Text>
+                <Text style={roboto.titleMediumBold}>Code sent</Text>
+                <Text style={[otpStyles.pText, roboto.bodyMedium]}>Please enter the code sent to your email address.</Text>
             </View>
 
-            <View style={[otpStyles.main, otpStyles.otpV, otpStyles.otpPaddingHorizontal]}>
+            <View style={[otpStyles.otpPaddingMedium, otpStyles.otpV, otpStyles.otpPaddingHorizontal]}>
                 <OtpInput ref={inputRefs[0]} value={otpArray[0]} valueChange={onValueEnter} index={0} />
                 <OtpInput ref={inputRefs[1]} value={otpArray[1]} valueChange={onValueEnter} index={1} />
                 <OtpInput ref={inputRefs[2]} value={otpArray[2]} valueChange={onValueEnter} index={2} />
@@ -145,8 +143,8 @@ export default function Otp() {
                 <Select text="Continue" selected={true} clickable={otpArray.every(Boolean) ? false : true} selectFun={onContinue} />
             </View>
 
-            <TouchableOpacity onPress={() => onResend()} style={[otpStyles.main, otpStyles.linkV]}>
-                <Text style={otpStyles.lText}>Resend OTP</Text>
+            <TouchableOpacity onPress={() => onResend()} style={[otpStyles.otpPaddingMedium, otpStyles.linkV]}>
+                <Text style={[otpStyles.lText, roboto.mediumEmphasizedBold]}>Resend OTP</Text>
             </TouchableOpacity>
 
             {

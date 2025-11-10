@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { fonts } from "./globals";
+import { fonts, roboto } from "./globals";
 
 export const otpStyles = StyleSheet.create({
     main: {
@@ -7,17 +7,13 @@ export const otpStyles = StyleSheet.create({
     },
 
     img: {
-        alignSelf: "center"
-    },
-
-    headerText: {
-        fontFamily: fonts.regular,
-        fontSize: 24
+        alignSelf: "center",
+        height: 194,
+        width: 194
     },
 
     pText: {
-        fontFamily: fonts.light,
-        fontSize: 18
+        width: 259
     },
 
     otpV: {
@@ -32,16 +28,18 @@ export const otpStyles = StyleSheet.create({
     },
 
     otpPadding: {
-        padding: 24
+        padding: 16
     },
 
     otpPaddingHorizontal: {
-        paddingHorizontal: 24
+        paddingHorizontal: 16
     },
 
     lText: {
-        color: "#008000",
-        fontFamily: fonts.bold,
-        fontSize: 16
+        color: "#008000"
+    },
+
+    otpPaddingMedium: {
+        paddingTop: 16
     }
 })

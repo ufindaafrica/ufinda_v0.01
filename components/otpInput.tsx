@@ -1,4 +1,5 @@
 import { otpInputStyles } from "@/styles/componentStyles/otpInput"
+import { globals, roboto } from "@/styles/globals"
 import { forwardRef, useState } from "react"
 import { TextInput } from "react-native"
 
@@ -16,7 +17,7 @@ const OtpInput = forwardRef<TextInput, OtpInputProps>(({ value, valueChange, ind
     return (
         <TextInput
             ref={ref}
-            style={[otpInputStyles.main, focused && otpInputStyles.focusedMain]}
+            style={[otpInputStyles.main, focused && otpInputStyles.focusedMain, roboto.bodyLargeBold]}
             cursorColor={"transparent"}
             keyboardType="numeric"
             value={value}

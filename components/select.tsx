@@ -17,7 +17,7 @@ export default function Select({ text, icon, selected, selectFun, clickable }: s
         <TouchableOpacity
             onPress={selectFun}
             disabled={clickable}
-            style={[selectStyles.box, selected && selectStyles.activeBox, clickable && selectStyles.clickable]}>
+            style={[selectStyles.box, selected && selectStyles.activeBox, clickable && selectStyles.clickable, icon && selectStyles.boxWithIcon]}>
 
             <Image source={icon} style={selectStyles.icon} />
 

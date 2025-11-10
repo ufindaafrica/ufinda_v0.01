@@ -11,7 +11,6 @@ export const selectStyles = StyleSheet.create({
         borderRadius: 15,
         alignItems: "center",
         justifyContent: "center",
-        flexDirection: "row"
     },
 
     text: {
@@ -36,6 +35,10 @@ export const selectStyles = StyleSheet.create({
 
     icon: {
         marginRight: 10
+    },
+
+    boxWithIcon: {
+        flexDirection: "row"
     }
     
 })
