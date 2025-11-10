@@ -134,7 +134,7 @@ export default function Pic() {
                 <Select text="Continue" selected clickable={image ? false : true} selectFun={() => onContinue()} />
             </View>
 
-            <Link href={"/auth/finishReg"} style={[picStyles.main, picStyles.linkText, roboto.mediumEmphasizedBold]}>
+            <Link href={"/home"} style={[picStyles.main, picStyles.linkText, roboto.mediumEmphasizedBold]}>
                 I'll do this later
             </Link>
 
