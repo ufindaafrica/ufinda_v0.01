@@ -1,4 +1,3 @@
-import Select from "@/components/select";
 import { images } from "@/constants/images";
 import { roboto } from "@/styles/globals";
 import { picStyles } from "@/styles/pic";

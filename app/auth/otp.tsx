@@ -5,7 +5,7 @@ import { images } from "@/constants/images";
 import { resendOtp } from "@/services/resendOtp";
 import { globals, roboto } from "@/styles/globals";
 import { otpStyles } from "@/styles/otp";
-import { Link, router } from "expo-router";
+import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Image, Keyboard, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
