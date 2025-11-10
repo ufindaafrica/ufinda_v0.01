@@ -8,7 +8,7 @@ export const selectStyles = StyleSheet.create({
         height: 44,
         borderColor: "#008000",
         borderWidth: 1.5,
-        borderRadius: 15,
+        borderRadius: 8,
         alignItems: "center",
         justifyContent: "center",
     },

@@ -1,6 +1,6 @@
 import BackArrow from "@/components/back";
 import Select from "@/components/select";
-import { globals } from "@/styles/globals";
+import { globals, roboto } from "@/styles/globals";
 import { picStyles } from "@/styles/pic";
 import { Link, router } from "expo-router";
 import { useEffect, useState } from "react";
@@ -100,9 +100,9 @@ export default function Pic() {
                 <BackArrow backFun={() => router.replace("/(tabs)/home")} />
             </View>
 
-            <View style={[picStyles.main, picStyles.paddingHorizontal]}>
-                <Text style={picStyles.headerText}>One more step</Text>
-                <Text style={picStyles.pText}>Now let's communicate your presence, please update your profile.</Text>
+            <View style={[picStyles.paddingHorizontal]}>
+                <Text style={roboto.titleMediumBold}>One more step</Text>
+                <Text style={[picStyles.pText, roboto.bodyLarge]}>Now let's communicate your presence, please update your profile.</Text>
             </View>
 
             <View style={[picStyles.main, picStyles.imgV]}>
@@ -110,21 +110,21 @@ export default function Pic() {
                     {
                         image ? <Image source={{ uri: image }} style={picStyles.previewImage} />
                             :
-                            <Text style={picStyles.fileText}>Browse files</Text>
+                            <Text style={[roboto.bodyMedium, picStyles.fileText]}>Browse files</Text>
                     }
                 </TouchableOpacity>
             </View>
 
             <View style={[picStyles.main, picStyles.paddingHorizontal]}>
                 <View style={picStyles.descHeader}>
-                    <Text style={picStyles.descText}>Description</Text>
-                    <Text style={picStyles.descText}>{descLength.toString()} / 50</Text>
+                    <Text style={[picStyles.descText, roboto.bodySmall]}>Description</Text>
+                    <Text style={[picStyles.descText, roboto.bodySmall]}>{descLength.toString()} / 40</Text>
                 </View>
                 <TextInput
                     placeholder="Tell us about yourself"
                     placeholderTextColor={"#b3b3b3"}
-                    style={picStyles.descInput}
-                    maxLength={50}
+                    style={[picStyles.descInput, roboto.bodyMedium]}
+                    maxLength={40}
                     value={desc}
                     onChangeText={(text) => onEnterDesc(text)}
                 />
@@ -134,7 +134,7 @@ export default function Pic() {
                 <Select text="Continue" selected clickable={image ? false : true} selectFun={() => onContinue()} />
             </View>
 
-            <Link href={"/auth/finishReg"} style={[picStyles.main, picStyles.linkText]}>
+            <Link href={"/auth/finishReg"} style={[picStyles.main, picStyles.linkText, roboto.mediumEmphasizedBold]}>
                 I'll do this later
             </Link>
 

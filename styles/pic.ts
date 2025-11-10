@@ -4,18 +4,13 @@ import { fonts } from "./globals";
 export const picStyles = StyleSheet.create({
 
     main: {
-        marginTop: 32
-    },
-
-    headerText: {
-        fontFamily: fonts.regular,
-        fontSize: 24
+        marginTop: 16
     },
 
     pText: {
-        fontFamily: fonts.light,
-        fontSize: 18,
-        marginTop: 5
+        marginTop: 8,
+        width: 259,
+        color: '#8e8e93'
     },
 
     imgV: {
@@ -25,20 +20,21 @@ export const picStyles = StyleSheet.create({
         borderRadius: 150,
         justifyContent: "center",
         alignItems: "center",
-        alignSelf: "center"
+        alignSelf: "center",
+        borderColor: "#101010"
     },
 
     imgO: {
         backgroundColor: "#f2f2f7",
-        height: "90%",
-        width: "90%",
+        height: "95%",
+        width: "95%",
         borderRadius: 150,
         justifyContent: "center",
         alignItems: "center"
     },
 
     fileText: {
-        fontFamily: fonts.regular
+        color: "#101010"
     },
 
     descHeader: {
@@ -47,24 +43,22 @@ export const picStyles = StyleSheet.create({
     },
 
     descText: {
-        fontFamily: fonts.regular
+        color: "#000000"
     },
 
     descInput: {
         borderWidth: 1,
         borderColor: "#b3b3b3",
-        borderRadius: 10,
-        marginTop: 10,
-        height: 70,
+        borderRadius: 8,
+        marginTop: 8,
+        height: 56,
         textAlignVertical: "top",
-        fontSize: 18,
         width: "100%",
         flexShrink: 1
     },
 
     linkText: {
         alignSelf: "center",
-        fontFamily: fonts.bold,
         color: "#008000"
     },
 
@@ -77,17 +71,17 @@ export const picStyles = StyleSheet.create({
     imgVExtra: {
         marginTop: 32,
         borderColor: "#008000",
-        borderWidth: 2.5,
+        borderWidth: 2.14,
         backgroundColor: "#e3f4f1"
     },
 
     checkImg: {
-        height: 50,
-        width: 50
+        height: 47,
+        width: 47
     },
 
     completeHeaderV: {
-        marginTop: 32,
+        marginTop: 16,
         paddingLeft: 16,
         paddingRight: 16
     },
@@ -97,11 +91,26 @@ export const picStyles = StyleSheet.create({
     },
 
     padding: {
-        padding: 24
+        padding: 16
     },
 
     paddingHorizontal: {
-        paddingHorizontal: 24
+        paddingHorizontal: 16
+    },
+
+    completeImgV: {
+        borderWidth: 2,
+        height: 136,
+        width: 136,
+        borderRadius: 150,
+        justifyContent: "center",
+        alignItems: "center",
+        alignSelf: "center"
+    },
+
+    pTextV: { 
+        width: 259, 
+        alignSelf: "center"
     }
 
 })
