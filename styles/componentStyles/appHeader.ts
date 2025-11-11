@@ -11,24 +11,32 @@ export const appHeaderStyles = StyleSheet.create({
     textV: {
         flexDirection: "row",
         justifyContent: "space-between",
-        // flexGrow: 1
     },
 
     img: {
-        // flexGrow: 1
+        height: 24,
+        width: 24
     },
 
-    text: {
-        fontFamily: fonts.bold,
-        paddingLeft: 22,
-        paddingRight: 22,
-        paddingTop: 5,
-        paddingBottom: 5,
-        borderRadius: 25
+    textTouch: {
+        width: 84,
+        height: 30,
+        paddingVertical: 8,
+        paddingHorizontal: 24,
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 30
     },
 
     selectedText: {
-        backgroundColor: "#008000",
         color: "#fffff7"
+    },
+
+    selectedTextTouch: {
+        backgroundColor: "#008000"
+    },
+
+    text: {
+        color: "#000000"
     }
 })

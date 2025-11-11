@@ -1,13 +1,14 @@
 import { images } from "@/constants/images";
 import { appHeaderStyles } from "@/styles/componentStyles/appHeader";
+import { roboto } from "@/styles/globals";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
-// type AppHeaderProps = {
-//     selectedHostel: boolean,
-//     selectedShop: boolean
-// }
+type AppHeaderProps = {
+    hostel?: boolean,
+    shop?: boolean
+}
 
-export default function AppHeader() {
+export default function AppHeader({ hostel, shop } : AppHeaderProps) {
     return (
         <View style={appHeaderStyles.main}>
             <TouchableOpacity>
@@ -15,12 +16,12 @@ export default function AppHeader() {
             </TouchableOpacity>
 
             <View style={appHeaderStyles.textV}>
-                <TouchableOpacity>
-                    <Text style={[appHeaderStyles.text, appHeaderStyles.selectedText]}>Hostel</Text>
+                <TouchableOpacity style={[hostel && appHeaderStyles.selectedTextTouch, appHeaderStyles.textTouch]}>
+                    <Text style={[appHeaderStyles.text, hostel && appHeaderStyles.selectedText, roboto.bodySmallBold]}>Hostel</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity disabled>
-                    <Text style={appHeaderStyles.text}>Shop</Text>
+                <TouchableOpacity style={[shop && appHeaderStyles.selectedTextTouch, appHeaderStyles.textTouch]}>
+                    <Text style={[appHeaderStyles.text, shop && appHeaderStyles.selectedText, roboto.bodySmallBold]}>Shop</Text>
                 </TouchableOpacity>
             </View>
 
