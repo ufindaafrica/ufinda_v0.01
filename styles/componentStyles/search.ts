@@ -7,17 +7,18 @@ export const searchStyles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: "#e5e5ea",
-        borderRadius: 25,
-        padding: 3
+        borderRadius: 30,
+        height: 44,
+        width: "100%"
     },
 
     img: {
-        marginLeft: 5
+        marginLeft: 5,
+        height: 16, 
+        width: 16
     },
 
     text: {
-        width: "90%",
-        fontFamily: fonts.regular,
-        fontSize: 14
+        width: "90%"
     }
 })

@@ -150,7 +150,7 @@ export const globals = StyleSheet.create({
     },
 
     homeContainer: {
-        padding: 24,
+        padding: 16,
         backgroundColor: "#f5f5f5"
     }
 });

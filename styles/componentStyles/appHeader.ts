@@ -1,5 +1,4 @@
 import { StyleSheet } from "react-native";
-import { fonts } from "../globals";
 
 export const appHeaderStyles = StyleSheet.create({
     main: {
