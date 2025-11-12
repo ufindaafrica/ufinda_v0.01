@@ -76,10 +76,10 @@ export default function Saved() {
             </View>
 
             <View style={[homeStyles.layoutMargin, { flexDirection: "row", justifyContent: "space-between", width: "100%" }]}>
-                <View style={homeStyles.eachFilterV}>
+                <View style={homeStyles.eachSavedFilterV}>
                     <Filter filterType="options" options={["Categories", "Hostel Type"]} setCurrentFilter={setCurrentFilter} visible={filter1Vis} setVisible={setFilter1Vis} />
                 </View>
-                <View style={homeStyles.eachFilterV}>
+                <View style={homeStyles.eachSavedFilterV}>
                     <Filter filterType="options" options={["Sort", "Price", "Name", "Near"]} setCurrentFilter={setCurrentSort} visible={filter2Vis} setVisible={setFilter2Vis} />
                 </View>
             </View>

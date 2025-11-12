@@ -19,6 +19,10 @@ export const homeStyles = StyleSheet.create({
 
     scrollV: {
         paddingBottom: 300
+    },
+
+    eachSavedFilterV: {
+        width: 100
     }
 })
 
