@@ -12,5 +12,10 @@ export const backStyles = StyleSheet.create({
         height: 44,
         width: 44,
         justifyContent: "center"
+    },
+
+    large: {
+        width: 24,
+        height: 24
     }
 })

@@ -16,8 +16,6 @@ type HostelCardProps = {
 
 export default function HostelCard({ hostel, isSaved, reload }: HostelCardProps) {
 
-    if (hostel.id === "3452RQ") console.log(isSaved)
-
     const onSave = async (id: string, saved: boolean) => {
 
         let savedHostels: Array<string> = JSON.parse(await getItemAsync("SAVED") || "[]")

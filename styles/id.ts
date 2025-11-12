@@ -3,25 +3,22 @@ import { fonts } from "./globals";
 
 export const idStyles = StyleSheet.create({
     safeV: {
-        backgroundColor: "#f5f5f5",
-        flex: 1
+        backgroundColor: "#f5f5f5"
     },
 
     headerV: {
         flexDirection: "row",
         justifyContent: "space-between",
-        padding: 24
+        padding: 16,
+        alignItems: "center",
+        height: 44,
+        marginBottom: 16
     },
 
     firstHeaderV: {
         flexDirection: "row",
-        alignItems: "center"
-    },
-
-    headerTxt: {
-        fontFamily: fonts.bold,
-        fontSize: 24,
-        paddingLeft: 32
+        alignItems: "center",
+        height: 44
     },
 
     layoutMargin: {
@@ -37,40 +34,42 @@ export const idStyles = StyleSheet.create({
     galleryV: {
         position: "absolute",
         bottom: 10,
-        marginHorizontal: 16,
+        marginHorizontal: 8,
         paddingHorizontal: 5,
         flexDirection: "row",
         backgroundColor: "#f5f5f5",
         justifyContent: "space-between",
         alignItems: "center",
-        borderRadius: 5
+        borderRadius: 4,
+        paddingVertical: 3
     },
 
     picV: {
-        height: "100%",
-        backgroundColor: 'pink'
+        height: 210,
+        // alignItems: 'center',
+        justifyContent: "center"
     },
 
     swipeV: {
-        height: "30%"
+        height: 210
     },
 
     galleryTxt: {
-        fontFamily: fonts.regular,
         paddingHorizontal: 3,
         paddingVertical: 2
     },
 
     prelimV: {
-        padding: 14,
-        height: "22%"
+        padding: 16,
+        height: 148,
+        paddingBottom: 0
     },
 
     topPrelimV: {
-        padding: 16,
-        backgroundColor: "#fffff7",
-        borderRadius: 15,
-        justifyContent: "space-between",
+        padding: 8,
+        backgroundColor: "#fcfcfc",
+        borderRadius: 16,
+        justifyContent: "space-around",
         height: "100%",
         width: "100%",
         marginRight: 16,
@@ -83,82 +82,139 @@ export const idStyles = StyleSheet.create({
     },
 
     regTxt: {
-        fontFamily: fonts.regular,
-    },
-
-    boldTxt: {
-        fontFamily: fonts.bold,
-        fontSize: 18
+        color: "#000000"
     },
 
     redTxt: {
         color: "red"
     },
 
-    thirdTopPrelimV: {
-        width: "48%"
+    thirdTopPrelimVOne: {
+        width: 128
+    },
+
+    thirdTopPrelimVTwo: {
+        width: 182
     },
 
     amenitiesV: {
-        // backgroundColor: "#fffff7",
-        // flexDirection: "row"
-        // padding: 14
         alignItems: "center",
         justifyContent: "center",
-        width: "25%"
+        width: 68,
+        height: 53
     },
 
     outerAmenitiesV: {
-        padding: 14,
-        // flexDirection: "row",
-        // backgroundColor: "#fffff7"
+        padding: 16,
+        paddingBottom: 0
     },
 
     innerAmenitiesV: {
-        backgroundColor: "#fffff7",
+        backgroundColor: "#fcfcfc",
         flexDirection: "row",
         justifyContent: "space-around",
         flexWrap: "wrap",
-        padding: 14,
+        padding: 8,
         alignItems: "center",
-        borderRadius: 15
+        borderRadius: 16
     },
 
-    amenitiesTxt: {
-        fontFamily: fonts.light,
-        // paddingHorizontal: 5
-    },
-
-    scrollV: {
-        padding: 14,
-        backgroundColor: "#fffff7",
+    detailsV: {
+        padding: 8,
+        backgroundColor: "#fcfcfc",
         borderRadius: 15,
         flexDirection: "row",
         flexWrap: "wrap",
-        paddingBottom: 70,
-
     },
 
-    outerScrollV: {
-        paddingTop: 14,
-        paddingHorizontal: 14,
-        borderRadius: 15
+    outerDetailsV: {
+        padding: 16,
+        borderRadius: 15,
+        paddingBottom: 0
     },
 
     detTxtV: {
         padding: 5,
-        width: "50%"
+        width: "50%",
     },
 
     detHeaderTxt: {
-        fontFamily: fonts.bold,
         paddingBottom: 1,
-        fontSize: 16
+        color: '#000000'
     },
 
     detLabelTxt: {
-        fontFamily: fonts.regular
+        color: "#8e8e93"
+    },
+
+    moreImg: {
+        height: 24,
+        width: 24
+    },
+
+    navArrow: {
+        height: 24,
+        width: 24,
+        position: "absolute",
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+
+    navImg: {
+        height: 24,
+        width: 24,
+    },
+
+    arrowLeftMargin: {
+        marginLeft: 8,
+        left: 0
+    },
+
+    arrowRightMargin: {
+        marginRight: 8,
+        right: 0
+    },
+
+    disabledArrow: {
+        opacity: 0.5
+    },
+
+    galleryImg: {
+        height: 11,
+        width: 11
+    },
+
+    archiveImg: {
+        height: 24,
+        width: 24
+    },
+
+    outerAgentV: {
+        padding: 16,
+        paddingBottom: 0
+    },
+
+    innerAgentV: {
+        borderRadius: 16,
+        backgroundColor: "#fcfcfc"
+    },
+
+    facilitiesListV: {
+        flexDirection: 'row',
+        flexWrap: 'wrap', 
+        gap: 8,
+        marginTop: 8
+    },
+
+    innerFacilitiesV: {
+        padding: 8
+    },
+
+    scrollV: {
+        paddingBottom: 50
+    },
+
+    cardMargin: {
+        marginBottom: 8
     }
-
-
 })

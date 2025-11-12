@@ -15,7 +15,6 @@ export const thumbnailStyles = StyleSheet.create({
         paddingVertical: 4,
         borderRadius: 6,
         paddingHorizontal: 8,
-        height: 20,
         textAlign: "center",
         textAlignVertical: "center"
     },

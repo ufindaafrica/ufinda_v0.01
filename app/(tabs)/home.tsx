@@ -63,7 +63,6 @@ export default function Home() {
     const [ reloadHome, setReloadHome ] = useState(false)
 
     useFocusEffect(useCallback(() => {
-        console.log("i fired")
         const savedHostels = async () => {
             const favHostels = JSON.parse(await getItemAsync('SAVED') || "[]")
             setSavedIds(favHostels)

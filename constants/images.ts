@@ -57,5 +57,7 @@ export const images = {
     errorIcon: require("../assets/images/group.png"),
     correctIcon: require("../assets/images/done.png"),
     savedIcon: require("../assets/images/savedIcon.png"),
-    comingSoon: require("../assets/images/comingSoon.png")
+    comingSoon: require("../assets/images/comingSoon.png"),
+    galleryLeft: require("../assets/images/galleryLeft.png"),
+    galleryRight: require("../assets/images/galleryRight.png")
 }

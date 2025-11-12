@@ -19,7 +19,7 @@ export default function Select({ text, icon, selected, selectFun, clickable }: s
             disabled={clickable}
             style={[selectStyles.box, selected && selectStyles.activeBox, clickable && selectStyles.clickable, icon && selectStyles.boxWithIcon]}>
 
-            <Image source={icon} style={selectStyles.icon} />
+            {icon ? <Image source={icon} style={[selectStyles.icon]} /> : null}
 
             <Text style={[selectStyles.text, selected ? selectStyles.activeText : null, roboto.mediumEmphasizedBold]}>{text}</Text>
 

@@ -10,12 +10,15 @@ export const selectStyles = StyleSheet.create({
         borderWidth: 1.5,
         borderRadius: 8,
         alignItems: "center",
+        flexDirection: "row",
         justifyContent: "center",
     },
 
     text: {
         color: "#008000",
-        alignSelf: "center"
+        alignSelf: "center",
+        textAlignVertical: "center",
+        textAlign: "center"
     },
 
     activeBox: {
@@ -34,11 +37,15 @@ export const selectStyles = StyleSheet.create({
     },
 
     icon: {
-        marginRight: 10
+        marginRight: 8,
+        width: 16,
+        height: 16
     },
 
     boxWithIcon: {
-        flexDirection: "row"
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center"
     }
     
 })
