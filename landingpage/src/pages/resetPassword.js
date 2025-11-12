@@ -121,7 +121,7 @@ const ResetPassword = () => {
         setLoading(true);
 
         try {
-            const response = await axios.post(process.env.BACKEND_URI, {
+            const response = await axios.post(process.env.BACKEND_URI || https://ufinda-v0-01.onrender.com/auth/reset-pwd, {
                 Token: token,
                 NewPassword: formData.newPassword,
             });
