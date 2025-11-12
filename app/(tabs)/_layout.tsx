@@ -1,39 +1,30 @@
 import { images } from "@/constants/images";
-import { fonts } from "@/styles/globals";
+import { roboto } from "@/styles/globals";
 import { Tabs } from "expo-router";
 import { Image, Text, View } from "react-native";
 
 
 const TabIcon = ({ focused, activeImg, inactiveImg, iconTitle }: any) => {
     return (
-        focused ? <View style={{
-            backgroundColor: "#008000",
+        <View style={[{
             flexDirection: "row",
             justifyContent: "center",
             alignItems: "center",
-            width: "280%",
+            width: 86,
             borderRadius: 25,
-            height: "150%"
-        }}>
-            <Image source={activeImg} style={{
-                width: 27,
-                height: 27,
-                marginRight: 3
+            height: 44,
+        }, focused && {
+            backgroundColor: "#008000",
+        }, !focused && { width: 56 }]}>
+            <Image source={focused ? activeImg : inactiveImg} style={{
+                width: 24,
+                height: 24,
+                marginRight: 6
             }} />
-            <Text style={{
-                fontFamily: fonts.regular,
-                color: "#fffff7",
-            }}>{iconTitle}</Text>
+            {focused && <Text style={[{
+                color: "#ffffff",
+            }, roboto.bodySmall]}>{iconTitle}</Text>}
         </View>
-            :
-            <View style={{
-                alignItems: "center"
-            }}>
-                <Image source={inactiveImg} style={{
-                    height: 27,
-                    width: 27
-                }} />
-            </View>
     )
 }
 
@@ -44,10 +35,12 @@ export default function _Layout() {
                 headerShown: false,
                 tabBarShowLabel: false,
                 tabBarStyle: {
-                    height: 60,
+                    height: 68,
                     justifyContent: "center",
                     alignItems: "center",
                     paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    alignContent: "center"
                 },
                 tabBarItemStyle: {
                     width: "100%",
