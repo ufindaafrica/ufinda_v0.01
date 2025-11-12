@@ -68,7 +68,7 @@ export default function Saved() {
     return (
         <SafeAreaView style={globals.homeContainer}>
             <View style={homeStyles.layoutMargin}>
-                <AppHeader />
+                <AppHeader hostel />
             </View>
 
             <View style={homeStyles.layoutMargin}>

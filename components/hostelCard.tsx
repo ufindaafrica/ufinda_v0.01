@@ -59,7 +59,7 @@ export default function HostelCard({ hostel, isSaved, reload }: HostelCardProps)
                 <Thumbnail bg={hostel.images[0]} available={hostel.available} distance={hostel.distance} />
             </TouchableOpacity>
 
-            <View style={hostelCardStyles.mainPlusAmenities}>
+            <TouchableOpacity onPress={() => hostel?.id && router.push({ pathname: "/hostel/[id]", params: { id: String(hostel.id) } })} style={hostelCardStyles.mainPlusAmenities}>
 
                 <View style={hostelCardStyles.main}>
                     <View>
@@ -90,7 +90,7 @@ export default function HostelCard({ hostel, isSaved, reload }: HostelCardProps)
                     }
                 </View>
 
-            </View>
+            </TouchableOpacity>
 
             <View style={hostelCardStyles.agentInfo}>
                 <View style={hostelCardStyles.agentCard}>
