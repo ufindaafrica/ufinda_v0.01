@@ -56,5 +56,6 @@ export const images = {
     loader: require("../assets/images/loader.gif"),
     errorIcon: require("../assets/images/group.png"),
     correctIcon: require("../assets/images/done.png"),
-    savedIcon: require("../assets/images/savedIcon.png")
+    savedIcon: require("../assets/images/savedIcon.png"),
+    comingSoon: require("../assets/images/comingSoon.png")
 }
