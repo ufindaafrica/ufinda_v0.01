@@ -13,13 +13,8 @@ export const homeStyles = StyleSheet.create({
     },
 
     eachFilterV: {
-        width: "50%",
-        padding: 5
-    },
-
-    currentOptionTxt: {
-        fontSize: 20,
-        fontFamily: fonts.regular
+        width: 175,
+        paddingBottom: 8
     },
 
     scrollV: {

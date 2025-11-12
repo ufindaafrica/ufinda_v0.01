@@ -3,7 +3,7 @@ import Filter from "@/components/filter";
 import HostelCard from "@/components/hostelCard";
 import Search from "@/components/search";
 import { dummyHostels, DummyHostelsType } from "@/constants/dummy_data";
-import { globals } from "@/styles/globals";
+import { globals, roboto } from "@/styles/globals";
 import { homeStyles } from "@/styles/home";
 import { useFocusEffect } from "expo-router";
 import { getItem, getItemAsync, setItemAsync } from "expo-secure-store";
@@ -86,14 +86,14 @@ export default function Home() {
                 <Search />
             </View>
 
-            <View style={[homeStyles.layoutMargin, homeStyles.filterV]}>
-                <View style={[homeStyles.eachFilterV, { zIndex: 2 }]}>
-                    <Filter filterType="options" options={["Near You", "Recommended", "Others"]} visible={filter1Vis} setVisible={setVisiblility1} setCurrentFilter={setFilter} />
+            <View style={[{ marginBottom: 8 }, homeStyles.filterV]}>
+                <View style={[homeStyles.eachFilterV, { zIndex: 2, paddingRight: 8 }]}>
+                    <Filter filterType="options" options={["Near You", "Recommended", "Others"]} visible={filter1Vis} setVisible={setVisiblility1} setCurrentFilter={setFilter} active />
                 </View>
                 <View style={[homeStyles.eachFilterV, { zIndex: 2 }]}>
                     <Filter filterType="options" options={["Type", "SelfCon", "Flat", "Face Me"]} visible={filter2Vis} setVisible={setVisiblility2} setCurrentFilter={setFilter} />
                 </View>
-                <View style={homeStyles.eachFilterV}>
+                <View style={[homeStyles.eachFilterV, { paddingRight: 8 }]}>
                     <Filter filterType="input" text="Min. Price" onInputFocus={inputFocus} setCurrentFilter={setFilter} />
                 </View>
                 <View style={homeStyles.eachFilterV}>
@@ -101,8 +101,8 @@ export default function Home() {
                 </View>
             </View>
 
-            <View style={[homeStyles.layoutMargin]}>
-                <Text style={homeStyles.currentOptionTxt}>{currentFilter}</Text>
+            <View style={{ marginBottom: 8 }}>
+                <Text style={roboto.bodyLargeBold}>{currentFilter}</Text>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={homeStyles.scrollV}>

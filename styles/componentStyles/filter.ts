@@ -9,18 +9,29 @@ export const filterStyles = StyleSheet.create({
         justifyContent: 'space-between',
         backgroundColor: "#fffffa",
         alignItems: "center",
-        borderRadius: 15
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#c7c7cc"
+    },
+
+    activeV: {
+        borderColor: "#000000"
     },
 
     text: {
-        fontFamily: fonts.regular,
-        fontSize: 18,
         padding: 10,
-        color: "#363333"
+        color: "#546881"
     },
 
     img: {
-        marginRight: 5
+        marginRight: 5,
+        width: 16,
+        height: 16,
+        opacity: 0.5
+    },
+
+    activeImg: {
+        opacity: 1
     },
 
     visibleDropDown: {
@@ -34,6 +45,10 @@ export const filterStyles = StyleSheet.create({
 
     input: {
         width: "100%"
+    },
+
+    activeFilterText: {
+        color: "#000000"
     }
 
 })

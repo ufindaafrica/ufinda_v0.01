@@ -1,5 +1,6 @@
 import { images } from "@/constants/images";
 import { filterStyles } from "@/styles/componentStyles/filter";
+import { roboto } from "@/styles/globals";
 import { useEffect, useRef, useState } from "react";
 import { Image, Keyboard, Text, TextInput, TouchableOpacity, View } from "react-native";
 
@@ -10,15 +11,16 @@ type FilterProps = {
     visible?: boolean,
     setVisible?: (value: any) => void,
     onInputFocus?: (value: any) => void,
-    setCurrentFilter: (text: string, type: "options" | "input" | "search") => void
+    setCurrentFilter: (text: string, type: "options" | "input" | "search") => void,
+    active?: boolean
 }
 
-export default function Filter({ options, filterType, text, visible, setVisible, onInputFocus, setCurrentFilter }: FilterProps) {
+export default function Filter({ options, filterType, text, visible, setVisible, onInputFocus, setCurrentFilter, active }: FilterProps) {
 
     // const [optionsVisible, setOptionsVisible] = useState(visible)
     const [currentOption, setCurrentOption] = useState<string | null>(options?.[0] ?? text ?? null)
     const [enterInput, setEnterInput] = useState(false)
-    const [changed, setChanged] = useState(true)
+    const [changed, setChanged] = useState(active ? true : false)
 
     const [input, setInput] = useState("")
 
@@ -47,22 +49,24 @@ export default function Filter({ options, filterType, text, visible, setVisible,
 
     return (
         <TouchableOpacity onPress={onPress}>
-            <View style={filterStyles.visibleV}>
+            <View style={[filterStyles.visibleV, changed && filterStyles.activeV]}>
                 {
-                    !enterInput ? <Text style={filterStyles.text}>{currentOption}</Text> :
+                    !enterInput ? <Text style={[filterStyles.text, roboto.mediumEmphasized, changed && filterStyles.activeFilterText]}>{currentOption}</Text> :
                         <TextInput
                             ref={inputRef}
-                            style={[filterStyles.input, filterStyles.text]}
+                            style={[filterStyles.input, filterStyles.text, roboto.mediumEmphasized, changed && filterStyles.activeFilterText]}
                             keyboardType="numeric"
                             value={input}
                             onChangeText={(text) => setInput(text)}
                             onBlur={() => {
                                 if (input == "") {
                                     setEnterInput(false)
+                                    setChanged(false)
                                 }
                                 if (input != "") {
                                     const preText = text ? text + ": " : ""
                                     setCurrentFilter(preText + input, "input")
+                                    setChanged(true)
                                 }
                             }}
                             onFocus={onInputFocus} />
@@ -73,7 +77,7 @@ export default function Filter({ options, filterType, text, visible, setVisible,
                         setVisible ? setVisible(!visible) : null
                         Keyboard.dismiss()
                         }}>
-                        <Image source={visible ? images.arrowUp : images.arrowDown} style={filterStyles.img} />
+                        <Image source={visible ? images.arrowUp : images.arrowDown} style={[filterStyles.img, changed && filterStyles.activeImg]} />
                     </TouchableOpacity> : null
                 }
             </View>
@@ -85,8 +89,13 @@ export default function Filter({ options, filterType, text, visible, setVisible,
                                 setCurrentOption(item)
                                 setVisible? setVisible(false) : null
                                 setCurrentFilter(item, "options")
+                                setChanged(true)
+                                if (item === "Type") {
+                                    setChanged(false)
+                                    setCurrentFilter("Near You", "options")
+                                }
                             }}>
-                                <Text style={filterStyles.text}>{item}</Text>
+                                <Text style={[filterStyles.text, roboto.mediumEmphasized]}>{item}</Text>
                             </TouchableOpacity>
                         )
                     }) : null
