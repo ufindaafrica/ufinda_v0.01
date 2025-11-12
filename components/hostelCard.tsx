@@ -6,6 +6,7 @@ import { DummyHostelsType } from "@/constants/dummy_data";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { getItemAsync, setItemAsync } from "expo-secure-store";
+import { roboto } from "@/styles/globals";
 
 type HostelCardProps = {
     hostel: DummyHostelsType,
@@ -58,51 +59,56 @@ export default function HostelCard({ hostel, isSaved, reload }: HostelCardProps)
                 <Thumbnail bg={hostel.images[0]} available={hostel.available} distance={hostel.distance} />
             </TouchableOpacity>
 
-            <View style={hostelCardStyles.main}>
-                <View>
-                    <Text style={[hostelCardStyles.hostelName]}>{hostel.name}</Text>
-                    <Text style={[hostelCardStyles.address, hostelCardStyles.textMargin]}>{hostel.address}</Text>
-                    <Text style={hostelCardStyles.hostelName}>₦ {hostel.price} / year</Text>
-                    <Text style={[hostelCardStyles.address, hostelCardStyles.textMargin]}>PID: {hostel.id}</Text>
-                    <View style={[hostelCardStyles.amenitiesV, hostelCardStyles.textMargin]}>
-                        {
-                            amenities.map((item, idx) => {
-                                const len = amenities.length - 1
-                                return (
-                                    <View key={item} style={hostelCardStyles.amenitiesV}>
-                                        {
-                                            idx > 0 ? <Text> </Text> : null
-                                        }
-                                        <Text style={[hostelCardStyles.address, hostelCardStyles.amenitiesT]}>{item} </Text>
-                                        {idx < len ? <Image source={images.blackDot} style={hostelCardStyles.blackDot} /> : null}
-                                    </View>
-                                )
-                            })
-                        }
+            <View style={hostelCardStyles.mainPlusAmenities}>
+
+                <View style={hostelCardStyles.main}>
+                    <View>
+                        <Text style={[hostelCardStyles.hostelName, roboto.titleSmallBold]}>{hostel.name}</Text>
+                        <Text style={[hostelCardStyles.address, hostelCardStyles.textMargin, roboto.bodySmall]}>{hostel.address}</Text>
+                        <Text style={[hostelCardStyles.hostelName, roboto.titleMediumBold]}>₦ {hostel.price} / year</Text>
+                        <Text style={[hostelCardStyles.address, roboto.bodySmallBold]}>PID: {hostel.id}</Text>
                     </View>
+                    <TouchableOpacity onPress={() => { onSave(hostel.id, saved) }}>
+                        <Image source={archiveImg} style={hostelCardStyles.archiveImg} />
+                    </TouchableOpacity>
                 </View>
-                <TouchableOpacity onPress={() => {onSave(hostel.id, saved)}}>
-                    <Image source={archiveImg} />
-                </TouchableOpacity>
+
+                <View style={[hostelCardStyles.amenitiesV]}>
+                    {
+                        amenities.map((item, idx) => {
+                            const len = amenities.length - 1
+                            return (
+                                <View key={item} style={hostelCardStyles.amenitiesV}>
+                                    {
+                                        idx > 0 ? <Text> </Text> : null
+                                    }
+                                    <Text style={[hostelCardStyles.address, hostelCardStyles.amenitiesT]}>{item} </Text>
+                                    {idx < len ? <Image source={images.blackDot} style={hostelCardStyles.blackDot} /> : null}
+                                </View>
+                            )
+                        })
+                    }
+                </View>
+
             </View>
 
             <View style={hostelCardStyles.agentInfo}>
                 <View style={hostelCardStyles.agentCard}>
                     <Image source={hostel.agent?.pic} style={hostelCardStyles.agentPic} />
                     <View>
-                        <Text style={[hostelCardStyles.agentName, hostelCardStyles.agentMargin]}>{hostel.agent?.name}</Text>
+                        <Text style={[roboto.bodyMediumBold, hostelCardStyles.agentMargin]}>{hostel.agent?.name}</Text>
                         <View style={[hostelCardStyles.stars, hostelCardStyles.agentMargin]}>
                             {
                                 [...Array(stars).fill("star"), ...Array(unstars).fill("unstar")].map((type, idx) => (
                                     <Image
                                         key={`${type}-${idx}`}
-                                        source={type === "star" ? images.star : images.greyStar} />
+                                        source={type === "star" ? images.star : images.greyStar} style={hostelCardStyles.eachStar} />
                                 ))
                             }
                         </View>
                         {hostel.agent?.verified ? <View style={hostelCardStyles.verifiedAgent}>
-                            <Image source={images.profileTick} />
-                            <Text style={hostelCardStyles.verifiedAgentT}>Verified Agent</Text>
+                            <Image source={images.profileTick} style={hostelCardStyles.verifiedAgentImg} />
+                            <Text style={[hostelCardStyles.verifiedAgentT, roboto.caption]}>Verified Agent</Text>
                         </View> : null}
                     </View>
                 </View>

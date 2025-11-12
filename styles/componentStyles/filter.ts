@@ -7,7 +7,7 @@ export const filterStyles = StyleSheet.create({
         flexDirection: "row",
         width: "100%",
         justifyContent: 'space-between',
-        backgroundColor: "#fffffa",
+        backgroundColor: "#fcfcfc",
         alignItems: "center",
         borderRadius: 8,
         borderWidth: 1,
@@ -37,7 +37,7 @@ export const filterStyles = StyleSheet.create({
     visibleDropDown: {
         width: "100%",
         justifyContent: 'space-between',
-        backgroundColor: "#fffffa",
+        backgroundColor: "#fcfcfc",
         borderRadius: 15,
         elevation: 5,
         position: "absolute"

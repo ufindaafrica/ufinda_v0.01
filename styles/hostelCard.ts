@@ -1,39 +1,27 @@
 import { StyleSheet } from "react-native";
-import { fonts } from "./globals";
 
 
 export const hostelCardStyles = StyleSheet.create({
     main: {
         flexDirection: "row",
         justifyContent: "space-between",
-        padding: 10
     },
 
     hostelName: {
-        fontFamily: fonts.bold,
-        fontSize: 24
+        color: "#000000"
     },
 
     textMargin: {
-        marginBottom: 5
+        marginBottom: 8
     },
 
     address: {
-        fontFamily: fonts.regular,
-        fontSize: 16,
-        color: "#363333"
-    },
-
-    price: {
-        fontFamily: fonts.bold,
-        fontSize: 24
+        color: "#8e8e93"
     },
 
     amenitiesV: {
         flexDirection: "row",
         flexWrap: "wrap",
-        alignItems: "center",
-        maxWidth: "90%"
     },
 
     amenitiesT: {
@@ -41,47 +29,46 @@ export const hostelCardStyles = StyleSheet.create({
     },
 
     card: {
-        backgroundColor: "#fffff7",
-        elevation: 1,
-        borderRadius: 10,
-        zIndex: 1,
+        backgroundColor: "#fcfcfc",
+        elevation: 0.5,
+        borderRadius: 16,
+        zIndex: 0.5,
         borderWidth: 1,
         borderColor: "#e5e5ea"
     },
 
     thumbnailV: {
-        padding: 10
+        padding: 6,
+        height: 140
     },
 
     agentInfo: {
         flexDirection: "row",
         backgroundColor: "#e5e5ea",
         justifyContent: "space-between",
-        alignItems: "center"
+        alignItems: "center",
+        height: 70,
+        borderBottomRightRadius: 14,
+        borderBottomLeftRadius: 14
     },
 
     agentCard: {
         flexDirection: "row",
-        padding: 10,
+        padding: 8,
         alignItems: "center"
     },
 
     agentPic: {
         borderRadius: 100,
-        marginRight: 16,
-        height: 50,
-        width: 50
-    },
-
-    agentName: {
-        fontFamily: fonts.bold,
-        fontSize: 18
+        marginRight: 8,
+        height: 40,
+        width: 40
     },
 
     stars: {
         flexDirection: "row",
         alignItems: "center",
-        maxWidth: "55%",
+        maxWidth: "50%",
         justifyContent: "space-between"
     },
 
@@ -91,35 +78,53 @@ export const hostelCardStyles = StyleSheet.create({
     },
 
     verifiedAgentT: {
-        marginLeft: 5,
-        fontFamily: fonts.regular,
-        fontSize:10,
+        marginLeft: 4,
         color: "#008000"
     },
 
     agentMargin: {
-        marginBottom: 5
+        marginBottom: 4
     },
 
     phoneView: {
         backgroundColor: "#008000",
-        marginRight: 10,
-        height: 40,
-        width: 50,
+        marginRight: 8,
+        height: 32,
+        width: 40,
         alignItems: "center",
         justifyContent: "center",
-        borderRadius: 10
+        borderRadius: 8
     },
 
     phoneImg: {
-        height: 25,
-        width: 25
+        height: 16,
+        width: 16
     },
 
     blackDot: {
         width: 3,
         height: 3,
         alignSelf: "center"
+    },
+
+    archiveImg: {
+        height: 24,
+        width: 24
+    },
+
+    eachStar: {
+        width: 8,
+        height: 8
+    },
+
+    verifiedAgentImg: {
+        width: 10,
+        height: 10
+    },
+
+    mainPlusAmenities: {
+        paddingHorizontal: 8,
+        paddingVertical: 16
     }
 })
 

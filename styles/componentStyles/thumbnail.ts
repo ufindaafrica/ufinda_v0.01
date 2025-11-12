@@ -4,18 +4,20 @@ import { fonts } from "../globals";
 export const thumbnailStyles = StyleSheet.create({
     main: {
         backgroundColor: "#b3b3b3",
-        height: 170,
-        borderRadius: 10,
-        padding: 10
+        height: 140,
+        borderRadius: 16,
+        padding: 10,
     },
 
     txt: {
-        fontFamily: fonts.light,
         color: "#593a00",
         backgroundColor: "#fff6e6",
-        padding:5,
-        borderRadius: 10,
-        alignSelf: "flex-start"
+        paddingVertical: 4,
+        borderRadius: 6,
+        paddingHorizontal: 8,
+        height: 20,
+        textAlign: "center",
+        textAlignVertical: "center"
     },
 
     unavailable: {
@@ -28,6 +30,7 @@ export const thumbnailStyles = StyleSheet.create({
     },
 
     bgStyle: {
-        borderRadius: 10
+        borderRadius: 16,
+        resizeMode: "cover"
     }
 })
