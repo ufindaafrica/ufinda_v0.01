@@ -13,17 +13,18 @@ const ResetPassword = () => {
     const token = searchParams.get('token');
 
     const [formData, setFormData] = useState({
-        newPassword: "",
+        new_password: "",
         confirmPassword: "",
     });
     const [status, setStatus] = useState({
         message: "",
         type: ""
     });
+    const [liveErrors, setLiveErrors] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isSuccess, setSuccess] = useState(false);
     const [showPassword, setShowPassword] = useState({
-        newPassword: false,
+        new_password: false,
         confirmPassword: false,
     });
     const [passwordStrength, setPasswordStrength] = useState({
@@ -63,32 +64,42 @@ const ResetPassword = () => {
         return {level, progress, colorClass};
     };
 
+    const getLiveValidation = (password, confirmPassword) => {
+        const errors = [];
+    }
+
     const validatePasswordStrength = (password) => {
         if (password.length < 8) {
-            return 'Password must be at least 8 characters long.';
+            error.push('Password must be at least 8 characters long.');
         }
         if (!/[A-Z]/.test(password)) {
-            return 'Password must contain at least one uppercase letter.';
+            error.push('Password must contain at least one uppercase letter.');
         }
         if (!/[a-z]/.test(password)) {
-            return 'Password must contain at least one lowercase letter.';
+            error.push('Password must contain at least one lowercase letter.');
         }
         if (!/[0-9]/.test(password)) {
-            return 'Password must contain at least one number.';
+            error.push('Password must contain at least one number.');
         }
         if (!/[^A-Za-z0-9]/.test(password)) {
-            return 'Password must contain at least one special character.';
+            error.push('Password must contain at least one special character.');
         }
-        return null;
+        return error;
     };
 
     const handleChange = (e) => {
         const {name, value} = e.target;
         setFormData({ ...formData, [name]: value });
 
-        if (name === 'newPassword') {
+        if (name === 'new_password') {
             setPasswordStrength(calculatePasswordStrength(value));
         }
+
+        const liveErrs = getLiveValidation(
+            newFormData.new_password,
+            newformData.confirmPassword
+        );
+        setLiveErrors(liveErrs);
     };
 
     const toggleVisibility = (field) => {
@@ -100,6 +111,13 @@ const ResetPassword = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (liveErrors.length > 0) {
+            setStatus({
+                message: 'Please pass all the checks first',
+                type: error
+            })
+        }
 
         if (formData.newPassword !== formData.confirmPassword) {
             setStatus({
@@ -121,10 +139,16 @@ const ResetPassword = () => {
         setLoading(true);
 
         try {
-            const response = await axios.post(process.env.BACKEND_URI || https://ufinda-v0-01.onrender.com/auth/reset-pwd, {
-                Token: token,
-                NewPassword: formData.newPassword,
-            });
+            const response = await axios.post(process.env.BACKEND_URI/auth/reset-pwd || https://ufinda-v0-01.onrender.com/auth/reset-pwd, {
+                token: token,
+                new_password: formData.newPassword,
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }, { timeout: 10000 }
+        );
 
             setStatus({
                 message: response.data.message,
@@ -132,6 +156,7 @@ const ResetPassword = () => {
             });
             setSuccess(true);
         } catch (error) {
+            console.error('Reset Error:', error.message, error.code, error.config, error.response);
             const errmsg = error.response?.data?.error || "Ouch! Something went wrong. Try again.";
             setStatus({
                 message: errmsg,
