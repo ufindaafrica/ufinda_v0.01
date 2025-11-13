@@ -7,7 +7,7 @@ import '../styles/resetPassword.css';
 import Background from '../assets/Backgroundimage.jpg';
 import onSuccess from '../assets/Onsuccess.png';
 import onReset from '../assets/Onreset.png';
-
+import BACKEND_URI from ../utils.js
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
@@ -129,7 +129,7 @@ const ResetPassword = () => {
 
     setLoading(true);
     try {
-        const API_URL = `${process.env.BACKEND_URI}/auth/reset-pwd`;
+        const API_URL = `${BACKEND_URI}/auth/reset-pwd`;
       const response = await axios.post(
         API_URL, {
           token,
