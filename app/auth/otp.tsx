@@ -18,11 +18,14 @@ import { verifyOtp } from "@/services/verifyOtp";
 export default function Otp() {
 
     const [userEmail, setUserEmail] = useState<string | null>("")
+    const [mode, setMode] = useState<string | null>("")
 
     useEffect(() => {
         const getUserEmail = async () => {
             const email = await SecureStore.getItemAsync("EMAIL")
             setUserEmail(email)
+            const userMode = await SecureStore.getItemAsync("MODE")
+            setMode(userMode)
         }
 
         getUserEmail()
@@ -60,7 +63,8 @@ export default function Otp() {
                 setErrorText(result[1])
                 setOtpArray(["", "", "", "", "", ""])
             } else {
-                router.replace("/auth/pic")
+                if (mode === "vendor") router.replace("/auth/vendorOtp")
+                else router.replace("/auth/pic")
             }
             
         }
