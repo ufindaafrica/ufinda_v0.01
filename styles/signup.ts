@@ -10,8 +10,7 @@ export const signupStyles = StyleSheet.create({
     },
 
     headerText: {
-        width: 139,
-        height: 24,
+        color: "#000000"
     },
 
     pText: {
@@ -81,7 +80,7 @@ export const signupStyles = StyleSheet.create({
     },
 
     altV: {
-        marginTop: 5,
+        marginTop: 8,
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center"
@@ -101,31 +100,33 @@ export const signupStyles = StyleSheet.create({
     },
 
     remImg: {
-        height: 20,
-        width: 20
+        height: 16,
+        width: 16
     },
 
     remText: {
-        fontFamily: fonts.light,
-        paddingLeft: 5,
-        color: "#534e4e"
+        paddingLeft: 4
     },
 
     forgotText: {
-        fontFamily: fonts.bold,
         color: "#008000"
     },
 
     orText: {
-        fontFamily: fonts.light,
-        fontSize: 18,
         color: "#b3b3b3",
         alignSelf: "center"
     },
 
-    orPadding: {
-        padding: 8
+    orV: {
+        flexDirection: "row",
+        alignItems: 'center',
+        justifyContent: "space-between"
     },
+
+    orImg: {
+        width: 168,
+        height: 2
+    }, 
 
     bottomView: {
         position: "absolute",
@@ -143,6 +144,10 @@ export const signupStyles = StyleSheet.create({
 
     policyPadding: {
         paddingTop: 8
+    },
+
+    grayText: {
+        color: "#8e8e93"
     }
 
 })

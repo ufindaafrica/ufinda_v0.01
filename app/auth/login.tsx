@@ -4,7 +4,7 @@ import Loader from "@/components/loader";
 import Select from "@/components/select";
 import { images } from "@/constants/images";
 import { logIn } from "@/services/logIn";
-import { fonts, globals } from "@/styles/globals";
+import { fonts, globals, roboto } from "@/styles/globals";
 import { signupStyles } from "@/styles/signup";
 import { Link, router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -30,7 +30,7 @@ export default function Login() {
     const [password, setPassword] = useState("")
 
     const [secureIcon, setSecureIcon] = useState(images.openEyeDefault)
-    const [securePass, setSecurePass] = useState(false)
+    const [securePass, setSecurePass] = useState(true)
 
     const [remember, setRemember] = useState(false)
 
@@ -86,7 +86,7 @@ export default function Login() {
 
                 <KeyboardAwareScrollView
                     contentContainerStyle={{
-                        flexGrow: 1, paddingBottom: 40
+                        flexGrow: 1, paddingBottom: 20
                     }}
                     style={{ flex: 1 }}
                     keyboardShouldPersistTaps="handled"
@@ -96,8 +96,8 @@ export default function Login() {
                     ref={scrollRef}
                 >
                     <View style={signupStyles.layoutPadding}>
-                        <Text style={signupStyles.headerText}>Login to your Account</Text>
-                        <Text style={signupStyles.pText}>Please enter your email and password to login to your account.</Text>
+                        <Text style={[signupStyles.headerText, roboto.titleLargeBold]}>Login to your Account</Text>
+                        <Text style={[signupStyles.pText, roboto.bodyMedium, signupStyles.grayText]}>Please enter your email and password to login to your account.</Text>
                     </View>
 
                     <View style={signupStyles.formPadding}>
@@ -130,10 +130,10 @@ export default function Login() {
                                 <TouchableOpacity onPress={() => setRemember(!remember)}>
                                     <Image source={!remember ? images.checkedBox : images.emptyBox} style={signupStyles.remImg} />
                                 </TouchableOpacity>
-                                <Text style={signupStyles.remText}>Remember me</Text>
+                                <Text style={[signupStyles.remText, roboto.bodySmall, signupStyles.grayText]}>Remember me</Text>
                             </View>
                             <View style={signupStyles.forgotV}>
-                                <Link href={"https://"} style={signupStyles.forgotText}>Forgot Password?</Link>
+                                <Link href={"https://"} style={[signupStyles.forgotText, roboto.bodySmallBold]}>Forgot Password?</Link>
                             </View>
                         </View>
                     </View>
@@ -143,16 +143,26 @@ export default function Login() {
                             <Select text="Continue" selected={true} selectFun={clickContinue} clickable={!email || !password} />
                         </View>
 
-                        <Text style={[signupStyles.orText, signupStyles.orPadding]}>OR</Text>
+                        <View style={[signupStyles.layoutPadding, signupStyles.orV]}>
 
-                        <Select clickable={true} text="Continue with Google" selected={false} icon={images.google} />
+                            <Image source={images.line} style={signupStyles.orImg} />
+
+                            <Text style={[signupStyles.orText, roboto.caption]}>OR</Text>
+
+                            <Image source={images.line} style={signupStyles.orImg} />
+
+                        </View>
+
+                        <View style={signupStyles.layoutPadding}>
+                            <Select clickable={true} text="Continue with Google" selected={false} icon={images.google} />
+                        </View>
                     </View>
 
                     {
                         loaderVisible || errorModal ? null : <View style={signupStyles.bottomView}>
                             <View style={signupStyles.policyView}>
-                                <Text style={signupStyles.policyText}>Don't have an account? </Text>
-                                <Link href={"/auth/signup"} style={[signupStyles.policyText, { fontFamily: fonts.bold, color: "#008000" }]}>Register</Link>
+                                <Text style={[roboto.bodyMedium, signupStyles.grayText]}>Don't have an account? </Text>
+                                <Link href={"/auth/signup"} style={[roboto.bodyMediumBold, { color: "#008000" }]}>Register</Link>
                             </View>
                         </View>
                     }
