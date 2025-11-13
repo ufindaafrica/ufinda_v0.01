@@ -48,7 +48,7 @@ const ResetPassword = () => {
     }
   }, [token]);
 
-  // Password strength calculation
+  //<--------- Determining the Password strength -------->
   const calculatePasswordStrength = (password) => {
     let score = 0;
     if (password.length >= 8) score++;
@@ -71,7 +71,7 @@ const ResetPassword = () => {
     return { level, progress, colorClass };
   };
 
-  // Live validation separated into two categories
+  //<---------- Live Validation -------->
   const getLiveValidation = (password, confirmPassword) => {
     const passwordErrors = [];
     let matchError = '';
@@ -89,7 +89,7 @@ const ResetPassword = () => {
     return { passwordErrors, matchError };
   };
 
-  // Handle input changes
+  //<------- Handling inpu ------->
   const handleChange = (e) => {
     const { name, value } = e.target;
     const newFormData = { ...formData, [name]: value };
@@ -129,12 +129,11 @@ const ResetPassword = () => {
 
     setLoading(true);
     try {
+        const API_URL = `${process.env.BACKEND_URI}/auth/reset-pwd`;
       const response = await axios.post(
-        process.env.BACKEND_URI ||
-          'https://ufinda-v0-01.onrender.com/auth/reset-pwd',
-        {
+        API_URL, {
           token,
-          new_password: formData.newPassword, // ✅ match backend JSON exactly
+          new_password: formData.newPassword,
         },
         { headers: { 'Content-Type': 'application/json' } }
       );
@@ -172,7 +171,7 @@ const ResetPassword = () => {
     );
   }
 
-  // ✅ Main reset form
+  
   return (
     <div className="reset-container">
       <div className="reset-r">
@@ -184,7 +183,7 @@ const ResetPassword = () => {
         <p className="reset-subtitle">Enter a new password</p>
 
         {status.message && (
-          <p className={`reset-para ${status.type === 'error' ? 'error-msg' : 'success'}`}>
+          <p className={`reset-para ${status.type === 'error' ? 'errormsg' : 'success'}`}>
             {status.message}
           </p>
         )}
@@ -226,12 +225,12 @@ const ResetPassword = () => {
           {/* Password strength meter */}
           {formData.newPassword && (
             <div className="progress-wrapper">
-              <div className="progress-container">
+              {/* <div className="progress-container">
                 <div
                   className={`progress-bar ${passwordStrength.colorClass}`}
                   style={{ width: `${passwordStrength.progress}%` }}
                 ></div>
-              </div>
+              </div> */}
               <p className="progress-level">{passwordStrength.level}</p>
             </div>
           )}
@@ -248,16 +247,16 @@ const ResetPassword = () => {
                 required
                 className="input"
               />
-              <button
+              {/* <button
                 type="button"
                 onClick={() => toggleVisibility('confirmPassword')}
                 className="eye-button"
               >
                 {showPassword.confirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
+              </button> */}
             </div>
 
-            {/* ✅ Show only "passwords do not match" error here */}
+            {/* Show only "passwords do not match" error here */}
             {liveErrors.matchError && (
               <p className="error-msg">{liveErrors.matchError}</p>
             )}
