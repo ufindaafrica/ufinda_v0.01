@@ -10,12 +10,14 @@ import * as ImagePicker from "expo-image-picker"
 import { studentKyc } from "@/services/studentKyc";
 import Loader from "@/components/loader";
 import ErrorModal from "@/components/errorModal";
+import { getItemAsync } from "expo-secure-store";
 
 
 export default function Pic() {
 
     const [desc, setDesc] = useState("")
     const [descLength, setDescLength] = useState(0)
+    const [mode, setMode] = useState<string | null>("")
 
     const onEnterDesc = (text: string) => {
         setDesc(text)
@@ -93,6 +95,14 @@ export default function Pic() {
         }
     }, [correctText])
 
+    useEffect(() => {
+        const getMode = async () => {
+            const mode = await getItemAsync("MODE")
+            setMode(mode)
+        }
+        getMode()
+    }, [])
+
     return (
         <SafeAreaView style={[globals.container]}>
 
@@ -134,7 +144,7 @@ export default function Pic() {
                 <Select text="Continue" selected clickable={image ? false : true} selectFun={() => onContinue()} />
             </View>
 
-            <Link href={"/home"} style={[picStyles.main, picStyles.linkText, roboto.mediumEmphasizedBold]}>
+            <Link href={mode === "vendor" ? "/(vendor)/dashboard" : "/(tabs)/home"} style={[picStyles.main, picStyles.linkText, roboto.mediumEmphasizedBold]}>
                 I'll do this later
             </Link>
 
@@ -147,7 +157,7 @@ export default function Pic() {
             }
 
             {
-                correctModal ? <ErrorModal correct text={correctText} errorFun={() => {setCorrectText("") ; router.replace("/auth/finishReg")}} /> : null
+                correctModal ? <ErrorModal correct text={correctText} errorFun={() => { setCorrectText(""); router.replace("/auth/finishReg") }} /> : null
             }
 
         </SafeAreaView>
