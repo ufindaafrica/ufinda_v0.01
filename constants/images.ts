@@ -67,5 +67,9 @@ export const images = {
     activeAds: require("../assets/images/activeAds.png"),
     plus: require("../assets/images/plus.png"),
     arrowRight: require("../assets/images/arrowRight.png"),
-    whiteArrowRight: require("../assets/images/whiteArrowRight.png")
+    whiteArrowRight: require("../assets/images/whiteArrowRight.png"),
+    published: require("../assets/images/published.png"),
+    sold: require("../assets/images/coin.png"),
+    vendorUser: require("../assets/images/vendorUser.png"),
+    appointments: require("../assets/images/appointments.png"),
 }

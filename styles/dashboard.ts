@@ -34,19 +34,16 @@ export const dashboardStyles = StyleSheet.create({
         flexDirection: "row", 
         flexWrap: "wrap", 
         justifyContent: "space-between", 
-        rowGap: 4 
+        rowGap: 2 
     },
 
     eachListing: {
-        height: 173, 
-        width: 170, 
+        height: 174, 
+        width: 175, 
         borderWidth: 1, 
         borderColor: "#f2f2f7", 
         borderRadius: 16, 
         padding: 16,
-    },
-
-    eachListingTop: {
         justifyContent: "space-between"
     },
 
@@ -77,5 +74,16 @@ export const dashboardStyles = StyleSheet.create({
         height: "100%", 
         backgroundColor: '#008000', 
         borderRadius: 30
+    },
+
+    metricImg: {
+        width: 32,
+        height: 32,
+        alignSelf: "center"
+    },
+
+    metricT: {
+        color: '#008000',
+        alignSelf: 'flex-end'
     }
 })

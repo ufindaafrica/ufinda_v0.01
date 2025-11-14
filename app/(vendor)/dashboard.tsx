@@ -31,6 +31,13 @@ export default function Dashboard() {
         )
     }
 
+    const metrics = [
+        ["Published Ads", images.published, 4],
+        ["Sold Ads", images.sold, 2],
+        ["Profile View", images.vendorUser, 14],
+        ["Appointments", images.appointments, 6]
+    ]
+
     return (
         <SafeAreaView style={[globals.vendorContainer]}>
             <Plus />
@@ -54,7 +61,7 @@ export default function Dashboard() {
 
                                 const remaining = Math.floor(((item.totalrooms - item.rentedrooms) / item.totalrooms) * 143)
 
-                                return (<View key={idx} style={[dashboardStyles.eachListing, dashboardStyles.eachListingTop]}>
+                                return (<View key={idx} style={[dashboardStyles.eachListing]}>
                                     <View>
                                         <Text style={[roboto.bodyMediumBold]}>{item.name}</Text>
                                         <Text style={[roboto.caption, dashboardStyles.postedT]}>{`posted: ${item.posted} ${item.time}`}</Text>
@@ -84,6 +91,20 @@ export default function Dashboard() {
                 </View>
 
                 <LineBreak />
+
+                <View style={[dashboardStyles.padding, {paddingBottom: 0}]}>
+                    <Text style={roboto.titleSmallBold}>Metrics</Text>
+                </View>
+
+                <View style={[dashboardStyles.listingsV, {padding: 16}]}>
+                    {
+                        metrics.map((item, idx) => <View key={idx} style={dashboardStyles.eachListing}>
+                            <Text style={[roboto.bodyMediumBold, { color: "#546881"}]}>{item[0]}</Text>
+                            <Image source={item[1]} style={dashboardStyles.metricImg} />
+                            <Text style={[roboto.headingLargeBold, dashboardStyles.metricT]}>{item[2]}</Text>
+                        </View>)
+                    }
+                </View>
             </ScrollView>
         </SafeAreaView>
     )
