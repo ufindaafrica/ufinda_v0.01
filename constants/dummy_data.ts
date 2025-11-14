@@ -510,3 +510,49 @@ export const dummyHostels: DummyHostelsType[] = [
         }
     }
 ]
+
+
+export const AgentHostels = [
+    {
+        "name": "Bethel Lodge",
+        "posted": "3/11/2025",
+        "time": "12:07pm",
+        "totalrooms": 12,
+        "rentedrooms": 3
+    },
+    {
+        "name": "Larigne Lodge",
+        "posted": "3/11/2025",
+        "time": "12:07pm",
+        "totalrooms": 8,
+        "rentedrooms": 4
+    },
+    {
+        "name": "Grace Apartments",
+        "posted": "3/11/2025",
+        "time": "12:07pm",
+        "totalrooms": 10,
+        "rentedrooms": 2
+    },
+    {
+        "name": "Ndu Houses",
+        "posted": "3/11/2025",
+        "time": "12:07pm",
+        "totalrooms": 25,
+        "rentedrooms": 7
+    },
+    {
+        "name": "Bethel Lodge",
+        "posted": "3/11/2025",
+        "time": "12:07pm",
+        "totalrooms": 12,
+        "rentedrooms": 3
+    },
+    {
+        "name": "Bethel Lodge",
+        "posted": "3/11/2025",
+        "time": "12:07pm",
+        "totalrooms": 12,
+        "rentedrooms": 3
+    },
+]
