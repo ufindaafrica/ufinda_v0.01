@@ -37,50 +37,49 @@ export default function Dashboard() {
 
             <VendorAppHeader />
 
-            <LineBreak />
-
             <ScrollView contentContainerStyle={dashboardStyles.scrollV} showsVerticalScrollIndicator={false}>
-                <View style={[dashboardStyles.padding, { paddingTop: 0 }]}>
+                <LineBreak />
+
+                <View style={[dashboardStyles.padding]}>
                     <Announcement view={appointments()} active />
                 </View>
 
                 <View style={[dashboardStyles.padding, { paddingTop: 0 }]}>
                     <Text style={[roboto.titleSmallBold, { paddingBottom: 8 }]}>My Ads</Text>
 
-                <View style={dashboardStyles.listingsV}>
+                    <View style={dashboardStyles.listingsV}>
 
-                    {
-                        AgentHostels.slice(0, 4).map((item, idx) =>
-                            {
-                            
-                            const remaining = Math.floor(((item.totalrooms - item.rentedrooms)/item.totalrooms) * 143)
-                            
-                            return (<View key={idx} style={[dashboardStyles.eachListing, dashboardStyles.eachListingTop]}>
-                                <View>
-                                    <Text style={[roboto.bodyMediumBold]}>{item.name}</Text>
-                                    <Text style={[roboto.caption, dashboardStyles.postedT]}>{`posted: ${item.posted} ${item.time}`}</Text>
-                                </View>
+                        {
+                            AgentHostels.slice(0, 4).map((item, idx) => {
 
-                                <View>
-                                    <View style={dashboardStyles.remEntireV}>
-                                        <Text style={[roboto.headlineLargeBold]}>{`${item.totalrooms - item.rentedrooms} `}</Text>
-                                        <Text style={[roboto.bodyMedium, dashboardStyles.remT]}>{`/ ${item.totalrooms} Rooms Left`}</Text>
+                                const remaining = Math.floor(((item.totalrooms - item.rentedrooms) / item.totalrooms) * 143)
+
+                                return (<View key={idx} style={[dashboardStyles.eachListing, dashboardStyles.eachListingTop]}>
+                                    <View>
+                                        <Text style={[roboto.bodyMediumBold]}>{item.name}</Text>
+                                        <Text style={[roboto.caption, dashboardStyles.postedT]}>{`posted: ${item.posted} ${item.time}`}</Text>
                                     </View>
 
-                                    <View style={dashboardStyles.outerRemV}>
-                                        <View style={[{width: remaining}, dashboardStyles.innerRemV]}></View>
-                                    </View>
-                                </View>
+                                    <View>
+                                        <View style={dashboardStyles.remEntireV}>
+                                            <Text style={[roboto.headlineLargeBold]}>{`${item.totalrooms - item.rentedrooms} `}</Text>
+                                            <Text style={[roboto.bodyMedium, dashboardStyles.remT]}>{`/ ${item.totalrooms} Rooms Left`}</Text>
+                                        </View>
 
-                            </View>)
+                                        <View style={dashboardStyles.outerRemV}>
+                                            <View style={[{ width: remaining }, dashboardStyles.innerRemV]}></View>
+                                        </View>
+                                    </View>
+
+                                </View>)
                             }
                             )
-                    }
+                        }
 
                     </View>
                 </View>
 
-                <View style={[dashboardStyles.padding,{ paddingTop: 0}]}>
+                <View style={[dashboardStyles.padding, { paddingTop: 0 }]}>
                     <Announcement view={allAds()} />
                 </View>
 
