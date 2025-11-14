@@ -65,5 +65,6 @@ export const images = {
     activeDashboard: require("../assets/images/activeDashboard.png"),
     ads: require("../assets/images/ads.png"),
     activeAds: require("../assets/images/activeAds.png"),
-    plus: require("../assets/images/plus.png")
+    plus: require("../assets/images/plus.png"),
+    arrowRight: require("../assets/images/arrowRight.png")
 }

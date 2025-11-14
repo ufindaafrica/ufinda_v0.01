@@ -176,6 +176,15 @@ export const globals = StyleSheet.create({
     homeContainer: {
         padding: 16,
         backgroundColor: "#f5f5f5"
+    },
+
+    vendorContainerPadding: {
+        padding: 16
+    },
+
+    vendorContainer: {
+        backgroundColor: "#fcfcfc",
+        flex: 1
     }
 });
 
