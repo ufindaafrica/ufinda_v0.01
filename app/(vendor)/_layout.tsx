@@ -32,9 +32,9 @@ export default function _Layout() {
                     height: 64,
                     width: 274,
                     borderRadius: 36,
-                    marginBottom: 16,
                     elevation: 1,
-                    padding: 0,
+                    position: "absolute",
+                    bottom: 16,
                     marginLeft: 16
                 },
                 tabBarItemStyle: {

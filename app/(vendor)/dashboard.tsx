@@ -1,12 +1,16 @@
-import { Text, View } from "react-native";
+import Plus from "@/components/plus";
+import { images } from "@/constants/images";
+import { dashboardStyles } from "@/styles/dashboard";
+import { globals } from "@/styles/globals";
+import { Image, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 
 export default function Dashboard () {
 
     return (
-            <SafeAreaView>
-                <View style={dashboardStyles.plusView}></View>
+            <SafeAreaView style={[globals.container, globals.homeContainer]}>
+                <Plus />
             </SafeAreaView>
     )
 }
