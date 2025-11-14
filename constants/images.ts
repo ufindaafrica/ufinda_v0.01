@@ -60,5 +60,10 @@ export const images = {
     comingSoon: require("../assets/images/comingSoon.png"),
     galleryLeft: require("../assets/images/galleryLeft.png"),
     galleryRight: require("../assets/images/galleryRight.png"),
-    line: require("../assets/images/line.png")
+    line: require("../assets/images/line.png"),
+    dashboard: require("../assets/images/dashboard.png"),
+    activeDashboard: require("../assets/images/activeDashboard.png"),
+    ads: require("../assets/images/ads.png"),
+    activeAds: require("../assets/images/activeAds.png"),
+    plus: require("../assets/images/plus.png")
 }
