@@ -2,6 +2,7 @@ import { images } from "@/constants/images";
 import { roboto } from "@/styles/globals";
 import { picStyles } from "@/styles/pic";
 import { router } from "expo-router";
+import { getItemAsync } from "expo-secure-store";
 import { useEffect } from "react";
 import { Image, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -9,9 +10,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function FinishReg() {
 
     useEffect(() => {
-        setTimeout(() => {
-            router.replace("/home")
-        }, 3000)
+        const getMode = async () => {
+            const mode = await getItemAsync("MODE")
+
+            setTimeout(() => {
+                if (mode === "vendor") router.push("/(vendor)/dashboard")
+                else router.replace("/home")
+            }, 3000)
+        }
+
+        getMode()
+
     }, [])
 
     return (

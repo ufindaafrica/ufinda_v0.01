@@ -22,7 +22,9 @@ export default function VendorOtp() {
 
     const onSubmitInfo = async () => {}
 
-    const onSkip = () => {}
+    const onSkip = () => {
+        router.replace("/auth/pic")
+    }
 
     return (
         <SafeAreaProvider>
@@ -76,11 +78,11 @@ export default function VendorOtp() {
                     </View>
 
                     <View style={signupStyles.layoutPadding}>
-                        <Select text="Continue" selected selectFun={() => onSubmitInfo} />
+                        <Select text="Continue" selected selectFun={() => onSubmitInfo()} />
                     </View>
 
                     <View style={signupStyles.layoutPadding}>
-                        <Select text="Skip" selected={false} selectFun={() => onSkip} />
+                        <Select text="Skip" selected={false} selectFun={() => onSkip()} />
                     </View>
 
                 </KeyboardAwareScrollView>
