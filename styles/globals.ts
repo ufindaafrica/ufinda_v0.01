@@ -154,7 +154,43 @@ export const roboto = StyleSheet.create({
         fontFamily: robotoFonts.bold,
         fontSize: 10,
         lineHeight: 12
-    }
+    },
+
+    headlineLarge: {
+        fontFamily: robotoFonts.regular,
+        fontSize: 28,
+        lineHeight: 34
+    },
+
+    headlineLargeBold: {
+        fontFamily: robotoFonts.bold,
+        fontSize: 28,
+        lineHeight: 34
+    },
+
+    headlineMedium: {
+        fontFamily: robotoFonts.regular,
+        fontSize: 25,
+        lineHeight: 30
+    },
+
+    headlineMediumBold: {
+        fontFamily: robotoFonts.bold,
+        fontSize: 25,
+        lineHeight: 30
+    },
+
+    headlineSmall: {
+        fontFamily: robotoFonts.regular,
+        fontSize: 22,
+        lineHeight: 26
+    },
+
+    headlineSmallBold: {
+        fontFamily: robotoFonts.bold,
+        fontSize: 22,
+        lineHeight: 26
+    },
 
 })
 
