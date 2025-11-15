@@ -177,3 +177,9 @@ type VendorKYC struct {
 	Nationality string `json:"nationality"`
 	StateOfResidence string `json:"state_of_residence"`
 }
+
+type Favorites struct {
+	ID uuid.UUID `json:"id"`
+	UserID string `json:"user_id"`
+	HostelID string `json:"hostel_id" binding:"required"`
+}

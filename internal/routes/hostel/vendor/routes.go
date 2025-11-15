@@ -315,3 +315,28 @@ func DeleteHostelHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{"message": "listing deleted successfully"})
 	}
 }
+
+func GetAllAgentsHostelHandler(c *gin.Context) {
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+
+	getUser, ok := user.(*db.User)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user type"})
+		return
+	}	
+	
+	hostels, err := hosteldb.FindVendorHostels(getUser.ID)
+	if err != nil {
+		if errors.Is(err, hosteldb.ErrorHostelNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "no listed hostel found for vendor"})
+		}else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get hostel"}) }
+		return
+	}
+
+	c.JSON(http.StatusOK, hostels)
+}

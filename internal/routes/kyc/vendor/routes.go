@@ -174,3 +174,4 @@ func CreateOnboardVendorKycHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc{
 		c.JSON(http.StatusOK, gin.H{"message": message})
 	}
 }
+

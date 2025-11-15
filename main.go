@@ -7,6 +7,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/cloudinary/cloudinary-go/v2"
 	"os"
+	"github.com/gin-contrib/cors"
 	"context"
 	"github.com/hibiken/asynq"
 	"github.com/oladev/ufinda_v0.01/internal/db"
@@ -76,6 +77,11 @@ func main() {
 
 	r := gin.Default()
 
+	config := cors.DefaultConfig()
+	config.AllowOrigins = []string{"https://ufinda.org"}
+	config.AllowMethods = []string{"GET", "POST", "DELETE", "PATCH"}
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization"}
+	r.Use(cors.New(config))
 	// Public endpoints
 	auth.RegisterAuth(r, cld)
 	userkyc.RegisterKYC(r, cld)

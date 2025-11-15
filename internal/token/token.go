@@ -305,7 +305,8 @@ func GenerateSecureToken() (string, error) {
 	return token, nil
 }
 
-func SendPasswordResetLink(email string, resetLink string) error {
+
+func SendPasswordResetLink(email string, resetToken string) error {
 	// --- Postmark API Key Setup ---
 	apiKey := os.Getenv("POSTMARK_SERVER_KEY")
 	if apiKey == "" {
@@ -315,32 +316,56 @@ func SendPasswordResetLink(email string, resetLink string) error {
 
 	client := postmark.NewClient(apiKey, "") // Second arg (Account Token) is not needed for sending
 
+	// --- Link Construction: Base URL + Token ---
+	// Base URL for the reset page (must be HTTPS for security)
+	const baseURL = "https://ufinda.org/reset-password"
+
+	// Construct the final link by appending the token as a query parameter
+	finalResetLink := fmt.Sprintf("%s?token=%s", baseURL, resetToken)
+	log.Printf("this is the final url: %s", finalResetLink)
+
 	// --- Email Content Construction ---
 	subject := "Password Reset Request for uFinda"
 
 	// Plain text version
-	plainTextContent := fmt.Sprintf("You requested a password reset. Please use the following link to reset your password: %s. This link will expire in 15 minutes.", resetLink)
+	plainTextContent := fmt.Sprintf(
+		"You requested a password reset. Please use the following link to reset your password: %s. This link will expire in 15 minutes.\n\n" +
+		"If you did not initiate this password reset request, please ignore this email or contact support@ufinda.org immediately.",
+		finalResetLink,
+	)
 
 	htmlContent := fmt.Sprintf(`
-        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-            <p>You requested a password reset. Please click the button below to securely reset your password:</p>
-            <p style="margin: 20px 0;">
-                <a href="%s" 
-                   style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
-                    Reset Password
-                </a>
-            </p>
-            <p>Alternatively, you can copy and paste the following URL into your browser:</p>
-            <p><a href="%s">%s</a></p>
-            <p style="color: #888;">This link is valid for 15 minutes.</p>
-        </div>
-    `, resetLink, resetLink, resetLink)
+		<div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+			<h2 style="color: #333;">Password Reset Request</h2>
+			<p>You requested a password reset. Please click the button below to securely reset your password:</p>
+			
+			<p style="margin: 30px 0; text-align: center;">
+				<a href="%s" 
+					style="background-color: #4CAF50; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 16px;">
+					Reset Password
+				</a>
+			</p>
+
+			<p style="text-align: center; margin-top: 10px;">Alternatively, you can copy and paste the following URL into your browser:</p>
+			<p style="text-align: center; word-break: break-all;"><a href="%s">%s</a></p>
+			
+			<p style="color: #888; margin-top: 25px; text-align: center;">This link is valid for 15 minutes.</p>
+
+			<!-- Security Disclaimer -->
+			<div style="border-top: 1px solid #eee; padding-top: 15px; margin-top: 20px;">
+				<p style="font-size: 12px; color: #cc0000; font-weight: bold;">
+					If you did not request this password reset, please ignore this email and contact us immediately at
+					<a href="mailto:support@ufinda.org" style="color: #cc0000; text-decoration: underline;">support@ufinda.org</a>.
+				</p>
+			</div>
+		</div>
+	`, finalResetLink, finalResetLink, finalResetLink)
 
 	// --- Postmark Email Message Configuration ---
 	emailMessage := postmark.Email{
-		From:    "uFinda <no-reply@ufinda.org>",
+		From: "uFinda <no-reply@ufinda.org>",
 		ReplyTo: "no-reply@ufinda.org",
-		To:      email,
+		To: email,
 		Subject: subject,
 		TextBody: plainTextContent,
 		HtmlBody: htmlContent,

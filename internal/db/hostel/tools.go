@@ -8,7 +8,9 @@ import (
 	"io"
 	"errors"
 	"encoding/json"
+	"log"
 	"net/http"
+	"strconv"
 	"net/url"
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 	"github.com/oladev/ufinda_v0.01/internal/db"
@@ -117,9 +119,17 @@ func FindHostelByID(id string) (*db.Hostel, error) {
 
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, ErrorGettingHostel
-	}
+    if resp.StatusCode != http.StatusOK {
+        // Read the error body for logging purposes
+        bodyBytes, readErr := io.ReadAll(resp.Body)
+        if readErr != nil {
+            log.Printf("DB API Error: Failed to read error response body (Status: %d)", resp.StatusCode)
+        } else {
+            log.Printf("DB API Error: Status %d for URL %s. Response: %s", resp.StatusCode, url, string(bodyBytes))
+        }
+        return nil, fmt.Errorf("failed to get hostel")
+    }
+
 
 	var hostel []db.Hostel
 
@@ -144,6 +154,17 @@ func GetHostelImagesPublicIDAndUrl(id string) ([]db.UploadedFile, error) {
 	}
 	defer resp.Body.Close()
 
+    if resp.StatusCode != http.StatusOK {
+        // Read the error body for logging purposes
+        bodyBytes, readErr := io.ReadAll(resp.Body)
+        if readErr != nil {
+            log.Printf("DB API Error: Failed to read error response body (Status: %d)", resp.StatusCode)
+        } else {
+            log.Printf("DB API Error: Status %d for URL %s. Response: %s", resp.StatusCode, url, string(bodyBytes))
+        }
+        return nil, fmt.Errorf("failed to get media")
+    }
+
 	var rows []hostelImageResponse
     if err := json.NewDecoder(resp.Body).Decode(&rows); err != nil {
         return nil, fmt.Errorf("decode failed: %w", err)
@@ -165,6 +186,17 @@ func GetHostelVideosPublicIDAndUrl(id string) ([]db.UploadedFile, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+    if resp.StatusCode != http.StatusOK {
+        // Read the error body for logging purposes
+        bodyBytes, readErr := io.ReadAll(resp.Body)
+        if readErr != nil {
+            log.Printf("DB API Error: Failed to read error response body (Status: %d)", resp.StatusCode)
+        } else {
+            log.Printf("DB API Error: Status %d for URL %s. Response: %s", resp.StatusCode, url, string(bodyBytes))
+        }
+        return nil, fmt.Errorf("failed to get media")
+    }
 
 	var rows []hostelVideoResponse
     if err := json.NewDecoder(resp.Body).Decode(&rows); err != nil {
@@ -196,3 +228,115 @@ func DeleteHostel(id string) error {
 	return nil
 }
 
+func FindVendorHostels(vendorID string) ([]db.Hostel, error) {
+	url := fmt.Sprintf("/rest/v1/hostels?vendor_id=eq.%s", url.QueryEscape(vendorID))
+    
+    resp, err := db.MakeDBRequest("GET", url, nil, nil)
+
+    if err != nil {
+        return nil, fmt.Errorf("failed to connect to database")
+    }
+
+    // Ensure the response body is always closed
+    defer resp.Body.Close() 
+
+    // --- 4. Handle DB API Errors ---
+    if resp.StatusCode != http.StatusOK {
+        // Read the error body for logging purposes
+        bodyBytes, readErr := io.ReadAll(resp.Body)
+        if readErr != nil {
+            log.Printf("DB API Error: Failed to read error response body (Status: %d)", resp.StatusCode)
+        } else {
+            log.Printf("DB API Error: Status %d for URL %s. Response: %s", resp.StatusCode, url, string(bodyBytes))
+        }
+        return nil, fmt.Errorf("failed to get hostel")
+    }
+
+	var hostel []db.Hostel
+	if err := json.NewDecoder(resp.Body).Decode(&hostel); err != nil {
+		return nil, err
+	}
+
+	if len(hostel) == 0 {
+		return nil, ErrorHostelNotFound
+	}
+
+	return hostel, nil
+}
+
+func FindSimilarHostels(baseHostel *db.Hostel, limit int, offset int) ([]db.Hostel, error) {
+	// --- 1. Calculate Rent Range (in Naira) ---
+	const NairaTolerance int64 = 50000 
+	const TableName = "hostels"
+	
+	minRent := baseHostel.RentPerYear - NairaTolerance
+	if minRent < 0 {
+		minRent = 0
+	}
+	maxRent := baseHostel.RentPerYear + NairaTolerance
+
+	// --- 2. Construct the Supabase URL Query ---
+	query := url.Values{}
+	query.Set("select", "*")
+	query.Set("limit", strconv.Itoa(limit))
+	query.Set("offset", strconv.Itoa(offset))
+
+	query.Set("id", fmt.Sprintf("neq.%s", baseHostel.ID))
+
+	query.Set("location", fmt.Sprintf("ilike.%s", baseHostel.Location))
+
+	query.Set("room_type", fmt.Sprintf("ilike.%s", baseHostel.RoomType))
+
+	query.Set("landlord_resides", fmt.Sprintf("eq.%s", url.QueryEscape(baseHostel.LandlordResides)))
+	query.Set("roommates_allowed", fmt.Sprintf("eq.%s", url.QueryEscape(baseHostel.RoommatesAllowed)))
+	query.Set("kitchen_access", fmt.Sprintf("eq.%s", url.QueryEscape(baseHostel.KitchenAccess)))
+	query.Set("toilet_access", fmt.Sprintf("eq.%s", url.QueryEscape(baseHostel.ToiletAccess)))
+
+	query.Set("rent_per_year", fmt.Sprintf("gte.%d", minRent))
+	query.Add("rent_per_year", fmt.Sprintf("lte.%d", maxRent))
+
+	query.Set("order", "created_at.desc")
+
+	urlPath := fmt.Sprintf("/rest/v1/%s?%s", TableName, query.Encode())
+
+	resp, err := db.MakeDBRequest("GET", urlPath, nil, nil) 
+	if err != nil {
+		return nil, fmt.Errorf("failed to make database request for similar hostels: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to retrieve similar hostels from API (Status: %d). Response: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	var similarHostels []db.Hostel
+	if err := json.NewDecoder(resp.Body).Decode(&similarHostels); err != nil {
+		return nil, fmt.Errorf("failed to decode similar hostels response: %w", err)
+	}
+	return similarHostels, nil
+}
+
+func AddToFavorites(fav db.Favorites) error {
+	url := fmt.Sprintf("/rest/v1/favorites")
+
+	resp, err := db.MakeDBRequest("POST", url, fav, nil)
+
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		bodyBytes, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			return fmt.Errorf("%w", readErr)
+		}
+
+		bodyString := string(bodyBytes)
+		return fmt.Errorf(" %s", bodyString)
+	}
+
+	return nil
+}

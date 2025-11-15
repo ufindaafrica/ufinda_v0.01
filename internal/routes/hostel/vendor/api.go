@@ -20,5 +20,7 @@ func RegisterHostel(r *gin.Engine, asynqClient *asynq.Client, cld *cloudinary.Cl
 
 		//delere hostel api
 		hostelApis.DELETE("/:id", DeleteHostelHandler(cld))
+		
+		hostelApis.GET("/agents", GetAllAgentsHostelHandler)
 	}
 }

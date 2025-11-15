@@ -12,5 +12,7 @@ func RegisterApi(r *gin.Engine) {
 		hostelApis.GET("/all", GetAvailableHostelHandler)
 		hostelApis.GET("/search", GetHostelBySearchQueryHandler)
 		hostelApis.GET("/:id", GetHostelByIdHandler)
+		hostelApis.GET("/:id/similar", GetSimilarHostelsHandler())
+		hostelApis.POST("/:id", AddToFavoritesHandler)
 	}
 }

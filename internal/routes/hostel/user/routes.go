@@ -9,6 +9,7 @@ import (
     "net/url"
     "strconv"
 	"fmt"
+	"github.com/google/uuid"
     "errors"
     "encoding/json"
 	"github.com/oladev/ufinda_v0.01/internal/db"
@@ -172,4 +173,91 @@ func GetHostelByIdHandler(c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, getHostel)
+}
+
+func GetSimilarHostelsHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+        // --- 1. Get Hostel ID from Path Parameter ---
+		hostelID := c.Param("id")
+		if hostelID == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Hostel ID is required in the path"})
+			return
+		}
+
+		limit := 10 // Default limit
+		limitStr := c.Query("limit")
+		if limitStr != "" {
+			var err error
+			limit, err = strconv.Atoi(limitStr)
+			if err != nil || limit <= 0 {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit parameter"})
+				return
+			}
+		}
+
+		pageStr := c.DefaultQuery("page", "1")
+		
+		page, err := strconv.Atoi(pageStr)
+        if err != nil || page < 1 {
+             c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page parameter. Must be an integer >= 1."})
+             return
+        }
+		offset := (page - 1) * limit
+        // fetch the base hostel
+		baseHostel, err := hosteldb.FindHostelByID(hostelID)
+		if err != nil {
+			if err == hosteldb.ErrorHostelNotFound {
+				c.JSON(http.StatusNotFound, gin.H{"error": "Hostel not found"})
+				return
+			}
+            
+			log.Printf("Error retrieving base hostel details: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve base hostel details"})
+			return
+		}
+        
+
+		similarHostels, err := hosteldb.FindSimilarHostels(baseHostel, limit, offset)
+		if err != nil {
+			log.Printf("Error fetching similar hostels: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch similar hostels"})
+			return
+		}
+
+        // --- 5. Return the Results ---
+		c.JSON(http.StatusOK, similarHostels)
+	}
+}
+
+func AddToFavoritesHandler(c *gin.Context) {
+	getUser, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+
+	user, ok := getUser.(*db.User)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user type"})
+		return
+	}
+
+	hostelId := c.Param("id")
+	if hostelId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "hostel id cannot be empty"})
+		return
+	}
+
+	favorite := db.Favorites{
+		ID: uuid.New(),
+		UserID: user.ID,
+		HostelID: hostelId,
+	}
+
+	if err := hosteldb.AddToFavorites(favorite); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to add to favorites"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "successfully added to favorites"})
 }
