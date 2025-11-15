@@ -7,7 +7,7 @@ import (
 	"github.com/oladev/ufinda_v0.01/internal/token"
     "fmt"
     "errors"
-    "log"
+    // "log"
 	"github.com/oladev/ufinda_v0.01/internal/logs/auth"
 	"github.com/oladev/ufinda_v0.01/internal/db"
     "github.com/oladev/ufinda_v0.01/internal/db/auth"
