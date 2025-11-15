@@ -116,8 +116,8 @@
     height: 48px;
   }
   .logo {
-    object-fit: contain;
-    height: 48px;
+    width: 75px;
+    height: auto;
   }
     .services-link {
       padding: 0;
@@ -186,10 +186,10 @@
 }
 
 @media (max-width: 480px) {
-  .logo {
+  /* .logo {
     width: 150px;
     height: 60px;
-  }
+  } */
 
   .navbar {
     height: 60px;
