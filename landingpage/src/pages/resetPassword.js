@@ -7,7 +7,7 @@ import '../styles/resetPassword.css';
 import Background from '../assets/Backgroundimage.jpg';
 import onSuccess from '../assets/Onsuccess.png';
 import onReset from '../assets/Onreset.png';
-import BACKEND_URI from '../utils.js';
+import { BASE_URL } from '../utils/constant.js';
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
@@ -210,7 +210,7 @@ const ResetPassword = () => {
               </button>
             </div>
 
-            {/* ✅ Show password errors under this input */}
+            {/* displays password errors under this input */}
             {liveErrors.passwordErrors.length > 0 && (
               <ul className="live-errors">
                 {liveErrors.passwordErrors.map((err, index) => (

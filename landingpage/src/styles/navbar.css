@@ -16,9 +16,8 @@
 }
 
 .logo {
-  width: 190px;
-  height: 80px;
-  object-fit: contain;
+  width: 75px;
+  height: auto;
 }
 
 .nav-links {
@@ -102,7 +101,7 @@
     padding: 0 50px;
   }
   .logo {
-    width: 150px;
+    width: 200px;
   }
 
   .nav-list {
@@ -116,8 +115,8 @@
     height: 48px;
   }
   .logo {
-    object-fit: contain;
-    height: 48px;
+    width: 64px;
+    height: 24px;
   }
     .services-link {
       padding: 0;
@@ -186,10 +185,10 @@
 }
 
 @media (max-width: 480px) {
-  .logo {
+  /* .logo {
     width: 150px;
-    height: 60px;
-  }
+    height: 32px;
+  } */
 
   .navbar {
     height: 60px;
