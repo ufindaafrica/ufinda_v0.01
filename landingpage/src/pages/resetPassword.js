@@ -7,7 +7,7 @@ import '../styles/resetPassword.css';
 import Background from '../assets/Backgroundimage.jpg';
 import onSuccess from '../assets/Onsuccess.png';
 import onReset from '../assets/Onreset.png';
-import { TEST_URL } from '../utils.js';
+import { BACKEND_URI } from '../utils.js';
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
