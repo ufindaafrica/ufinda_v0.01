@@ -77,9 +77,9 @@ export default function Onboarding() {
                     <Text style={[onboardingStyles.regular, roboto.bodyMedium]}>{descs[position]}</Text>
 
                     <View style={onboardingStyles.dots}>
-                        <Image source={(position == 0) ? images.blackDot : images.dot}></Image>
-                        <Image source={(position == 1) ? images.blackDot : images.dot}></Image>
-                        <Image source={(position == 2) ? images.blackDot : images.dot}></Image>
+                        <Image source={(position == 0) ? images.blackDot : images.dot} style={onboardingStyles.dotImg}></Image>
+                        <Image source={(position == 1) ? images.blackDot : images.dot} style={onboardingStyles.dotImg}></Image>
+                        <Image source={(position == 2) ? images.blackDot : images.dot} style={onboardingStyles.dotImg}></Image>
                     </View>
 
                     <TouchableOpacity

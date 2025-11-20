@@ -90,5 +90,10 @@ export const onboardingStyles = StyleSheet.create({
         alignItems: "center",
         width: 358,
         paddingHorizontal: 16
+    },
+
+    dotImg: {
+        width: 6,
+        height: 6
     }
 })
