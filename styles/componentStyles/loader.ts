@@ -1,9 +1,10 @@
+import { scale, verticalScale } from "@/deps/scale";
 import { StyleSheet } from "react-native";
 
 export const loaderStyles = StyleSheet.create({
     loaderV: {
-        width: 120,
-        height: 120,
+        width: scale(120),
+        height: scale(120),
         backgroundColor: "#f5f5f5",
         borderRadius: 150
     },

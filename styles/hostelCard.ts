@@ -1,3 +1,4 @@
+import { moderateScale, scale, verticalScale } from "@/deps/scale";
 import { StyleSheet } from "react-native";
 
 
@@ -12,7 +13,7 @@ export const hostelCardStyles = StyleSheet.create({
     },
 
     textMargin: {
-        marginBottom: 8
+        marginBottom: moderateScale(8)
     },
 
     address: {
@@ -38,8 +39,8 @@ export const hostelCardStyles = StyleSheet.create({
     },
 
     thumbnailV: {
-        padding: 6,
-        height: 140
+        padding: moderateScale(6),
+        height: verticalScale(140)
     },
 
     agentInfo: {
@@ -47,22 +48,22 @@ export const hostelCardStyles = StyleSheet.create({
         backgroundColor: "#e5e5ea",
         justifyContent: "space-between",
         alignItems: "center",
-        height: 70,
+        height: verticalScale(70),
         borderBottomRightRadius: 14,
         borderBottomLeftRadius: 14
     },
 
     agentCard: {
         flexDirection: "row",
-        padding: 8,
+        padding: moderateScale(8),
         alignItems: "center"
     },
 
     agentPic: {
         borderRadius: 100,
-        marginRight: 8,
-        height: 40,
-        width: 40
+        marginRight: moderateScale(8),
+        height: scale(40),
+        width: scale(40)
     },
 
     stars: {
@@ -88,17 +89,17 @@ export const hostelCardStyles = StyleSheet.create({
 
     phoneView: {
         backgroundColor: "#008000",
-        marginRight: 8,
-        height: 32,
-        width: 40,
+        marginRight: moderateScale(8),
+        height: verticalScale(32),
+        width: scale(40),
         alignItems: "center",
         justifyContent: "center",
         borderRadius: 8
     },
 
     phoneImg: {
-        height: 16,
-        width: 16
+        height: scale(16),
+        width: scale(16)
     },
 
     blackDot: {
@@ -108,8 +109,8 @@ export const hostelCardStyles = StyleSheet.create({
     },
 
     archiveImg: {
-        height: 24,
-        width: 24
+        height: scale(24),
+        width: scale(24)
     },
 
     eachStar: {
@@ -118,13 +119,13 @@ export const hostelCardStyles = StyleSheet.create({
     },
 
     verifiedAgentImg: {
-        width: 10,
-        height: 10
+        width: scale(10),
+        height: scale(10)
     },
 
     mainPlusAmenities: {
-        paddingHorizontal: 8,
-        paddingVertical: 16
+        paddingHorizontal: moderateScale(8),
+        paddingVertical: moderateScale(16)
     }
 })
 

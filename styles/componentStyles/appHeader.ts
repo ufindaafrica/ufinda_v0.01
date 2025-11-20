@@ -1,3 +1,4 @@
+import { moderateScale, scale, verticalScale } from "@/deps/scale";
 import { StyleSheet } from "react-native";
 
 export const appHeaderStyles = StyleSheet.create({
@@ -13,15 +14,15 @@ export const appHeaderStyles = StyleSheet.create({
     },
 
     img: {
-        height: 24,
-        width: 24
+        height: scale(24),
+        width: scale(24)
     },
 
     textTouch: {
-        width: 84,
-        height: 30,
-        paddingVertical: 8,
-        paddingHorizontal: 24,
+        width: scale(84),
+        height: verticalScale(30),
+        paddingVertical: moderateScale(8),
+        paddingHorizontal: moderateScale(24),
         alignItems: "center",
         justifyContent: "center",
         borderRadius: 30

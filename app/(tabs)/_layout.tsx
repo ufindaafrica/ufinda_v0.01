@@ -1,4 +1,5 @@
 import { images } from "@/constants/images";
+import { moderateScale, scale, verticalScale } from "@/deps/scale";
 import { roboto } from "@/styles/globals";
 import { Tabs } from "expo-router";
 import { Image, Text, View } from "react-native";
@@ -10,16 +11,16 @@ const TabIcon = ({ focused, activeImg, inactiveImg, iconTitle }: any) => {
             flexDirection: "row",
             justifyContent: "center",
             alignItems: "center",
-            width: 86,
+            width: scale(86),
             borderRadius: 25,
-            height: 44,
+            height: verticalScale(44),
         }, focused && {
             backgroundColor: "#008000",
-        }, !focused && { width: 56 }]}>
+        }, !focused && { width: scale(56) }]}>
             <Image source={focused ? activeImg : inactiveImg} style={{
-                width: 24,
-                height: 24,
-                marginRight: 6
+                width: scale(24),
+                height: scale(24),
+                marginRight: scale(6)
             }} />
             {focused && <Text style={[{
                 color: "#ffffff",
@@ -35,11 +36,11 @@ export default function _Layout() {
                 headerShown: false,
                 tabBarShowLabel: false,
                 tabBarStyle: {
-                    height: 68,
+                    height: verticalScale(68),
                     justifyContent: "center",
                     alignItems: "center",
-                    paddingHorizontal: 16,
-                    paddingVertical: 12,
+                    paddingHorizontal: moderateScale(16),
+                    paddingVertical: moderateScale(12),
                     alignContent: "center"
                 },
                 tabBarItemStyle: {
@@ -47,7 +48,7 @@ export default function _Layout() {
                     height: "100%",
                     justifyContent: "center",
                     alignItems: "center",
-                    paddingVertical: 10
+                    paddingVertical: moderateScale(10)
                 }
             }}>
             <Tabs.Screen

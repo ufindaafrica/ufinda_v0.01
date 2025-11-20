@@ -1,221 +1,221 @@
 import { StyleSheet } from "react-native";
+import { moderateScale } from "@/deps/scale";
 
 export const fonts = {
     regular: "Inter_400Regular",
     bold: "Inter_700Bold",
     light: "Inter_300Light",
-}
+};
 
 const robotoFonts = {
     regular: "Roboto_400Regular",
     bold: "Roboto_700Bold"
-}
+};
 
 export const roboto = StyleSheet.create({
     display: {
         fontFamily: robotoFonts.regular,
-        fontSize: 34,
-        lineHeight: 41
+        fontSize: moderateScale(34),
+        lineHeight: moderateScale(41)
     },
 
     displayBold: {
         fontFamily: robotoFonts.bold,
-        fontSize: 34,
-        lineHeight: 41
+        fontSize: moderateScale(34),
+        lineHeight: moderateScale(41)
     },
-
+    
     headingLarge: {
         fontFamily: robotoFonts.regular,
-        fontSize: 28,
-        lineHeight: 36
+        fontSize: moderateScale(28),
+        lineHeight: moderateScale(36)
     },
 
     headingLargeBold: {
         fontFamily: robotoFonts.bold,
-        fontSize: 28,
-        lineHeight: 36
+        fontSize: moderateScale(28),
+        lineHeight: moderateScale(36)
     },
 
     headingMedium: {
         fontFamily: robotoFonts.regular,
-        fontSize: 24,
-        lineHeight: 31
+        fontSize: moderateScale(24),
+        lineHeight: moderateScale(31)
     },
 
     headingMediumBold: {
         fontFamily: robotoFonts.bold,
-        fontSize: 24,
-        lineHeight: 31
+        fontSize: moderateScale(24),
+        lineHeight: moderateScale(31)
     },
-
+    
     headingSmall: {
         fontFamily: robotoFonts.regular,
-        fontSize: 22,
-        lineHeight: 28
+        fontSize: moderateScale(22),
+        lineHeight: moderateScale(28)
     },
 
     headingSmallBold: {
         fontFamily: robotoFonts.bold,
-        fontSize: 22,
-        lineHeight: 28
+        fontSize: moderateScale(22),
+        lineHeight: moderateScale(28)
     },
 
     titleLarge: {
         fontFamily: robotoFonts.regular,
-        fontSize: 20,
-        lineHeight: 26
+        fontSize: moderateScale(20),
+        lineHeight: moderateScale(26)
     },
 
     titleLargeBold: {
         fontFamily: robotoFonts.bold,
-        fontSize: 20,
-        lineHeight: 26
+        fontSize: moderateScale(20),
+        lineHeight: moderateScale(26)
     },
 
     titleMedium: {
         fontFamily: robotoFonts.regular,
-        fontSize: 18,
-        lineHeight: 22
+        fontSize: moderateScale(18),
+        lineHeight: moderateScale(22)
     },
 
     titleMediumBold: {
         fontFamily: robotoFonts.bold,
-        fontSize: 18,
-        lineHeight: 22
+        fontSize: moderateScale(18),
+        lineHeight: moderateScale(22)
     },
 
     titleSmall: {
         fontFamily: robotoFonts.regular,
-        fontSize: 16,
-        lineHeight: 20
+        fontSize: moderateScale(16),
+        lineHeight: moderateScale(20)
     },
 
     titleSmallBold: {
         fontFamily: robotoFonts.bold,
-        fontSize: 16,
-        lineHeight: 20
+        fontSize: moderateScale(16),
+        lineHeight: moderateScale(20)
     },
 
     bodyLarge: {
         fontFamily: robotoFonts.regular,
-        fontSize: 16,
-        lineHeight: 22
+        fontSize: moderateScale(16),
+        lineHeight: moderateScale(22)
     },
 
     bodyLargeBold: {
         fontFamily: robotoFonts.bold,
-        fontSize: 16,
-        lineHeight: 22
+        fontSize: moderateScale(16),
+        lineHeight: moderateScale(22)
     },
 
     bodyMedium: {
         fontFamily: robotoFonts.regular,
-        fontSize: 14,
-        lineHeight: 20
+        fontSize: moderateScale(14),
+        lineHeight: moderateScale(20)
     },
 
     bodyMediumBold: {
         fontFamily: robotoFonts.bold,
-        fontSize: 14,
-        lineHeight: 20
+        fontSize: moderateScale(14),
+        lineHeight: moderateScale(20)
     },
 
     bodySmall: {
         fontFamily: robotoFonts.regular,
-        fontSize: 12,
-        lineHeight: 18
+        fontSize: moderateScale(12),
+        lineHeight: moderateScale(18)
     },
 
     bodySmallBold: {
         fontFamily: robotoFonts.bold,
-        fontSize: 12,
-        lineHeight: 18
+        fontSize: moderateScale(12),
+        lineHeight: moderateScale(18)
     },
 
     mediumEmphasized: {
         fontFamily: robotoFonts.regular,
-        fontSize: 12,
-        lineHeight: 16
+        fontSize: moderateScale(12),
+        lineHeight: moderateScale(16)
     },
 
     mediumEmphasizedBold: {
         fontFamily: robotoFonts.bold,
-        fontSize: 12,
-        lineHeight: 16
+        fontSize: moderateScale(12),
+        lineHeight: moderateScale(16)
     },
 
     caption: {
         fontFamily: robotoFonts.regular,
-        fontSize: 10,
-        lineHeight: 12
+        fontSize: moderateScale(10),
+        lineHeight: moderateScale(12)
     },
 
     captionBold: {
         fontFamily: robotoFonts.bold,
-        fontSize: 10,
-        lineHeight: 12
+        fontSize: moderateScale(10),
+        lineHeight: moderateScale(12)
     },
 
     headlineLarge: {
         fontFamily: robotoFonts.regular,
-        fontSize: 28,
-        lineHeight: 34
+        fontSize: moderateScale(28),
+        lineHeight: moderateScale(34)
     },
 
     headlineLargeBold: {
         fontFamily: robotoFonts.bold,
-        fontSize: 28,
-        lineHeight: 34
+        fontSize: moderateScale(28),
+        lineHeight: moderateScale(34)
     },
 
     headlineMedium: {
         fontFamily: robotoFonts.regular,
-        fontSize: 25,
-        lineHeight: 30
+        fontSize: moderateScale(25),
+        lineHeight: moderateScale(30)
     },
 
     headlineMediumBold: {
         fontFamily: robotoFonts.bold,
-        fontSize: 25,
-        lineHeight: 30
+        fontSize: moderateScale(25),
+        lineHeight: moderateScale(30)
     },
 
     headlineSmall: {
         fontFamily: robotoFonts.regular,
-        fontSize: 22,
-        lineHeight: 26
+        fontSize: moderateScale(22),
+        lineHeight: moderateScale(26)
     },
 
     headlineSmallBold: {
         fontFamily: robotoFonts.bold,
-        fontSize: 22,
-        lineHeight: 26
+        fontSize: moderateScale(22),
+        lineHeight: moderateScale(26)
     },
-
-})
+});
 
 export const globals = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#f5f5f5"
     },
-    
+
     text: {
         fontFamily: "System",
-        fontSize: 30
+        fontSize: moderateScale(30)
     },
 
     authContainer: {
-        padding: 16
+        padding: moderateScale(16)
     },
 
     homeContainer: {
-        padding: 16,
+        padding: moderateScale(16),
         backgroundColor: "#f5f5f5"
     },
 
     vendorContainerPadding: {
-        padding: 16
+        padding: moderateScale(16)
     },
 
     vendorContainer: {
@@ -232,4 +232,4 @@ export const colors = StyleSheet.create({
     foundationWarningDark: {
         color: "#008000"
     }
-})
+});

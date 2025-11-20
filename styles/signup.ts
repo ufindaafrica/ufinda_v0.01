@@ -1,5 +1,6 @@
 import { StyleSheet } from "react-native";
 import { fonts } from "./globals";
+import { moderateScale, scale } from "@/deps/scale";
 
 
 export const signupStyles = StyleSheet.create({
@@ -14,45 +15,44 @@ export const signupStyles = StyleSheet.create({
     },
 
     pText: {
-        width: 259,
-        height: 40,
+        width: scale(259),
         paddingTop: 8
     },
 
     main: {
-        padding: 16,
+        padding: moderateScale(16),
         height: "100%",
         justifyContent: "space-between"
     },
 
     eachName: {
-        width: 150
+        width: scale(150)
     },
 
     policyView: {
         flexDirection: "row",
-        width: 340,
+        width: scale(340),
         flexWrap: "wrap",
         alignContent: "center",
         justifyContent: "center",
         alignSelf: "center",
-        paddingTop: 8
+        paddingTop: moderateScale(8)
     },
 
     continueView: {
-        paddingTop: 16
+        paddingTop: moderateScale(16)
     },
 
     keyboardVisible: {
-        paddingBottom: 40
+        paddingBottom: moderateScale(40)
     },
 
     layoutPadding: {
-        paddingTop: 16
+        paddingTop: moderateScale(16)
     },
 
     formPadding: {
-        paddingTop: 16
+        paddingTop: moderateScale(16)
     },
 
     passwordCheck: {
@@ -74,13 +74,13 @@ export const signupStyles = StyleSheet.create({
     },
 
     icon: {
-        marginRight: 5,
-        height: 16,
-        width: 16
+        marginRight: scale(5),
+        height: scale(16),
+        width: scale(16)
     },
 
     altV: {
-        marginTop: 8,
+        marginTop: moderateScale(8),
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center"
@@ -100,12 +100,12 @@ export const signupStyles = StyleSheet.create({
     },
 
     remImg: {
-        height: 16,
-        width: 16
+        height: scale(16),
+        width: scale(16)
     },
 
     remText: {
-        paddingLeft: 4
+        paddingLeft: moderateScale(4)
     },
 
     forgotText: {
@@ -124,7 +124,7 @@ export const signupStyles = StyleSheet.create({
     },
 
     orImg: {
-        width: 168,
+        width: scale(168),
         height: 2
     }, 
 
@@ -139,11 +139,11 @@ export const signupStyles = StyleSheet.create({
     },
 
     passwordCheckV: {
-        paddingTop: 7
+        paddingTop: moderateScale(7)
     },
 
     policyPadding: {
-        paddingTop: 8
+        paddingTop: moderateScale(8)
     },
 
     grayText: {

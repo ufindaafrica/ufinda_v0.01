@@ -1,5 +1,6 @@
 import { StyleSheet } from "react-native";
 import { fonts } from "../globals";
+import { moderateScale, scale, verticalScale } from "@/deps/scale";
 
 
 export const inputStyles = StyleSheet.create({
@@ -21,8 +22,8 @@ export const inputStyles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingRight: 5,
-        height: 44
+        paddingRight: moderateScale(5),
+        height: verticalScale(44)
     },
 
     focusedInputBox: {
@@ -30,7 +31,7 @@ export const inputStyles = StyleSheet.create({
     },
 
     label: {
-        paddingBottom: 4
+        paddingBottom: moderateScale(4)
     },
 
     invalidInputBox: {
@@ -38,8 +39,8 @@ export const inputStyles = StyleSheet.create({
     },
 
     icon: {
-        height: 20,
-        width: 20
+        height:scale(20),
+        width: scale(20)
     },
 
     txtColor: {

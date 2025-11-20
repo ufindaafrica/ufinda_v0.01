@@ -1,3 +1,4 @@
+import { moderateScale, scale, verticalScale } from "@/deps/scale";
 import { StyleSheet } from "react-native";
 
 
@@ -5,7 +6,7 @@ export const selectStyles = StyleSheet.create({
 
     box: {
         width: "100%",
-        height: 44,
+        height: verticalScale(44),
         borderColor: "#008000",
         borderWidth: 1.5,
         borderRadius: 8,
@@ -37,9 +38,9 @@ export const selectStyles = StyleSheet.create({
     },
 
     icon: {
-        marginRight: 8,
-        width: 16,
-        height: 16
+        marginRight: moderateScale(8),
+        width: scale(16),
+        height: scale(16)
     },
 
     boxWithIcon: {

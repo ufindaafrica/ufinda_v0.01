@@ -1,19 +1,19 @@
 import { StyleSheet } from "react-native";
-import { fonts, roboto } from "./globals";
+import { moderateScale, scale, verticalScale } from "@/deps/scale";
 
 export const otpStyles = StyleSheet.create({
     main: {
-        marginTop: 32
+        marginTop: verticalScale(32)
     },
 
     img: {
         alignSelf: "center",
-        height: 194,
-        width: 194
+        height: scale(194),
+        width: scale(194)
     },
 
     pText: {
-        width: 259
+        width: scale(259)
     },
 
     otpV: {
@@ -28,11 +28,11 @@ export const otpStyles = StyleSheet.create({
     },
 
     otpPadding: {
-        padding: 16
+        padding: moderateScale(16)
     },
 
     otpPaddingHorizontal: {
-        paddingHorizontal: 16
+        paddingHorizontal: moderateScale(16)
     },
 
     lText: {
@@ -40,6 +40,6 @@ export const otpStyles = StyleSheet.create({
     },
 
     otpPaddingMedium: {
-        paddingTop: 16
+        paddingTop: moderateScale(16)
     }
 })

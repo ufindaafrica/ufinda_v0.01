@@ -1,21 +1,22 @@
+import { scale, verticalScale } from "@/deps/scale";
 import { StyleSheet } from "react-native";
 
 
 export const backStyles = StyleSheet.create({
 
     img: {
-        height: 12,
-        width: 6
+        height: verticalScale(12),
+        width: scale(6)
     },
 
     arrowV: {
-        height: 44,
-        width: 44,
+        height: scale(44),
+        width: scale(44),
         justifyContent: "center"
     },
 
     large: {
-        width: 24,
-        height: 24
+        width: scale(24),
+        height: scale(24)
     }
 })

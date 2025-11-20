@@ -1,4 +1,5 @@
 import { images } from "@/constants/images";
+import { moderateScale, scale, verticalScale } from "@/deps/scale";
 import { Tabs } from "expo-router";
 import { Image, View } from "react-native";
 
@@ -6,17 +7,17 @@ import { Image, View } from "react-native";
 const TabIcon = ({ focused, activeImg, inactiveImg, iconTitle }: any) => {
     return (
         <View style={[{
-            width: 55,
+            width: scale(55),
             borderRadius: 37,
-            height: 55,
+            height: scale(55),
             justifyContent: "center",
             alignItems: "center"
         }, focused && {
             backgroundColor: "#008000",
         }]}>
             <Image source={focused ? activeImg : inactiveImg} style={{
-                width: 30,
-                height: 30
+                width: scale(30),
+                height: scale(30)
             }} />
         </View>
     )
@@ -29,17 +30,17 @@ export default function _Layout() {
                 headerShown: false,
                 tabBarShowLabel: false,
                 tabBarStyle: {
-                    height: 64,
-                    width: 274,
-                    borderRadius: 36,
+                    height: verticalScale(64),
+                    width: scale(274),
+                    borderRadius: moderateScale(36),
                     elevation: 1,
                     position: "absolute",
-                    bottom: 16,
-                    marginLeft: 16
+                    bottom: moderateScale(16),
+                    marginLeft: moderateScale(16)
                 },
                 tabBarItemStyle: {
                     alignItems: "center",
-                    paddingTop: 12.5
+                    paddingTop: moderateScale(13.5)
                 }
             }}>
             <Tabs.Screen

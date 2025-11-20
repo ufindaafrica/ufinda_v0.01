@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { fonts } from "../globals";
+import { moderateScale, scale, verticalScale } from "@/deps/scale";
 
 
 export const searchStyles = StyleSheet.create({
@@ -8,14 +8,14 @@ export const searchStyles = StyleSheet.create({
         alignItems: "center",
         backgroundColor: "#e5e5ea",
         borderRadius: 30,
-        height: 44,
+        height: verticalScale(44),
         width: "100%"
     },
 
     img: {
-        marginLeft: 5,
-        height: 16, 
-        width: 16
+        marginLeft: moderateScale(5),
+        height: scale(16), 
+        width: scale(16)
     },
 
     text: {

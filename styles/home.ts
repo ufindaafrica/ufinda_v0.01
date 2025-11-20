@@ -1,28 +1,29 @@
 import { StyleSheet } from "react-native";
-import { fonts } from "./globals";
+import { moderateScale, scale, verticalScale } from "@/deps/scale";
 
 
 export const homeStyles = StyleSheet.create({
     layoutMargin: {
-        marginBottom: 16
+        marginBottom: moderateScale(16)
     },
 
     filterV: {
         flexDirection: "row",
-        flexWrap: "wrap"
+        flexWrap: "wrap",
+        justifyContent: "space-between"
     },
 
     eachFilterV: {
-        width: 175,
-        paddingBottom: 8
+        width: scale(175),
+        paddingBottom: moderateScale(8)
     },
 
     scrollV: {
-        paddingBottom: 300
+        paddingBottom: verticalScale(300)
     },
 
     eachSavedFilterV: {
-        width: 100
+        width: scale(100)
     }
 })
 

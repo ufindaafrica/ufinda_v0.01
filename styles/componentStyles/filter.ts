@@ -1,6 +1,5 @@
+import { moderateScale, scale, verticalScale } from "@/deps/scale";
 import { StyleSheet } from "react-native";
-import { fonts } from "../globals";
-
 
 export const filterStyles = StyleSheet.create({
     visibleV: {
@@ -19,14 +18,14 @@ export const filterStyles = StyleSheet.create({
     },
 
     text: {
-        padding: 10,
+        padding: moderateScale(10),
         color: "#546881"
     },
 
     img: {
-        marginRight: 5,
-        width: 16,
-        height: 16,
+        marginRight: moderateScale(5),
+        width: scale(16),
+        height: scale(16),
         opacity: 0.5
     },
 

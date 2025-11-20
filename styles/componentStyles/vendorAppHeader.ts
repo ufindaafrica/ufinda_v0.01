@@ -1,5 +1,5 @@
+import { moderateScale, scale } from "@/deps/scale";
 import { StyleSheet } from "react-native";
-import { useReducedMotion } from "react-native-reanimated";
 
 
 export const vendorAppHeader = StyleSheet.create({
@@ -8,7 +8,7 @@ export const vendorAppHeader = StyleSheet.create({
         width: "100%",
         justifyContent: "space-between",
         backgroundColor: '#fcfcfc',
-        padding: 16
+        padding: moderateScale(16)
     },
 
     blackTxt: {
@@ -17,35 +17,35 @@ export const vendorAppHeader = StyleSheet.create({
 
     greenTxt: {
         color: "#008000",
-        paddingRight: 4,
+        paddingRight: moderateScale(4),
     },
 
     greenImg: {
-        width: 16,
-        height: 16
+        width: scale(16),
+        height: scale(16)
     },
 
     bellImg: {
-        width: 24,
-        height: 24
+        width: scale(24),
+        height: scale(24)
     },
 
     roundV: {
-        width: 44,
-        height: 44,
+        width: scale(44),
+        height: scale(44),
         borderRadius: 50
     },
 
     bellButton: {
         backgroundColor: "#f5f5f5",
-        marginRight: 8,
+        marginRight: moderateScale(8),
         justifyContent: "center",
         alignItems: "center"
     },
 
     postV: {
         flexDirection: "row",
-        paddingTop: 8,
+        paddingTop: moderateScale(8),
         alignItems: "center"
     },
 

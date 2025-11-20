@@ -1,21 +1,22 @@
+import { moderateScale, scale, verticalScale } from "@/deps/scale";
 import { StyleSheet } from "react-native";
 
 export const picStyles = StyleSheet.create({
 
     main: {
-        marginTop: 16
+        marginTop: verticalScale(16)
     },
 
     pText: {
-        marginTop: 8,
-        width: 259,
+        marginTop: verticalScale(8),
+        width: scale(259),
         color: '#8e8e93'
     },
 
     imgV: {
         borderWidth: 1.5,
-        height: 200,
-        width: 200,
+        height: scale(200),
+        width: scale(200),
         borderRadius: 150,
         justifyContent: "center",
         alignItems: "center",
@@ -49,8 +50,8 @@ export const picStyles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "#b3b3b3",
         borderRadius: 8,
-        marginTop: 8,
-        height: 56,
+        marginTop: verticalScale(8),
+        height: verticalScale(56),
         textAlignVertical: "top",
         width: "100%",
         flexShrink: 1
@@ -68,21 +69,21 @@ export const picStyles = StyleSheet.create({
     },
 
     imgVExtra: {
-        marginTop: 32,
+        marginTop: verticalScale(32),
         borderColor: "#008000",
         borderWidth: 2.14,
         backgroundColor: "#e3f4f1"
     },
 
     checkImg: {
-        height: 47,
-        width: 47
+        height: scale(47),
+        width: scale(47)
     },
 
     completeHeaderV: {
-        marginTop: 16,
-        paddingLeft: 16,
-        paddingRight: 16
+        marginTop: verticalScale(16),
+        paddingLeft: moderateScale(16),
+        paddingRight: moderateScale(16)
     },
 
     centerText: {
@@ -90,17 +91,17 @@ export const picStyles = StyleSheet.create({
     },
 
     padding: {
-        padding: 16
+        padding: moderateScale(16)
     },
 
     paddingHorizontal: {
-        paddingHorizontal: 16
+        paddingHorizontal: moderateScale(16)
     },
 
     completeImgV: {
         borderWidth: 2,
-        height: 136,
-        width: 136,
+        height: scale(136),
+        width: scale(136),
         borderRadius: 150,
         justifyContent: "center",
         alignItems: "center",
@@ -108,7 +109,7 @@ export const picStyles = StyleSheet.create({
     },
 
     pTextV: { 
-        width: 259, 
+        width: scale(259), 
         alignSelf: "center"
     }
 

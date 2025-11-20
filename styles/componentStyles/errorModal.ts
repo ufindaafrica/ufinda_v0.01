@@ -1,10 +1,11 @@
+import { scale, verticalScale } from "@/deps/scale";
 import { StyleSheet } from "react-native";
 
 
 export const errorModalStyles = StyleSheet.create({
     main: {
-        height: 243,
-        width: 243,
+        height: scale(243),
+        width: scale(243),
         justifyContent: 'space-evenly',
         alignItems: 'center',
         backgroundColor: "#f5f5f5",
@@ -14,8 +15,8 @@ export const errorModalStyles = StyleSheet.create({
     },
 
     buttonV: {
-        width: 76,
-        height: 44
+        width: scale(76),
+        height: verticalScale(44)
     },
 
     mainV: {
@@ -34,7 +35,7 @@ export const errorModalStyles = StyleSheet.create({
     },
 
     icon: {
-        width: 80,
-        height: 80
+        width: scale(80),
+        height: scale(80)
     }
 })

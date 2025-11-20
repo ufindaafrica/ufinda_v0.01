@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { fonts } from "./globals";
+import { moderateScale, scale, verticalScale } from "@/deps/scale";
 
 
 export const onboardingStyles = StyleSheet.create({
@@ -21,8 +21,8 @@ export const onboardingStyles = StyleSheet.create({
 
     logo: {
         backgroundColor: "#fcfcfc",
-        width: 170,
-        height: 32,
+        width: scale(170),
+        height: verticalScale(32),
         justifyContent: "center",
         alignItems: "center",
         borderRadius: 10
@@ -36,13 +36,13 @@ export const onboardingStyles = StyleSheet.create({
     header: {
         textAlign: "center",
         color: "#101010",
-        width: 240
+        width: scale(240)
     },
 
     regular: {
         textAlign: "center",
         color: "#546881",
-        width: 278
+        width: scale(278)
     },
 
     dots: {
@@ -54,11 +54,11 @@ export const onboardingStyles = StyleSheet.create({
     button: {
         backgroundColor: "#101010",
         width: "95%",
-        height: 44,
+        height: verticalScale(44),
         borderRadius: 8,
         justifyContent: "center",
         alignItems: "center",
-        padding: 10
+        padding: moderateScale(10)
     },
 
     buttonText: {
@@ -66,13 +66,13 @@ export const onboardingStyles = StyleSheet.create({
     },
 
     img: {
-        width: 170,
-        height: 31.72
+        width: scale(170),
+        height: verticalScale(31.72)
     },
 
     onImg: {
-        width: 390,
-        height: 420
+        width: scale(390),
+        height: verticalScale(420)
     },
 
     onImg3: {
@@ -85,15 +85,15 @@ export const onboardingStyles = StyleSheet.create({
     },
 
     bottomV: {
-        height: 198,
+        height: verticalScale(198),
         justifyContent: "space-between",
         alignItems: "center",
-        width: 358,
-        paddingHorizontal: 16
+        width: scale(358),
+        paddingHorizontal: moderateScale(16)
     },
 
     dotImg: {
-        width: 6,
-        height: 6
+        width: scale(6),
+        height: verticalScale(6)
     }
 })

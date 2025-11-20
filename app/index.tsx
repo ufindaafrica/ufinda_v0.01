@@ -49,7 +49,7 @@ export default function Index() {
   useEffect(() => {
     if (!splashScreen && firstOpen === false) {
       if (SecureStore.getItem("AUTH") == null) {
-        router.replace("/auth/mode")
+        // router.replace("/auth/mode")
         // router.replace("/auth/otp")
         // router.replace("/auth/login")
         // router.replace("/(tabs)/home")
@@ -58,6 +58,7 @@ export default function Index() {
         // router.replace("/onboarding")
         // router.replace("/auth/vendorOtp")
         // router.replace("/dashboard")
+        router.replace("/(vendor)/ads")
       } else {
         // router.replace("/(tabs)/home")
         // router.replace("/auth/mode")

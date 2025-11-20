@@ -1,5 +1,5 @@
+import { moderateScale, scale, verticalScale } from "@/deps/scale";
 import { StyleSheet } from "react-native";
-import { fonts } from "./globals";
 
 export const idStyles = StyleSheet.create({
     safeV: {
@@ -9,20 +9,20 @@ export const idStyles = StyleSheet.create({
     headerV: {
         flexDirection: "row",
         justifyContent: "space-between",
-        padding: 16,
+        padding: moderateScale(16),
         alignItems: "center",
-        height: 44,
-        marginBottom: 16
+        height: verticalScale(44),
+        marginBottom: moderateScale(16)
     },
 
     firstHeaderV: {
         flexDirection: "row",
         alignItems: "center",
-        height: 44
+        height: verticalScale(44)
     },
 
     layoutMargin: {
-        marginBottom: 16
+        marginBottom: moderateScale(16)
     },
 
     hostelImg: {
@@ -33,9 +33,9 @@ export const idStyles = StyleSheet.create({
 
     galleryV: {
         position: "absolute",
-        bottom: 10,
-        marginHorizontal: 8,
-        paddingHorizontal: 5,
+        bottom: moderateScale(10),
+        marginHorizontal: moderateScale(8),
+        paddingHorizontal: moderateScale(5),
         flexDirection: "row",
         backgroundColor: "#f5f5f5",
         justifyContent: "space-between",
@@ -45,13 +45,13 @@ export const idStyles = StyleSheet.create({
     },
 
     picV: {
-        height: 210,
+        height: verticalScale(210),
         // alignItems: 'center',
         justifyContent: "center"
     },
 
     swipeV: {
-        height: 210
+        height: verticalScale(210)
     },
 
     galleryTxt: {
@@ -60,8 +60,8 @@ export const idStyles = StyleSheet.create({
     },
 
     prelimV: {
-        padding: 16,
-        height: 148,
+        padding: moderateScale(16),
+        height: verticalScale(148),
         paddingBottom: 0
     },
 
@@ -72,7 +72,7 @@ export const idStyles = StyleSheet.create({
         justifyContent: "space-around",
         height: "100%",
         width: "100%",
-        marginRight: 16,
+        marginRight: moderateScale(16),
     },
 
     firstTopPrelimV: {
@@ -90,22 +90,22 @@ export const idStyles = StyleSheet.create({
     },
 
     thirdTopPrelimVOne: {
-        width: 128
+        width: scale(128)
     },
 
     thirdTopPrelimVTwo: {
-        width: 182
+        width: scale(182)
     },
 
     amenitiesV: {
         alignItems: "center",
         justifyContent: "center",
-        width: 68,
-        height: 53
+        width: scale(68),
+        height: verticalScale(53)
     },
 
     outerAmenitiesV: {
-        padding: 16,
+        padding: moderateScale(16),
         paddingBottom: 0
     },
 
@@ -128,7 +128,7 @@ export const idStyles = StyleSheet.create({
     },
 
     outerDetailsV: {
-        padding: 16,
+        padding: moderateScale(16),
         borderRadius: 15,
         paddingBottom: 0
     },
@@ -148,21 +148,21 @@ export const idStyles = StyleSheet.create({
     },
 
     moreImg: {
-        height: 24,
-        width: 24
+        height: scale(24),
+        width: scale(24)
     },
 
     navArrow: {
-        height: 24,
-        width: 24,
+        height: scale(24),
+        width: scale(24),
         position: "absolute",
         justifyContent: 'center',
         alignItems: 'center',
     },
 
     navImg: {
-        height: 24,
-        width: 24,
+        height: scale(24),
+        width: scale(24),
     },
 
     arrowLeftMargin: {
@@ -185,12 +185,12 @@ export const idStyles = StyleSheet.create({
     },
 
     archiveImg: {
-        height: 24,
-        width: 24
+        height: scale(24),
+        width: scale(24)
     },
 
     outerAgentV: {
-        padding: 16,
+        padding: moderateScale(16),
         paddingBottom: 0
     },
 
@@ -211,7 +211,7 @@ export const idStyles = StyleSheet.create({
     },
 
     scrollV: {
-        paddingBottom: 50
+        paddingBottom: verticalScale(50)
     },
 
     cardMargin: {

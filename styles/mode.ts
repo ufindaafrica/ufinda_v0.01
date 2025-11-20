@@ -1,14 +1,15 @@
+import { verticalScale } from "@/deps/scale";
 import { StyleSheet } from "react-native";
 
 export const modeStyles = StyleSheet.create({
 
     textView: {
-        paddingTop: 8
+        paddingTop: verticalScale(8)
     },
 
     selectMode: {
-        marginTop: 12,
-        height: 150,
+        marginTop: verticalScale(8),
+        height: verticalScale(150),
         justifyContent: "space-between"
     }
 })
