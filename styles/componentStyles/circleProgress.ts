@@ -17,7 +17,7 @@ export const circleProgressStyles = StyleSheet.create({
     },
 
     color: {
-        color: '#006000'
+        color: '#008000'
     },
 
     bottomT: {

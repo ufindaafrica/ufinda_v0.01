@@ -28,9 +28,6 @@ export default function CircleProgress ({ progress, totalProgress }: CircleProgr
 
     useEffect(() => {
         const strokeValue = circumference * (1 - actualProgress)
-        console.log(strokeValue)
-        console.log(circumference)
-
         setStrokeDashOffset(strokeValue)
     }, [actualProgress])
 

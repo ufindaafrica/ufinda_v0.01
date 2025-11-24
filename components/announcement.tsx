@@ -6,16 +6,17 @@ import { Image, TouchableOpacity, View } from "react-native";
 
 type AnnouncementProps = {
     active?: boolean,
-    view: JSX.Element
+    view: JSX.Element,
+    fun?: (value: any) => void
 }
 
-export default function Announcement ({ active, view } : AnnouncementProps) {
+export default function Announcement ({ active, view, fun } : AnnouncementProps) {
     return (
         <View style={[announcementStyles.main, active && announcementStyles.activeMain]}>
 
             {view}
 
-            <TouchableOpacity style={[announcementStyles.touch, !active && announcementStyles.activeTouch]}>
+            <TouchableOpacity onPress={fun} style={[announcementStyles.touch, !active && announcementStyles.activeTouch]}>
                 <Image source={active ? images.arrowRight : images.whiteArrowRight} style={announcementStyles.img} />
             </TouchableOpacity>
 

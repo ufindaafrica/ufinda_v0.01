@@ -231,5 +231,13 @@ export const colors = StyleSheet.create({
 
     foundationWarningDark: {
         color: "#008000"
+    },
+
+    black: {
+        color: "#000000"
+    },
+
+    darkBurntOrange: {
+        color: "#be7c00"
     }
 });

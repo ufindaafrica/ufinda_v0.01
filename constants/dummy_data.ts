@@ -518,41 +518,65 @@ export const AgentHostels = [
         "posted": "3/11/2025",
         "time": "12:07pm",
         "totalrooms": 12,
-        "rentedrooms": 3
+        "rentedrooms": 10,
+        "address": "12 Ikoyi bridge road, Lagos",
+        "product": "hostel",
+        "distance": 3.0,
+        "hostelType": "Duplex"
     },
     {
         "name": "Larigne Lodge",
         "posted": "3/11/2025",
         "time": "12:07pm",
-        "totalrooms": 8,
-        "rentedrooms": 4
+        "totalrooms": 18,
+        "rentedrooms": 9,
+        "address": "8 Ndu road, Owerri",
+        "product": "hostel",
+        "distance": 1.5,
+        "hostelType": "Self-con"
     },
     {
         "name": "Grace Apartments",
         "posted": "3/11/2025",
         "time": "12:07pm",
         "totalrooms": 10,
-        "rentedrooms": 2
+        "rentedrooms": 4,
+        "address": "25 Kwara road, kwara",
+        "product": "hostel",
+        "distance": 17.0,
+        "hostelType": "Self-con"
     },
     {
         "name": "Ndu Houses",
         "posted": "3/11/2025",
         "time": "12:07pm",
         "totalrooms": 25,
-        "rentedrooms": 7
+        "rentedrooms": 23,
+        "address": "10 Nnamdi azikiwe road, Illorin",
+        "product": "hostel",
+        "distance": 2.0,
+        "hostelType": "Duplex"
+    },
+    {
+        "name": "Okpara Lodge",
+        "posted": "3/11/2025",
+        "time": "12:07pm",
+        "totalrooms": 17,
+        "rentedrooms": 5,
+        "address": "17 Akanu Ibiam Street, Ogui, enugu",
+        "product": "hostel",
+        "distance": 5.0,
+        "hostelType": "Duplex"
     },
     {
         "name": "Bethel Lodge",
         "posted": "3/11/2025",
         "time": "12:07pm",
         "totalrooms": 12,
-        "rentedrooms": 3
-    },
-    {
-        "name": "Bethel Lodge",
-        "posted": "3/11/2025",
-        "time": "12:07pm",
-        "totalrooms": 12,
-        "rentedrooms": 3
+        "rentedrooms": 1,
+        "address": "7 Ali Road, Kano",
+        "product": "hostel",
+        "distance": 27.5,
+        "hostelType": "Self-con"
     },
 ]
