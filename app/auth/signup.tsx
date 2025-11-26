@@ -3,7 +3,7 @@ import Input from "@/components/input";
 import Select from "@/components/select";
 import { signupStyles } from "@/styles/signup";
 import { Image, Keyboard, KeyboardAvoidingView, Platform, Text, TextInput, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaFrame } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import React, { useEffect, useRef, useState } from "react";
 import { images } from "@/constants/images";
@@ -17,10 +17,12 @@ import ErrorModal from "@/components/errorModal";
 
 export default function SignUp() {
 
-    let role: string | null
+    const [role, setRole] = useState("user")
+
     useEffect(() => {
         const getRole = async () => {
-            role = await SecureStore.getItemAsync("MODE")
+            const roleValue = await SecureStore.getItemAsync("MODE")
+            setRole(roleValue ?? "user")
         }
 
         getRole()
