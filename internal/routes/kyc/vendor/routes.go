@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"github.com/cloudinary/cloudinary-go/v2"
 	// "encoding/json"
-	// "github.com/oladev/ufinda_v0.01/internal/logs/kyc"
     "github.com/oladev/ufinda_v0.01/internal/db/kyc/vendor"
 	"errors"
 	"github.com/gin-gonic/gin"
@@ -126,7 +125,7 @@ func CreateOnboardVendorKycHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc{
 		var opErr error
 		var message string
 
-		if err != nil && !errors.Is(err, userkycdb.ErrorKYCNotFound) {
+		if err != nil && !errors.Is(err, vendorkycdb.ErrorKYCNotFound) {
 			// Log database/fetching issue
 			kyclog.LogKYC(getUser.ID, fmt.Errorf("database error fetching existing KYC: %w", err))
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "database error fetching kyc"})

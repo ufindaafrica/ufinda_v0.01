@@ -42,9 +42,6 @@ func handleVerificationUpdate(payload DojahWebhookPayload) error {
 func VerifyDojahSignature(receivedSignature string) bool {
 	secretKey := os.Getenv("DOJAH_SECRET_KEY")
 
-	// CRITICAL DEBUG STEP 1: Check the key being used
-	log.Printf("DEBUG: Using Secret Key (Length: %d)", len(secretKey))
-
 	if secretKey == "" {
 		log.Println("Security Error: DOJAH_SECRET_KEY is not set.")
 		return false
@@ -53,9 +50,6 @@ func VerifyDojahSignature(receivedSignature string) bool {
 	hashBytes := sha256.Sum256([]byte(secretKey))
 
 	computedHash := hex.EncodeToString(hashBytes[:])
-
-	log.Printf("DEBUG: Computed Hash: %s", computedHash)
-	log.Printf("DEBUG: Received Hash: %s", receivedSignature)
 
 	if computedHash == receivedSignature {
 		return true
@@ -76,8 +70,6 @@ func DojahWebhookHandler(wsHub *hub.Hub) gin.HandlerFunc {
 		c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(rawBody))
 
 		receivedSignature := c.GetHeader("x-dojah-signature-v2")
-		log.Printf("Raw Body Received %s", string(rawBody))
-		log.Printf("this is the received signature: %s", receivedSignature)
 		if receivedSignature == "" {
 			log.Println("Security Check 2 (HMAC) Failed: Missing x-dojah-signature header.")
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: Missing Signature"})

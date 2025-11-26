@@ -12,6 +12,6 @@ func RegisterKYC(r *gin.Engine, cld *cloudinary.Cloudinary) {
 	kycRoutes.Use(auth.VendorAuthMiddleware())
 	{
 		kycRoutes.GET("/vendor", GetWidgetUrl)
-		kycRoutes.POST("/vendor", kyc.MaxBytesMiddleware(2<<20), CreateOnboardVendorKycHandler(cld))
+		kycRoutes.POST("/vendor", kyc.MaxBytesMiddleware(5<<20), CreateOnboardVendorKycHandler(cld))
 	}
 }

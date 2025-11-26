@@ -15,7 +15,7 @@ func IPFilterMiddleware(dojahIp string) gin.HandlerFunc {
 			host = c.Request.RemoteAddr
 		}
 
-		if host!= dojahIp || host != "127.0.0.1" {
+		if host!= dojahIp {
 			log.Printf("SECURITY REJECTED: Request from unwhitelisted IP: %s (Expected: %s)", host, dojahIp)
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden: IP not whitelisted"})
 			return
