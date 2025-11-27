@@ -13,7 +13,9 @@ import * as WebBrowser from 'expo-web-browser'
 import { getVendorOtpUrl } from "@/services/vendorOtpUrl";
 import Loader from "@/components/loader";
 import ErrorModal from "@/components/errorModal";
-import { getHeaderTitle } from "@react-navigation/elements";
+import * as Linking from "expo-linking"
+import { kycWebSocket } from "@/services/kycWebSocket";
+import KycWebView from "@/components/webview";
 
 
 export default function VendorOtp() {
@@ -32,6 +34,14 @@ export default function VendorOtp() {
         else setIncomplete(false)
     }, [address])
 
+    const closeWebView = () => {
+        setShowWebView(false)
+        setLoaderVisible(true)
+    }
+
+    const [showWebView, setShowWebView] = useState(false)
+    const [otpUrl, setOtpUrl] = useState("")
+
     const onSubmitInfo = async () => {
 
         setLoaderVisible(true)
@@ -45,13 +55,38 @@ export default function VendorOtp() {
             setErrorText(result[1])
         } else {
             const vendorOtpUrl = result[1]
+            setOtpUrl(vendorOtpUrl)
             console.log(vendorOtpUrl)
 
             const parsed = new URL(vendorOtpUrl)
-            const value = parsed.searchParams.get("metadata[user-id]")
+            const value = parsed.searchParams.get("metadata%5Buser_id%5D")
             console.log(value)
 
-            const dojahOtp = await WebBrowser.openBrowserAsync(vendorOtpUrl)
+            // const redirectUrl = Linking.createURL('auth/vendorOtp')
+            // const dojahOtp = await WebBrowser.openAuthSessionAsync(vendorOtpUrl, redirectUrl, {skipRedirectCheck: true} as any)
+
+            // start web socket
+            const vendorId = "sample"
+            const wsSession = kycWebSocket(vendorId)
+            const { promise: wsPromise, cancel } = wsSession
+
+            // show webview
+            setShowWebView(true)
+
+            // setLoaderVisible(true)
+
+            try {
+                // const vendorId = "sample"
+                const result = await wsPromise
+                console.log("final kyc result:", result)
+
+            } catch (error) {
+                console.log("failed to get kyc results")
+            }
+
+            setLoaderVisible(false)
+
+            console.log("all done")
         }
 
     }
@@ -87,7 +122,7 @@ export default function VendorOtp() {
         <SafeAreaProvider>
             <SafeAreaView style={[globals.homeContainer, globals.container]}>
                 <View>
-                    <BackArrow backFun={() => router.replace("/home")} />
+                    <BackArrow backFun={() => router.replace("/(vendor)/dashboard")} />
                 </View>
 
                 <KeyboardAwareScrollView
@@ -156,6 +191,20 @@ export default function VendorOtp() {
                     }
 
                 </KeyboardAwareScrollView>
+
+                {showWebView && (
+                    <KycWebView
+                        url={otpUrl}
+                        onComplete={() => {
+                            console.log("WebView finished, but websocket still listening...");
+                            closeWebView();
+                        }}
+                        onCancel={() => {
+                            console.log("User cancelled verification");
+                            closeWebView();
+                        }}
+                    />
+                )}
 
 
             </SafeAreaView>
