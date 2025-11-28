@@ -1,4 +1,4 @@
-import { BASE_URL } from "./apiConstants"
+import { BARE_URL, BASE_URL } from "./apiConstants"
 
 
 export const kycWebSocket = (vendorId: string) => {
@@ -7,7 +7,7 @@ export const kycWebSocket = (vendorId: string) => {
 
     const promise = new Promise((resolve, reject) => {
         try {
-            ws = new WebSocket(`ws://${BASE_URL}/ws?user_id=${vendorId}`);
+            ws = new WebSocket(`ws://${BARE_URL}/ws?user_id=${vendorId}`);
         } catch (e) {
             console.log("WebSocket failed to construct:", e);
             reject(e);
@@ -43,7 +43,7 @@ export const kycWebSocket = (vendorId: string) => {
             console.log("websocket time out")
             ws?.close()
             reject(new Error("timeout"))
-        }, 15000)
+        }, 20000)
     })
 
     return {

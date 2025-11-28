@@ -6,14 +6,12 @@ import { globals, roboto } from "@/styles/globals";
 import { signupStyles } from "@/styles/signup";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Keyboard, Text, TextInput, View } from "react-native";
+import { Text, TextInput, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import * as WebBrowser from 'expo-web-browser'
 import { getVendorOtpUrl } from "@/services/vendorOtpUrl";
 import Loader from "@/components/loader";
 import ErrorModal from "@/components/errorModal";
-import * as Linking from "expo-linking"
 import { kycWebSocket } from "@/services/kycWebSocket";
 import KycWebView from "@/components/webview";
 
@@ -39,6 +37,9 @@ export default function VendorOtp() {
         setLoaderVisible(true)
     }
 
+    const vendorId = "sample"
+    const [otpDone, setOtpDone] = useState(false)
+
     const [showWebView, setShowWebView] = useState(false)
     const [otpUrl, setOtpUrl] = useState("")
 
@@ -62,33 +63,44 @@ export default function VendorOtp() {
             const value = parsed.searchParams.get("metadata%5Buser_id%5D")
             console.log(value)
 
-            // const redirectUrl = Linking.createURL('auth/vendorOtp')
-            // const dojahOtp = await WebBrowser.openAuthSessionAsync(vendorOtpUrl, redirectUrl, {skipRedirectCheck: true} as any)
-
-            // start web socket
-            const vendorId = "sample"
-            const wsSession = kycWebSocket(vendorId)
-            const { promise: wsPromise, cancel } = wsSession
-
             // show webview
             setShowWebView(true)
 
             // setLoaderVisible(true)
 
-            try {
-                // const vendorId = "sample"
-                const result = await wsPromise
-                console.log("final kyc result:", result)
+            // const wsSession = kycWebSocket(vendorId)
+            // const { promise: wsPromise, cancel } = wsSession
 
-            } catch (error) {
-                console.log("failed to get kyc results")
-            }
+            // try {
+            //     const result = await wsPromise
+            //     console.log("final kyc result:", result)
 
-            setLoaderVisible(false)
+            // } catch (error) {
+            //     console.log("failed to get kyc results")
+            // }
 
-            console.log("all done")
+            // setLoaderVisible(false)
+
+            // console.log("all done")
         }
 
+    }
+
+    const getSocketResults = async () => {
+        const wsSession = kycWebSocket(vendorId)
+        const { promise: wsPromise, cancel } = wsSession
+
+        try {
+            const result = await wsPromise
+            console.log("final kyc result:", result)
+
+        } catch (error) {
+            console.log("failed to get kyc results")
+        }
+
+        setLoaderVisible(false)
+
+        console.log("all done")
     }
 
     const onSkip = () => {
@@ -137,14 +149,6 @@ export default function VendorOtp() {
                         <Text style={[roboto.bodyMedium, signupStyles.pText, signupStyles.grayText]}>Please provide us with more information to complete your profile</Text>
                     </View>
 
-                    {/* <View style={signupStyles.layoutPadding}>
-                        <Input
-                            label="Type"
-                            value="Agent"
-                            editable={false}
-                        />
-                    </View> */}
-
                     <View style={signupStyles.layoutPadding}>
                         <Input
                             label="Address"
@@ -156,18 +160,6 @@ export default function VendorOtp() {
                             ref={addressRef}
                         />
                     </View>
-
-                    {/* <View style={signupStyles.layoutPadding}>
-                        <Input
-                            label="NIN"
-                            hint="01234567890"
-                            value={NIN}
-                            onChangeText={(text) => {setNIN(text)}}
-                            returnKeyType="done"
-                            onSubmitEditing={() => Keyboard.dismiss()}
-                            ref={NINRef}
-                        />
-                    </View> */}
 
                     <View style={signupStyles.layoutPadding}>
                         <Select text="Continue" selected selectFun={() => onSubmitInfo()} clickable={incomplete} />
@@ -198,15 +190,15 @@ export default function VendorOtp() {
                         onComplete={() => {
                             console.log("WebView finished, but websocket still listening...");
                             closeWebView();
+                            getSocketResults()
                         }}
                         onCancel={() => {
                             console.log("User cancelled verification");
                             closeWebView();
+                            getSocketResults()
                         }}
                     />
                 )}
-
-
             </SafeAreaView>
         </SafeAreaProvider>
     )

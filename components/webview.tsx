@@ -1,5 +1,6 @@
+import { verticalScale } from "@/deps/scale"
 import { useRef, useState } from "react"
-import { ActivityIndicator, Button, Modal, View } from "react-native"
+import { ActivityIndicator, Button, Modal, Text, TouchableOpacity, View } from "react-native"
 import { WebView } from "react-native-webview"
 
 
@@ -9,13 +10,13 @@ type KycWebViewProps = {
     onCancel?: () => void
 }
 
-export default function KycWebView ({ url, onComplete, onCancel } : KycWebViewProps) {
+export default function KycWebView({ url, onComplete, onCancel }: KycWebViewProps) {
     const [loading, setLoading] = useState(true)
     const [visible, setVisible] = useState(true)
     const webViewRef = useRef<WebView>(null)
 
     const handleMessage = (event: any) => {
-         console.log("WebView message:", event.nativeEvent.data)
+        console.log("WebView message:", event.nativeEvent.data)
         if (event.nativeEvent.data === "KYC_DONE") {
             setVisible(false)
             onComplete()
@@ -32,29 +33,37 @@ export default function KycWebView ({ url, onComplete, onCancel } : KycWebViewPr
 
 
     return (
-        <Modal visible={visible} animationType="slide">
-            <View style={{flex: 1}}>
-                {
-                    loading && (
-                        <ActivityIndicator 
-                            size={"large"}
-                            color={"#0000ff"}
-                            style={{ position: "absolute", top: "50%", left: "50%"}}/>
-                    )
-                }
-                <WebView
-                    ref={webViewRef}
-                    source={{ uri: url }}
-                    onLoadEnd={() => setLoading(false)}
-                    onMessage={handleMessage}
-                    onNavigationStateChange={handleNavigationStateChange} />
-                <Button
-                    title="Cancel Verification"
-                    onPress={() => {
-                        setVisible(false)
-                        onCancel?.()
-                    }} />
-            </View>
-        </Modal>
+        <View style={{ width: "80%", height: "80%" }}>
+            <Modal visible={visible} animationType="slide" transparent={true}>
+                <View style={{ flex: 1, alignSelf: "center", width: "100%", justifyContent: "center", alignItems: 'center' }}>
+                    <View style={{width: "80%", height: "60%"}}>
+                        {
+                            loading && (
+                                <ActivityIndicator
+                                    size={"large"}
+                                    color={"#008000"}
+                                    style={{ position: "absolute", top: "50%", left: "50%" }} />
+                            )
+                        }
+                        <WebView
+                            ref={webViewRef}
+                            style={{
+                                flex: 1
+                            }}
+                            source={{ uri: url }}
+                            onLoadEnd={() => setLoading(false)}
+                            onMessage={handleMessage}
+                            onNavigationStateChange={handleNavigationStateChange} />
+                        <TouchableOpacity
+                            onPress={() => {
+                                setVisible(false)
+                                onCancel?.()
+                            }}
+                            style={{width: "100%",height: verticalScale(44), backgroundColor: "#008000", alignItems: "center", justifyContent: 'center'}}
+                        ><Text style={{color: "#ffffff"}}>CANCEL VERIFICATION</Text></TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+        </View>
     )
 }
