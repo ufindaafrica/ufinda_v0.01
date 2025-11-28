@@ -34,6 +34,11 @@ export const inputStyles = StyleSheet.create({
         paddingBottom: moderateScale(4)
     },
 
+    noLabel: {
+        paddingBottom: 0,
+        display: "none"
+    },
+
     invalidInputBox: {
         borderColor: "#bf0000"
     },

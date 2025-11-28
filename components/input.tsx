@@ -21,7 +21,7 @@ const Input = forwardRef<TextInput, inputProps>(({ label, hint, onFocus, onSubmi
 
     return (
         <View>
-            <Text style={[inputStyles.label, roboto.bodySmallBold]}>{label}</Text>
+            <Text style={[label ? inputStyles.label : inputStyles.noLabel, roboto.bodySmallBold,]}>{label}</Text>
 
             <View style={[inputStyles.inputV, focused ? inputStyles.focusedInputBox : null, invalid && inputStyles.invalidInputBox]}>
 
