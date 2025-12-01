@@ -5,36 +5,59 @@ import { images } from "@/constants/images";
 import { pickMedia } from "@/deps/pickImage";
 import { globals, roboto } from "@/styles/globals";
 import { newHostelStyles } from "@/styles/newHostel";
-import { useEffect, useRef, useState } from "react";
-import { Image, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useState } from "react";
+import { Alert, Image, Platform, Text,ToastAndroid,TouchableOpacity, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 
 export default function NewHostel() {
 
-    const [hostelImages, setHostelImages] = useState<Promise<{ media: string; mediaName: string | null | undefined; mediaType: string; } | null>[] | any[]>([null, null, null, null, null])
+    type Media = {
+        media: string;
+        mediaName: string | null | undefined;
+        mediaType: string;
+    };
 
-    const getMedia = async (type: "image" | "video") => {
-        return await pickMedia(type)
+    type Error = {
+        error: string
     }
 
-    // const [dummy, setDummy] = useState(true)
+    const [hostelImages, setHostelImages] = useState<(Media | Error | null)[]>([
+        null, null, null, null, null
+    ]);
 
-    // useEffect(() => {
-    //     // setHostelImages(prev => {
-    //     //     const newList = prev
-    //     //     newList[idx] = getMedia("image")
-    //     //     console.log(newList)
-    //     //     return newList
-    //     // })
-    //     setHostelImages(prev => {
-    //         const newList = prev
-    //         newList[1] = getMedia("image")
-    //         console.log(newList)
-    //         return newList
-    //     })
-    // }, [dummy])
+    const [hostelVideo, setHostelVideo] = useState<Media | Error | null>(null)
+
+    const getMedia = async (type: "image" | "video", idx: number = 0) => {
+
+        const media = await pickMedia(type)
+
+        if ("media" in media) {
+            if (type === "image") {
+                setHostelImages(prev => {
+                    const newList = [...prev]
+                    newList[idx] = media
+                    return newList
+                })
+            }
+
+            if (type === "video") {
+                setHostelVideo(media)
+            }
+        }
+
+        else {
+            const message = media.error
+
+            if (Platform.OS === "android") {
+                ToastAndroid.show(message, ToastAndroid.CENTER)
+            } else {
+                Alert.alert("", message)
+            }
+        }
+
+    }
 
     return (
         <SafeAreaView style={globals.vendorContainer}>
@@ -68,14 +91,9 @@ export default function NewHostel() {
                     <View style={newHostelStyles.hostelImgV}>
                         {
                             Array.from(hostelImages).map((item, idx) => <TouchableOpacity key={idx} style={newHostelStyles.addHostelV} onPress={() => {
-                                setHostelImages(prev => {
-                                    const newList = prev
-                                    newList[idx] = getMedia("image")
-                                    console.log(newList)
-                                    return newList
-                                })
+                                getMedia("image", idx)
                             }}>
-                                {item === null ? <Image source={images.plus} style={newHostelStyles.plusImg} /> : <Image source={images.activeUser} style={newHostelStyles.hostelImg} />}
+                                {item === null ? <Image source={images.plus} style={newHostelStyles.plusImg} /> : <Image source={{ uri: "media" in item ? item.media : images.plus }} style={newHostelStyles.hostelImg} />}
                             </TouchableOpacity>)
                         }
                     </View>
@@ -86,8 +104,10 @@ export default function NewHostel() {
                 </View>
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Add videos" />
-                    <TouchableOpacity style={newHostelStyles.addHostelV}>
-                        <Image source={images.plus} style={newHostelStyles.plusImg} />
+                    <TouchableOpacity style={newHostelStyles.addHostelV} onPress={() => {
+                        getMedia("video")
+                    }}>
+                        {hostelVideo === null ? <Image source={images.plus} style={newHostelStyles.plusImg} /> : <Image source={{ uri: "media" in hostelVideo ? hostelVideo.media : images.plus }} style={newHostelStyles.hostelImg} />}
                     </TouchableOpacity>
                 </View>
                 <View style={newHostelStyles.inputV}>
