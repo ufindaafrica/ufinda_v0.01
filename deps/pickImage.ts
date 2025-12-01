@@ -1,4 +1,36 @@
 import * as ImagePicker from "expo-image-picker"
+// import { Image as ImageCompressor, Video as VideoCompressor } from "react-native-compressor"
+// import * as FileSystem from "expo-file-system/legacy"
+
+// async function compressMedia(uri: string, depth = 0, type: "image" | "video") {
+
+//     const maxSize = (type === "image") ? 3 * 1024 * 1024 : 15 * 1024 * 1024
+
+//     if (depth > 5) {
+//         return uri;
+//     }
+
+//     const file = await FileSystem.getInfoAsync(uri)
+//     const uriSize = (file.exists && file.size) ? file.size : 0
+
+//     if (uriSize <= maxSize) {
+//         return uri
+//     }
+
+//     else {
+//         const compressedUri = type === "image" ? await ImageCompressor.compress(uri, {
+//             compressionMethod: "manual",
+//             maxWidth: 1024,
+//             quality: 0.8
+//         }) : await VideoCompressor.compress(uri, {
+//             compressionMethod: "manual",
+//             maxSize: 15 * 1024 * 1024
+//         })
+
+//         return compressMedia(compressedUri, depth + 1, type)
+//     }
+
+// }
 
 export const pickMedia = async (type: "image" | "video") => {
     let error = ""
@@ -6,16 +38,14 @@ export const pickMedia = async (type: "image" | "video") => {
     const selectedImage = await ImagePicker.launchCameraAsync({
         mediaTypes: [`${type}s`],
         allowsEditing: false,
-        quality: 0,
-        videoQuality: ImagePicker.UIImagePickerControllerQualityType.Low
+        quality: 0.5,
+        videoQuality: ImagePicker.UIImagePickerControllerQualityType.VGA640x480
     })
 
     if (!selectedImage.canceled) {
 
-        const MAX_IMG = 3 * 1024 * 1024
+        const MAX_IMG = 5 * 1024 * 1024
         const MAX_VID = 15 * 1024 * 1024
-
-        console.log(selectedImage.assets[0].fileSize)
 
         if (type == "image" && (selectedImage.assets[0].fileSize ?? 0) >= MAX_IMG) {
             error = "error: image is more than 3MB"
