@@ -72,5 +72,6 @@ export const images = {
     sold: require("../assets/images/coin.png"),
     vendorUser: require("../assets/images/vendorUser.png"),
     appointments: require("../assets/images/appointments.png"),
-    asterisk: require("../assets/images/asterisk.png")
+    asterisk: require("../assets/images/asterisk.png"),
+    whiteTick: require("../assets/images/tick-circle.png")
 }

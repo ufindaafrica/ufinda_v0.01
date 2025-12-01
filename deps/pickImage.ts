@@ -44,8 +44,8 @@ export const pickMedia = async (type: "image" | "video") => {
 
     if (!selectedImage.canceled) {
 
-        const MAX_IMG = 5 * 1024 * 1024
-        const MAX_VID = 15 * 1024 * 1024
+        const MAX_IMG = 9 * 1024 * 1024
+        const MAX_VID = 20 * 1024 * 1024
 
         if (type == "image" && (selectedImage.assets[0].fileSize ?? 0) >= MAX_IMG) {
             error = "error: image is more than 3MB"

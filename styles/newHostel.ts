@@ -69,5 +69,15 @@ export const newHostelStyles = StyleSheet.create({
         height: scale(56),
         resizeMode: "cover",
         borderRadius: 4
+    },
+
+    paddingBottom: {
+        paddingBottom: moderateScale(16)
+    },
+
+    descriptionV: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center'
     }
 })
