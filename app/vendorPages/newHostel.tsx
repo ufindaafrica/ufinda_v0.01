@@ -24,10 +24,17 @@ export default function NewHostel() {
     const [hostelType, setHostelType] = useState("")
     const [numberOfRooms, setNumberOfRooms] = useState("")
     const [totalRooms, setTotalRooms] = useState("")
-    const [roomate, setRoomate] = useState(false)
-    const [power, setPower] = useState(false)
-    const [kitchen, setKitchen] = useState(false)
-    // const []
+    const [roomate, setRoomate] = useState("")
+    const [power, setPower] = useState("")
+    const [kitchen, setKitchen] = useState("")
+    const [toilet, setToilet] = useState("")
+    const [landlord, setLandlord] = useState("")
+    const [desc, setDesc] = useState("")
+    const [yearlyrent, setYearlyRent] = useState("")
+    const [totalPrice, setTotalPrice] = useState("")
+    const [bulkPrice, setBulkPrice] = useState("")
+
+    const [descLength, setDescLength] = useState("0")
 
     type Media = {
         media: string;
@@ -81,7 +88,7 @@ export default function NewHostel() {
         console.log("categories", categories)
     }
 
-    
+
 
     // useEffect(() => {
     //     const getLocation = async () => {
@@ -104,6 +111,11 @@ export default function NewHostel() {
     // }, [])
 
     const [drawer, setDrawer] = useState(false)
+    const [roomateDrawer, setRoomateDrawer] = useState(false)
+    const [kitchenDrawer, setKitchenDrawer] = useState(false)
+    const [powerDrawer, setPowerDrawer] = useState(false)
+    const [toiletDrawer, setToiletDrawer] = useState(false)
+    const [landlordDrawer, setLandlordDrawer] = useState(false)
 
     return (
         <SafeAreaView style={globals.vendorContainer}>
@@ -181,68 +193,91 @@ export default function NewHostel() {
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Number of rooms available" />
                     <Input
-                        hint="ex: Self con"
-                        icon={images.arrowDown}
-                        editable={false}
+                        hint="4"
+                        keyboardType="numeric"
+                        value={numberOfRooms}
+                        onChangeText={(text) => setNumberOfRooms(text)}
                     />
                 </View>
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Total hostel rooms" />
                     <Input
-                        hint="ex: Self con"
-                        icon={images.arrowDown}
-                        editable={false}
+                        hint="10"
+                        keyboardType="numeric"
+                        value={totalRooms}
+                        onChangeText={(text) => setTotalRooms(text)}
                     />
                 </View>
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Roomate" />
-                    <Input
-                        hint="yes/no"
-                        icon={images.arrowDown}
-                        editable={false}
-                    />
+                    <TouchableOpacity onPress={() => setRoomateDrawer(true)}>
+                        <Input
+                            hint="yes/no"
+                            icon={images.arrowDown}
+                            editable={false}
+                            value={roomate}
+                            setSecureText={() => setRoomateDrawer(true)}
+                        />
+                    </TouchableOpacity>
                 </View>
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Power supply" />
-                    <Input
-                        hint="yes/no"
-                        icon={images.arrowDown}
-                        editable={false}
-                    />
+                    <TouchableOpacity onPress={() => setPowerDrawer(true)}>
+                        <Input
+                            hint="yes/no"
+                            icon={images.arrowDown}
+                            editable={false}
+                            value={power}
+                            setSecureText={() => setPowerDrawer(true)}
+                        />
+                    </TouchableOpacity>
                 </View>
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Kitchen Access" />
-                    <Input
-                        hint="yes/no"
-                        icon={images.arrowDown}
-                        editable={false}
-                    />
+                    <TouchableOpacity onPress={() => setKitchenDrawer(true)}>
+                        <Input
+                            hint="yes/no"
+                            icon={images.arrowDown}
+                            editable={false}
+                            value={kitchen}
+                            setSecureText={() => setKitchenDrawer(true)}
+                        />
+                    </TouchableOpacity>
                 </View>
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Toilet Access" />
-                    <Input
-                        hint="yes/no"
-                        icon={images.arrowDown}
-                        editable={false}
-                    />
+                    <TouchableOpacity onPress={() => setToiletDrawer(true)}>
+                        <Input
+                            hint="yes/no"
+                            icon={images.arrowDown}
+                            editable={false}
+                            value={toilet}
+                            setSecureText={() => setToiletDrawer(true)}
+                        />
+                    </TouchableOpacity>
                 </View>
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Landlord Resides" />
-                    <Input
-                        hint="yes/no"
-                        icon={images.arrowDown}
-                        editable={false}
-                    />
+                    <TouchableOpacity onPress={() => setLandlordDrawer(true)}>
+                        <Input
+                            hint="yes/no"
+                            icon={images.arrowDown}
+                            editable={false}
+                            value={landlord}
+                            setSecureText={() => setLandlordDrawer(true)}
+                        />
+                    </TouchableOpacity>
                 </View>
                 <View style={[newHostelStyles.inputV, newHostelStyles.paddingBottom]}>
                     <View style={newHostelStyles.descriptionV}>
                         <HostelLabel label="Description" />
-                        <Text style={roboto.bodyMedium}>0/350</Text>
+                        <Text style={roboto.bodyMedium}>{descLength}/350</Text>
                     </View>
                     <Input
                         hint="Hostel description"
-                        icon={images.arrowDown}
-                        editable={false}
+                        maxLength={350}
+                        value={desc}
+                        onChangeText={(text) => {setDesc(text);setDescLength(text.length.toString(0))}}
                     />
                 </View>
                 <LineBreak />
@@ -250,24 +285,27 @@ export default function NewHostel() {
                     <HostelLabel label="Rent Per Year" />
                     <Input
                         hint="eg. 150000"
-                        icon={images.arrowDown}
-                        editable={false}
+                        keyboardType="numeric"
+                        value={yearlyrent}
+                        onChangeText={(text) => setYearlyRent(text)}
                     />
                 </View>
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Total Price" />
                     <Input
                         hint="eg. 150000"
-                        icon={images.arrowDown}
-                        editable={false}
+                        keyboardType="numeric"
+                        value={totalPrice}
+                        onChangeText={(text) => setTotalPrice(text)}
                     />
                 </View>
                 <View style={[newHostelStyles.inputV, newHostelStyles.paddingBottom]}>
                     <Text style={roboto.bodyMediumBold}>Bulk price</Text>
                     <Input
                         hint="Add wholesale price?"
-                        icon={images.arrowDown}
-                        editable={false}
+                        keyboardType="numeric"
+                        value={bulkPrice}
+                        onChangeText={(text) => setBulkPrice(text)}
                     />
                 </View>
                 <LineBreak />
@@ -310,7 +348,27 @@ export default function NewHostel() {
             </KeyboardAwareScrollView>
 
             {
-                drawer ? <Drawer title="Hostel Type" options={["Self Con", "Single Room", "One Room and Parlour", "Two Bedroom flat", "Room in a Flat", "3 Bedroom Flat"]} onCloseDrawer={setDrawer} onSelectOption={setHostelType} selectedOption={hostelType}/> : null
+                drawer ? <Drawer title="Hostel Type" options={["Self Con", "Single Room", "One Room and Parlour", "Two Bedroom flat", "Room in a Flat", "3 Bedroom Flat"]} onCloseDrawer={setDrawer} onSelectOption={setHostelType} selectedOption={hostelType} /> : null
+            }
+
+            {
+                roomateDrawer ? <Drawer title="Roomate" options={["yes", "no"]} onCloseDrawer={setRoomateDrawer} onSelectOption={setRoomate} selectedOption={roomate} /> : null
+            }
+
+            {
+                powerDrawer ? <Drawer title="Power Supply" options={["yes", "no"]} onCloseDrawer={setPowerDrawer} onSelectOption={setPower} selectedOption={power} /> : null
+            }
+
+            {
+                kitchenDrawer ? <Drawer title="Kitchen Access" options={["yes", "no"]} onCloseDrawer={setKitchenDrawer} onSelectOption={setKitchen} selectedOption={kitchen} /> : null
+            }
+
+            {
+                toiletDrawer ? <Drawer title="Toilet Access" options={["yes", "no"]} onCloseDrawer={setToiletDrawer} onSelectOption={setToilet} selectedOption={toilet} /> : null
+            }
+
+            {
+                landlordDrawer ? <Drawer title="Landlord Resides" options={["yes", "no"]} onCloseDrawer={setLandlordDrawer} onSelectOption={setLandlord} selectedOption={landlord} /> : null
             }
         </SafeAreaView>
     )
