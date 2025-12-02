@@ -13,6 +13,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as WebBrowser from "expo-web-browser"
 import * as Location from "expo-location"
+import Drawer from "@/components/drawer";
 
 
 export default function NewHostel() {
@@ -80,25 +81,29 @@ export default function NewHostel() {
         console.log("categories", categories)
     }
 
-    useEffect(() => {
-        const getLocation = async () => {
-            const { status } = await Location.requestForegroundPermissionsAsync()
-            if (status != "granted") {
-                return
-            }
-            
-            const loc = await Location.getCurrentPositionAsync({})
-            const address = await Location.reverseGeocodeAsync(loc.coords)
+    
 
-            if (address.length > 0) {
-                console.log(address[0])
-                const formatted = address[0].formattedAddress + ""
-                setAddress(formatted)
-                // setFinalAddress(addr[0].city + ", " + addr[0].region)
-            }
-        }
-        getLocation()
-    }, [])
+    // useEffect(() => {
+    //     const getLocation = async () => {
+    //         const { status } = await Location.requestForegroundPermissionsAsync()
+    //         if (status != "granted") {
+    //             return
+    //         }
+
+    //         const loc = await Location.getCurrentPositionAsync({})
+    //         const address = await Location.reverseGeocodeAsync(loc.coords)
+
+    //         if (address.length > 0) {
+    //             console.log(address[0])
+    //             const formatted = address[0].formattedAddress + ""
+    //             setAddress(formatted)
+    //             // setFinalAddress(addr[0].city + ", " + addr[0].region)
+    //         }
+    //     }
+    //     getLocation()
+    // }, [])
+
+    const [drawer, setDrawer] = useState(false)
 
     return (
         <SafeAreaView style={globals.vendorContainer}>
@@ -163,11 +168,15 @@ export default function NewHostel() {
                 </View>
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Hostel type" />
-                    <Input
-                        hint="ex: Self con"
-                        icon={images.arrowDown}
-                        editable={false}
-                    />
+                    <TouchableOpacity onPress={() => setDrawer(true)}>
+                        <Input
+                            hint="ex: Self con"
+                            icon={images.arrowDown}
+                            editable={false}
+                            setSecureText={() => setDrawer(true)}
+                            value={hostelType}
+                        />
+                    </TouchableOpacity>
                 </View>
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Number of rooms available" />
@@ -299,6 +308,10 @@ export default function NewHostel() {
                 </View>
 
             </KeyboardAwareScrollView>
+
+            {
+                drawer ? <Drawer title="Hostel Type" options={["Self Con", "Single Room", "One Room and Parlour", "Two Bedroom flat", "Room in a Flat", "3 Bedroom Flat"]} onCloseDrawer={setDrawer} onSelectOption={setHostelType} selectedOption={hostelType}/> : null
+            }
         </SafeAreaView>
     )
 }

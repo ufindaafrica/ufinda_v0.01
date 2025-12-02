@@ -239,5 +239,9 @@ export const colors = StyleSheet.create({
 
     darkBurntOrange: {
         color: "#be7c00"
+    },
+
+    foundationPrimaryNormal: {
+        color: "#546881"
     }
 });
