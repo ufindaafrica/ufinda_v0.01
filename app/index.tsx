@@ -57,9 +57,9 @@ export default function Index() {
         // router.replace("/auth/login")
         // router.replace("/onboarding")
         // router.replace("/auth/vendorOtp")
-        // router.replace("/dashboard")
+        router.replace("/dashboard")
         // router.replace("/(vendor)/ads")
-        router.replace("/vendorPages/newHostel")
+        // router.replace("/vendorPages/newHostel")
       } else {
         // router.replace("/(tabs)/home")
         // router.replace("/auth/mode")
