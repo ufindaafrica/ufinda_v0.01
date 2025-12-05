@@ -47,6 +47,18 @@ export const selectStyles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center"
+    },
+
+    adBox: {
+        height: verticalScale(32)
+    },
+
+    inactiveAdBox: {
+        borderColor: "#e5e5ea"
+    },
+
+    black: {
+        color: "#000000"
     }
     
 })

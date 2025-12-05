@@ -7,13 +7,14 @@ import { pickMedia } from "@/deps/pickImage";
 import { moderateScale, scale, verticalScale } from "@/deps/scale";
 import { colors, globals, roboto } from "@/styles/globals";
 import { newHostelStyles } from "@/styles/newHostel";
-import { useEffect, useState } from "react";
-import { Alert, Image, Platform, Text, ToastAndroid, TouchableOpacity, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Alert, Image, Keyboard, Platform, Text, ToastAndroid, TouchableOpacity, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as WebBrowser from "expo-web-browser"
 import * as Location from "expo-location"
 import Drawer from "@/components/drawer";
+import { TextInput } from "react-native";
 
 
 export default function NewHostel() {
@@ -88,8 +89,6 @@ export default function NewHostel() {
         console.log("categories", categories)
     }
 
-
-
     // useEffect(() => {
     //     const getLocation = async () => {
     //         const { status } = await Location.requestForegroundPermissionsAsync()
@@ -117,6 +116,64 @@ export default function NewHostel() {
     const [toiletDrawer, setToiletDrawer] = useState(false)
     const [landlordDrawer, setLandlordDrawer] = useState(false)
 
+    const [topAdView, setTopAdView] = useState(false)
+    const [top7View, setTop7View] = useState(false)
+    const [top30View, setTop30View] = useState(false)
+
+    const [bottomAdView, setBottomAdView] = useState(false)
+
+    const clickAdView = (view: "top" | "7" | "30" | "bottom") => {
+
+        if (view === "top") {
+            setTopAdView(true)
+            if (!top7View && !top30View) {
+                setTop7View(true)
+            }
+            setBottomAdView(false)
+        }
+
+        if (view === "30") {
+            setTop30View(true)
+            setTopAdView(true)
+            setTop7View(false)
+            setBottomAdView(false)
+        }
+
+        if (view === "7") {
+            setTop7View(true)
+            setTopAdView(true)
+            setTop30View(false)
+            setBottomAdView(false)
+        }
+
+        if (view === "bottom") {
+            setBottomAdView(true)
+            setTopAdView(false)
+            setTop7View(false)
+            setTop30View(false)
+        }
+
+    }
+
+    useEffect(() => {
+        clickAdView("top")
+    }, [])
+
+    const availableRoomsRef = useRef<TextInput | null>(null)
+    const totalRoomsRef = useRef<TextInput | null>(null)
+    const descriptionRef = useRef<TextInput | null>(null)
+    const yearlyRentRef = useRef<TextInput | null>(null)
+    const totalPriceRef = useRef<TextInput | null>(null)
+    const bulkPriceRef = useRef<TextInput | null>(null)
+    const scrollRef = useRef<KeyboardAwareScrollView | null>(null)
+
+    const focusNext = (nextRef: React.RefObject<TextInput | null>) => {
+        const nextInput = nextRef.current
+        if (!nextInput) return
+        nextInput.focus()
+        scrollRef.current?.scrollToFocusedInput(nextInput, verticalScale(150))
+    }
+
     return (
         <SafeAreaView style={globals.vendorContainer}>
             <View style={newHostelStyles.headerV}>
@@ -125,15 +182,20 @@ export default function NewHostel() {
                     <Image source={images.more} style={newHostelStyles.moreImg} />
                 </TouchableOpacity>
             </View>
-            <KeyboardAwareScrollView contentContainerStyle={newHostelStyles.scrollV}>
+            <KeyboardAwareScrollView 
+            contentContainerStyle={newHostelStyles.scrollV} 
+            ref={scrollRef} 
+            enableOnAndroid={true}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}>
                 <LineBreak />
-
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Title" />
                     <Input
                         hint="ex: Example Hostel"
                         value={title}
                         onChangeText={(e) => setTitle(e)}
+                        onSubmitEditing={() => Keyboard.dismiss()}
                     />
                 </View>
 
@@ -180,7 +242,7 @@ export default function NewHostel() {
                 </View>
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Hostel type" />
-                    <TouchableOpacity onPress={() => setDrawer(true)}>
+                    <TouchableOpacity onPress={() => {Keyboard.dismiss() ; setDrawer(true)}}>
                         <Input
                             hint="ex: Self con"
                             icon={images.arrowDown}
@@ -197,6 +259,10 @@ export default function NewHostel() {
                         keyboardType="numeric"
                         value={numberOfRooms}
                         onChangeText={(text) => setNumberOfRooms(text)}
+                        ref={availableRoomsRef}
+                        onFocus={() => focusNext(availableRoomsRef)}
+                        returnKeyType="next"
+                        onSubmitEditing={() => focusNext(totalRoomsRef)}
                     />
                 </View>
                 <View style={newHostelStyles.inputV}>
@@ -206,11 +272,15 @@ export default function NewHostel() {
                         keyboardType="numeric"
                         value={totalRooms}
                         onChangeText={(text) => setTotalRooms(text)}
+                        ref={totalRoomsRef}
+                        onFocus={() => focusNext(totalRoomsRef)}
+                        returnKeyType="done"
+                        onSubmitEditing={() => Keyboard.dismiss()}
                     />
                 </View>
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Roomate" />
-                    <TouchableOpacity onPress={() => setRoomateDrawer(true)}>
+                    <TouchableOpacity onPress={() => {Keyboard.dismiss() ; setRoomateDrawer(true)}}>
                         <Input
                             hint="yes/no"
                             icon={images.arrowDown}
@@ -222,7 +292,7 @@ export default function NewHostel() {
                 </View>
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Power supply" />
-                    <TouchableOpacity onPress={() => setPowerDrawer(true)}>
+                    <TouchableOpacity onPress={() => {Keyboard.dismiss() ; setPowerDrawer(true)}}>
                         <Input
                             hint="yes/no"
                             icon={images.arrowDown}
@@ -234,7 +304,7 @@ export default function NewHostel() {
                 </View>
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Kitchen Access" />
-                    <TouchableOpacity onPress={() => setKitchenDrawer(true)}>
+                    <TouchableOpacity onPress={() => {Keyboard.dismiss() ; setKitchenDrawer(true)}}>
                         <Input
                             hint="yes/no"
                             icon={images.arrowDown}
@@ -246,7 +316,7 @@ export default function NewHostel() {
                 </View>
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Toilet Access" />
-                    <TouchableOpacity onPress={() => setToiletDrawer(true)}>
+                    <TouchableOpacity onPress={() => {Keyboard.dismiss() ; setToiletDrawer(true)}}>
                         <Input
                             hint="yes/no"
                             icon={images.arrowDown}
@@ -258,7 +328,7 @@ export default function NewHostel() {
                 </View>
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Landlord Resides" />
-                    <TouchableOpacity onPress={() => setLandlordDrawer(true)}>
+                    <TouchableOpacity onPress={() => {Keyboard.dismiss() ; setLandlordDrawer(true)}}>
                         <Input
                             hint="yes/no"
                             icon={images.arrowDown}
@@ -277,7 +347,12 @@ export default function NewHostel() {
                         hint="Hostel description"
                         maxLength={350}
                         value={desc}
-                        onChangeText={(text) => {setDesc(text);setDescLength(text.length.toString(0))}}
+                        onChangeText={(text) => { setDesc(text); setDescLength(text.length.toString()) }}
+                        ref={descriptionRef}
+                        onFocus={() => focusNext(descriptionRef)}
+                        returnKeyType="next"
+                        onSubmitEditing={() => focusNext(yearlyRentRef)}
+                        
                     />
                 </View>
                 <LineBreak />
@@ -288,6 +363,10 @@ export default function NewHostel() {
                         keyboardType="numeric"
                         value={yearlyrent}
                         onChangeText={(text) => setYearlyRent(text)}
+                        ref={yearlyRentRef}
+                        onFocus={() => focusNext(yearlyRentRef)}
+                        returnKeyType="next"
+                        onSubmitEditing={() => focusNext(totalPriceRef)}
                     />
                 </View>
                 <View style={newHostelStyles.inputV}>
@@ -297,6 +376,10 @@ export default function NewHostel() {
                         keyboardType="numeric"
                         value={totalPrice}
                         onChangeText={(text) => setTotalPrice(text)}
+                        ref={totalPriceRef}
+                        onFocus={() => focusNext(totalPriceRef)}
+                        returnKeyType="next"
+                        onSubmitEditing={() => focusNext(bulkPriceRef)}
                     />
                 </View>
                 <View style={[newHostelStyles.inputV, newHostelStyles.paddingBottom]}>
@@ -306,21 +389,25 @@ export default function NewHostel() {
                         keyboardType="numeric"
                         value={bulkPrice}
                         onChangeText={(text) => setBulkPrice(text)}
+                        ref={bulkPriceRef}
+                        onFocus={() => focusNext(bulkPriceRef)}
+                        returnKeyType="done"
+                        onSubmitEditing={() => Keyboard.dismiss()}
                     />
                 </View>
                 <LineBreak />
-                <View style={{ padding: moderateScale(16) }}>
-                    <Text style={[roboto.bodyLargeBold, { paddingBottom: verticalScale(8) }]}>You cannot post a Hostel Ad for free</Text>
-                    <TouchableOpacity style={[{ justifyContent: "space-between", height: verticalScale(143), width: "100%", padding: moderateScale(13) }, { borderWidth: 2, borderColor: "#008000", borderRadius: 8 }]}>
+                <View style={newHostelStyles.padding}>
+                    <Text style={[roboto.bodyLargeBold, newHostelStyles.paddingBottomSmall]}>You cannot post a Hostel Ad for free</Text>
+                    <TouchableOpacity onPress={() => clickAdView("top")} style={[newHostelStyles.adView, newHostelStyles.topAdView, topAdView && newHostelStyles.selectedAdView]}>
                         <Text style={roboto.titleSmallBold}>Boost with gold</Text>
                         <Text style={[roboto.bodyMedium, colors.grays]}>Best choice if you need fast sale. Your ad will be at the top of search results and get 15X more traffic.</Text>
                         <View style={newHostelStyles.descriptionV}>
-                            <View style={[newHostelStyles.descriptionV, { gap: scale(8) }]}>
-                                <View style={{ width: scale(89) }}>
-                                    <Select text="7 days" selected icon={images.whiteTick} />
+                            <View style={[newHostelStyles.descriptionV, newHostelStyles.gap]}>
+                                <View style={newHostelStyles.adOption}>
+                                    <Select text="7 days" selected={top7View} icon={top7View && images.whiteTick} adBox selectFun={() => clickAdView("7")} />
                                 </View>
-                                <View style={{ width: scale(89) }}>
-                                    <Select text="1 month" selected={false} />
+                                <View style={newHostelStyles.adOption}>
+                                    <Select text="1 month" selected={top30View} icon={top30View && images.whiteTick} adBox selectFun={() => clickAdView("30")} />
                                 </View>
                             </View>
                             <View>
@@ -328,7 +415,7 @@ export default function NewHostel() {
                             </View>
                         </View>
                     </TouchableOpacity>
-                    <TouchableOpacity style={[{ justifyContent: "space-between", height: verticalScale(87), width: "100%", padding: moderateScale(13), marginVertical: verticalScale(8) }, { borderWidth: 1, borderColor: "#e5e5ea", borderRadius: 8 }]}>
+                    <TouchableOpacity onPress={() => clickAdView("bottom")} style={[newHostelStyles.adView, newHostelStyles.bottomAdView, bottomAdView && newHostelStyles.selectedAdView]}>
                         <Text style={roboto.titleSmallBold}>Boost with Diamond</Text>
                         <View style={newHostelStyles.descriptionV}>
                             <Text style={roboto.titleSmall}>1 month</Text>
