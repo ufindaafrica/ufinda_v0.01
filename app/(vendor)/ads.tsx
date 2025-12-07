@@ -1,5 +1,4 @@
 import CircleProgress from "@/components/circleProgress";
-import LineBreak from "@/components/lineBreak";
 import Plus from "@/components/plus";
 import Search from "@/components/search";
 import { AgentHostels } from "@/constants/dummy_data";

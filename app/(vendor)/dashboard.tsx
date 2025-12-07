@@ -5,11 +5,11 @@ import VendorAppHeader from "@/components/vendorAppHeader";
 import { AgentHostels } from "@/constants/dummy_data";
 import { images } from "@/constants/images";
 import { dashboardStyles } from "@/styles/dashboard";
-import { colors, globals, roboto } from "@/styles/globals";
+import {globals, roboto } from "@/styles/globals";
 import { router } from "expo-router";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Dashboard() {
 

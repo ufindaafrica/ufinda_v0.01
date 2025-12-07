@@ -221,6 +221,10 @@ export const globals = StyleSheet.create({
     vendorContainer: {
         backgroundColor: "#fcfcfc",
         flex: 1
+    },
+
+    lightContainer: {
+        backgroundColor: '#fcfcfc'
     }
 });
 
@@ -243,5 +247,9 @@ export const colors = StyleSheet.create({
 
     foundationPrimaryNormal: {
         color: "#546881"
+    },
+
+    white: {
+        color: '#ffffff'
     }
 });

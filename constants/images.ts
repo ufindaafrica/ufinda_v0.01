@@ -74,5 +74,8 @@ export const images = {
     appointments: require("../assets/images/appointments.png"),
     asterisk: require("../assets/images/asterisk.png"),
     whiteTick: require("../assets/images/tick-circle.png"),
-    close: require("../assets/images/close.png")
+    close: require("../assets/images/close.png"),
+    laptop: require("../assets/images/laptop.png"),
+    onetick: require("../assets/images/onetick.png"),
+    twoticks: require("../assets/images/twoticks.png"),
 }
