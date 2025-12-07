@@ -6,18 +6,20 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv" // <-- ADDED: Needed for parsing limit/offset in handlers
 	"sync"
 	"time"
-	"uFinda/internal/db"
-	"strconv"
+	"github.com/oladev/ufinda_v0.01/internal/db"
 	"github.com/google/uuid"
-	// "github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 )
 
+// Define the expected length for non-UUID user/vendor IDs
+const UserIDLength = 10
+
 // WebSocket upgrader with stricter origin check
 var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
+	ReadBufferSize: 1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
 		origin := r.Header.Get("Origin")
@@ -27,8 +29,9 @@ var upgrader = websocket.Upgrader{
 			return true
 		}
 		allowedOrigins := []string{
-			"http://localhost:3000",
-			// your production origins
+			"http://localhost:8080",
+			// "http://localhost:3000",
+			"https://ufinda-v0-01.onrender.com",
 		}
 		for _, allowed := range allowedOrigins {
 			if origin == allowed {
@@ -40,42 +43,47 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+// Helper to validate the 7-character string ID
+func isValidStringID(id string) bool {
+	return len(id) == UserIDLength
+}
+
 // --- Core chat types ---
 
 type ChatRoom struct {
-	ID        string     `json:"id"`
-	BuyerID   string     `json:"buyer_id"`
-	VendorID  string     `json:"vendor_id"`
-	ProductID *string    `json:"product_id,omitempty"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
+	ID string `json:"id"`
+	BuyerID string `json:"buyer_id"`
+	VendorID string `json:"vendor_id"`
+	ProductID *string `json:"product_id,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type Message struct {
-	ID          string     `json:"id"`
-	ChatRoomID  string     `json:"chat_room_id"`
-	SenderID    string     `json:"sender_id"`
-	Content     string     `json:"content"`
-	MessageType string     `json:"message_type"`
-	IsRead      bool       `json:"is_read"`
-	CreatedAt   time.Time  `json:"created_at"`
+	ID string `json:"id"`
+	ChatRoomID string `json:"chat_room_id"`
+	SenderID string `json:"sender_id"`
+	Content string `json:"content"`
+	MessageType string `json:"message_type"`
+	IsRead bool `json:"is_read"`
+	CreatedAt time.Time `json:"created_at"`
 	DeliveredAt *time.Time `json:"delivered_at,omitempty"`
 }
 
 type ChatMessage struct {
-	ID          string     `json:"id"`
-	ChatRoomID  string     `json:"chat_room_id"`
-	SenderID    string     `json:"sender_id"`
-	Content     string     `json:"content"`
-	CreatedAt   time.Time  `json:"created_at"`
-	SenderName  string     `json:"sender_name"`
+	ID string `json:"id"`
+	ChatRoomID string `json:"chat_room_id"`
+	SenderID string `json:"sender_id"`
+	Content string `json:"content"`
+	CreatedAt time.Time `json:"created_at"`
+	SenderName string `json:"sender_name"`
 	DeliveredAt *time.Time `json:"delivered_at,omitempty"`
 }
 
 type WSMessage struct {
-	Type      string          `json:"type"`
-	Payload   json.RawMessage `json:"payload"`
-	MessageID string          `json:"message_id,omitempty"`
+	Type string `json:"type"`
+	Payload json.RawMessage `json:"payload"`
+	MessageID string `json:"message_id,omitempty"`
 }
 
 type JoinRoomPayload struct {
@@ -88,7 +96,7 @@ type LeaveRoomPayload struct {
 
 type SendMessagePayload struct {
 	ChatRoomID string `json:"room_id"`
-	Content    string `json:"content"`
+	Content string `json:"content"`
 }
 
 type NewMessagePayload ChatMessage
@@ -105,19 +113,19 @@ type ErrorPayload struct {
 
 type RateLimiter struct {
 	userMessages map[string]int
-	lastReset    map[string]time.Time
-	limit        int
-	interval     time.Duration
-	mutex        sync.Mutex
+	lastReset map[string]time.Time
+	limit int
+	interval time.Duration
+	mutex sync.Mutex
 }
 
 func NewRateLimiter(limit int, interval time.Duration) *RateLimiter {
 	return &RateLimiter{
 		userMessages: make(map[string]int),
-		lastReset:    make(map[string]time.Time),
-		limit:        limit,
-		interval:     interval,
-		mutex:        sync.Mutex{},
+		lastReset: make(map[string]time.Time),
+		limit: limit,
+		interval: interval,
+		mutex: sync.Mutex{},
 	}
 }
 
@@ -141,12 +149,12 @@ func (rl *RateLimiter) Allow(userID string) bool {
 // --- WebSocket Client ---
 
 type Client struct {
-	UserID   string
+	UserID string
 	Username string
-	Conn     *websocket.Conn
-	Hub      *Hub
-	Send     chan WSMessage
-	mutex    sync.Mutex
+	Conn *websocket.Conn
+	Hub *Hub
+	Send chan WSMessage
+	mutex sync.Mutex
 }
 
 func (c *Client) ReadPump() {
@@ -157,9 +165,10 @@ func (c *Client) ReadPump() {
 	}()
 
 	c.Conn.SetReadLimit(512)
-	c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	// Setting read deadline to 60s + 10s grace
+	c.Conn.SetReadDeadline(time.Now().Add(70 * time.Second))
 	c.Conn.SetPongHandler(func(string) error {
-		c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		c.Conn.SetReadDeadline(time.Now().Add(70 * time.Second))
 		return nil
 	})
 
@@ -169,7 +178,7 @@ func (c *Client) ReadPump() {
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("WebSocket unexpected close for user %s: %v", c.UserID, err)
-			} else {
+			} else if err != io.EOF { // EOF often means a clean closure
 				log.Printf("WebSocket read error for user %s: %v", c.UserID, err)
 			}
 			break
@@ -230,46 +239,20 @@ func (c *Client) ReadPump() {
 				c.SendError("Message content too long (max 1000 characters)")
 				continue
 			}
+			// UserID length check (for consistency, although already checked on connection)
+			if !isValidStringID(c.UserID) {
+				log.Printf("Client %s: Invalid SenderID format.", c.UserID)
+				c.SendError("Invalid Sender ID format.")
+				continue
+			}
 
-			// Save the message to DB
+			// Save the message to DB and broadcast is handled inside SendMessage
 			_, err := c.Hub.ChatService.SendMessage(payload.ChatRoomID, c.UserID, payload.Content)
 			if err != nil {
 				log.Printf("Client %s: Failed to persist message: %v", c.UserID, err)
 				c.SendError("Failed to save message")
 				continue
 			}
-
-			// senderName, err := c.Hub.ChatService.getSenderName(c.UserID)
-    		// if err != nil {
-			// 	log.Printf("Warning: Could not get sender name for user %s: %v. Using 'Unknown User'.", c.UserID, err)
-			// 	senderName = "Unknown User"
-			// }
-
-			// // Prepare enriched payload to broadcast
-			// broadcastPayload := NewMessagePayload{
-			// 	ID:          message.ID,
-			// 	ChatRoomID:  message.ChatRoomID,
-			// 	SenderID:    message.SenderID,
-			// 	Content:     message.Content,
-			// 	CreatedAt:   message.CreatedAt,
-			// 	SenderName:  SenderName,
-			// 	DeliveredAt: message.DeliveredAt,
-			// }
-			// payloadBytes, err := json.Marshal(broadcastPayload)
-			// if err != nil {
-			// 	log.Printf("Client %s: Failed to marshal broadcast payload: %v", c.UserID, err)
-			// 	c.SendError("Internal error")
-			// 	continue
-			// }
-
-			// // Broadcast the saved message to everyone
-			// messageToHub := WSMessage{
-			// 	Type:      "message",
-			// 	Payload:   payloadBytes,
-			// 	MessageID: message.ID,
-			// }
-			// c.Hub.Broadcast <- messageToHub
-
 
 		case "pong":
 			// Handled by SetPongHandler
@@ -307,7 +290,8 @@ func (c *Client) WritePump() {
 			err := c.Conn.WriteMessage(websocket.PingMessage, nil)
 			c.mutex.Unlock()
 			if err != nil {
-				log.Printf("Client %s: WebSocket ping error部分error: %v", c.UserID, err)
+				// Corrected logging of the ping error
+				log.Printf("Client %s: WebSocket ping error: %v", c.UserID, err)
 				return
 			}
 		}
@@ -327,38 +311,49 @@ func (c *Client) SendError(message string) {
 // --- Hub ---
 
 type Hub struct {
-	Clients     map[*Client]bool
-	Rooms       map[string]map[*Client]bool
-	Register    chan *Client
-	Unregister  chan *Client
-	Broadcast   chan WSMessage
+	Clients map[*Client]bool
+	Rooms map[string]map[*Client]bool
+	Register chan *Client
+	Unregister chan *Client
+	Broadcast chan WSMessage
 	RateLimiter *RateLimiter
 	ChatService *SupabaseChatService
 }
 
-func NewHub() *Hub {
-	return &Hub{
-		Clients:     make(map[*Client]bool),
-		Rooms:       make(map[string]map[*Client]bool),
-		Register:    make(chan *Client),
-		Unregister:  make(chan *Client),
-		Broadcast:   make(chan WSMessage),
-		RateLimiter: NewRateLimiter(20, time.Minute),
-		ChatService: nil,
+func NewHub(chatService *SupabaseChatService) *Hub {
+	h := &Hub{
+		Clients: make(map[*Client]bool),
+		Rooms: make(map[string]map[*Client]bool),
+		Register: make(chan *Client),
+		Unregister: make(chan *Client),
+		Broadcast: make(chan WSMessage),
+		RateLimiter: NewRateLimiter(10, time.Minute),
+		ChatService: chatService,
 	}
+	return h
 }
 
 func (h *Hub) Run() {
 	for {
 		select {
 		case client := <-h.Register:
+			if !isValidStringID(client.UserID) {
+				log.Printf("Refusing registration for client with invalid UserID format: %s", client.UserID)
+				client.Conn.Close()
+				continue
+			}
 			h.Clients[client] = true
 			log.Printf("Client %s registered. Total clients: %d", client.UserID, len(h.Clients))
 
 		case client := <-h.Unregister:
 			if _, ok := h.Clients[client]; ok {
 				delete(h.Clients, client)
-				close(client.Send)
+				// Only close if the channel hasn't been closed elsewhere (e.g., in SendError)
+				select {
+				case <-client.Send:
+				default:
+					close(client.Send)
+				}
 
 				for roomID, clientsInRoom := range h.Rooms {
 					if _, exists := clientsInRoom[client]; exists {
@@ -379,7 +374,6 @@ func (h *Hub) Run() {
 					log.Printf("Hub: Failed to unmarshal broadcast message payload: %v", err)
 					continue
 				}
-				log.Printf("Hub: uuid: %v", payload.ChatRoomID)
 				if _, err := uuid.Parse(payload.ChatRoomID); err != nil {
 					log.Printf("Hub: Invalid chat_room_id UUID: %s", payload.ChatRoomID)
 					continue
@@ -427,14 +421,10 @@ func (h *Hub) LeaveRoom(client *Client, roomID string) {
 	}
 }
 
+// Refactored to iterate directly over the map
 func (h *Hub) BroadcastToRoom(roomID string, message WSMessage) {
 	if clients, exists := h.Rooms[roomID]; exists {
-		clientsToBroadcast := make([]*Client, 0, len(clients))
 		for client := range clients {
-			clientsToBroadcast = append(clientsToBroadcast, client)
-		}
-
-		for _, client := range clientsToBroadcast {
 			select {
 			case client.Send <- message:
 				if message.Type == "message" {
@@ -460,11 +450,19 @@ type SupabaseChatService struct {
 	hub *Hub
 }
 
-func NewSupabaseChatService(hub *Hub) *SupabaseChatService {
-	return &SupabaseChatService{hub: hub}
+func NewSupabaseChatService() *SupabaseChatService {
+	return &SupabaseChatService{}
+}
+
+func (cs *SupabaseChatService) SetHub(hub *Hub) {
+	cs.hub = hub
 }
 
 func (cs *SupabaseChatService) CreateChatRoom(buyerID, vendorID string, productID *string) (*ChatRoom, error) {
+	if !isValidStringID(buyerID) || !isValidStringID(vendorID) {
+		return nil, fmt.Errorf("invalid buyer or vendor ID format (must be %d characters)", UserIDLength)
+	}
+
 	existingRoom, err := cs.findExistingRoom(buyerID, vendorID, productID)
 	if err != nil {
 		log.Printf("Error checking for existing chat room: %v", err)
@@ -476,7 +474,7 @@ func (cs *SupabaseChatService) CreateChatRoom(buyerID, vendorID string, productI
 	}
 
 	roomData := map[string]interface{}{
-		"buyer_id":  buyerID,
+		"buyer_id": buyerID,
 		"vendor_id": vendorID,
 	}
 	if productID != nil {
@@ -484,7 +482,7 @@ func (cs *SupabaseChatService) CreateChatRoom(buyerID, vendorID string, productI
 	}
 
 	headers := map[string]string{
-    	"Prefer": "return=representation",
+		"Prefer": "return=representation",
 	}
 
 	resp, err := db.MakeDBRequest("POST", "/rest/v1/chat_rooms", roomData, headers)
@@ -565,8 +563,8 @@ func (cs *SupabaseChatService) SendMessage(chatRoomID, senderID, content string)
 	if _, err := uuid.Parse(chatRoomID); err != nil {
 		return nil, fmt.Errorf("chat_room_id is not a valid UUID: %v", err)
 	}
-	if _, err := uuid.Parse(senderID); err != nil {
-		return nil, fmt.Errorf("sender_id is not a valid UUID: %v", err)
+	if !isValidStringID(senderID) {
+		return nil, fmt.Errorf("sender_id is not a valid string ID (must be %d characters)", UserIDLength)
 	}
 	if len(content) == 0 || len(content) > 1000 {
 		return nil, fmt.Errorf("message content must be between 1 and 1000 characters")
@@ -574,10 +572,10 @@ func (cs *SupabaseChatService) SendMessage(chatRoomID, senderID, content string)
 
 	messageData := map[string]interface{}{
 		"chat_room_id": chatRoomID,
-		"sender_id":    senderID,
-		"content":      content,
+		"sender_id": senderID,
+		"content": content,
 		"message_type": "text",
-		"is_read":      false,
+		"is_read": false,
 	}
 
 	resp, err := db.MakeDBRequest(
@@ -625,33 +623,43 @@ func (cs *SupabaseChatService) SendMessage(chatRoomID, senderID, content string)
 	}
 
 	chatMsg := NewMessagePayload{
-		ID:          message.ID,
-		ChatRoomID:  message.ChatRoomID,
-		SenderID:    message.SenderID,
-		Content:     message.Content,
-		CreatedAt:   message.CreatedAt,
-		SenderName:  senderName,
+		ID: message.ID,
+		ChatRoomID: message.ChatRoomID,
+		SenderID: message.SenderID,
+		Content: message.Content,
+		CreatedAt: message.CreatedAt,
+		SenderName: senderName,
 		DeliveredAt: message.DeliveredAt,
 	}
 
 	payloadBytes, err := json.Marshal(chatMsg)
 	if err != nil {
 		log.Printf("Error marshalling NewMessagePayload: %v", err)
+		// Still return the message even if broadcast marshalling fails
 		return message, nil
 	}
-
-	cs.hub.Broadcast <- WSMessage{
-		Type:      "message",
-		Payload:   payloadBytes,
-		MessageID: message.ID,
+	
+	if cs.hub != nil {
+		cs.hub.Broadcast <- WSMessage{
+			Type: "message",
+			Payload: payloadBytes,
+			MessageID: message.ID,
+		}
+	} else {
+		log.Println("Warning: Hub is nil in SupabaseChatService. Message cannot be broadcast.")
 	}
+
 
 	return message, nil
 }
 
 func (cs *SupabaseChatService) getSenderName(userID string) (string, error) {
-	// First try the users table (email or phone)
-	endpoint := fmt.Sprintf("/rest/v1/users?id=eq.%s&select=phone,email", userID)
+	if !isValidStringID(userID) {
+		return "Unknown User", fmt.Errorf("userID is not a valid string ID (must be %d characters)", UserIDLength)
+	}
+
+	// First try the users table (first_name or last_name)
+	endpoint := fmt.Sprintf("/rest/v1/users?id=eq.%s&select=first_name,last_name", userID)
 	resp, err := db.MakeDBRequest("GET", endpoint, nil, nil)
 	if err != nil {
 		log.Printf("Error making DB request to get user: %v", err)
@@ -660,20 +668,25 @@ func (cs *SupabaseChatService) getSenderName(userID string) (string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		var users []map[string]interface{}
-		if err := json.Unmarshal(body, &users); err == nil && len(users) > 0 {
-			if phone, ok := users[0]["phone"].(string); ok && phone != "" {
-				return phone, nil
-			}
-			if email, ok := users[0]["email"].(string); ok && email != "" {
-				return email, nil
+		body, err := io.ReadAll(resp.Body)
+		if err == nil {
+			var users []map[string]interface{}
+			if err := json.Unmarshal(body, &users); err == nil && len(users) > 0 {
+				// Prioritize first_name, then last name
+				if first_name, ok := users[0]["first_name"].(string); ok && first_name != "" {
+					return first_name, nil
+				}
+				if last_name, ok := users[0]["last_name"].(string); ok && last_name != "" {
+					return last_name, nil
+				}
 			}
 		}
+	} else {
+		log.Printf("Users table query failed with status %d for ID %s", resp.StatusCode, userID)
 	}
 
 	// Now try the vendors table (email or phone)
-	vendorEndpoint := fmt.Sprintf("/rest/v1/vendors?id=eq.%s&select=phone,email", userID)
+	vendorEndpoint := fmt.Sprintf("/rest/v1/vendors?id=eq.%s&select=first_name,email", userID)
 	vendorResp, err := db.MakeDBRequest("GET", vendorEndpoint, nil, nil)
 	if err != nil {
 		log.Printf("Error making DB request to get vendor: %v", err)
@@ -682,19 +695,24 @@ func (cs *SupabaseChatService) getSenderName(userID string) (string, error) {
 	defer vendorResp.Body.Close()
 
 	if vendorResp.StatusCode == http.StatusOK {
-		body, _ := io.ReadAll(vendorResp.Body)
-		var vendors []map[string]interface{}
-		if err := json.Unmarshal(body, &vendors); err == nil && len(vendors) > 0 {
-			if phone, ok := vendors[0]["phone"].(string); ok && phone != "" {
-				return phone, nil
-			}
-			if email, ok := vendors[0]["email"].(string); ok && email != "" {
-				return email, nil
+		body, err := io.ReadAll(vendorResp.Body)
+		if err == nil {
+			var vendors []map[string]interface{}
+			if err := json.Unmarshal(body, &vendors); err == nil && len(vendors) > 0 {
+				// Prioritize first_name, then last_name
+				if first_name, ok := vendors[0]["first_name"].(string); ok && first_name != "" {
+					return first_name, nil
+				}
+				if last_name, ok := vendors[0]["last_name"].(string); ok && last_name != "" {
+					return last_name, nil
+				}
 			}
 		}
+	} else {
+		log.Printf("Vendors table query failed with status %d for ID %s", vendorResp.StatusCode, userID)
 	}
 
-	return "Unknown User", fmt.Errorf("sender not found in users or vendors for ID %s", userID)
+	return "Unknown User", fmt.Errorf("sender not found or has no contact info in users or vendors for ID %s", userID)
 }
 
 func (cs *SupabaseChatService) GetChatHistory(chatRoomID string, limit int, offset int) ([]Message, error) {
@@ -729,6 +747,7 @@ func (cs *SupabaseChatService) GetChatHistory(chatRoomID string, limit int, offs
 		return nil, fmt.Errorf("failed to parse response: %v", err)
 	}
 
+	// Reverse the order to display chronologically (oldest first)
 	for i, j := 0, len(messages)-1; i < j; i, j = i+1, j-1 {
 		messages[i], messages[j] = messages[j], messages[i]
 	}
@@ -737,8 +756,8 @@ func (cs *SupabaseChatService) GetChatHistory(chatRoomID string, limit int, offs
 }
 
 func (cs *SupabaseChatService) GetUserChatRooms(userID string) ([]ChatRoom, error) {
-	if _, err := uuid.Parse(userID); err != nil {
-		return nil, fmt.Errorf("user_id is not a valid UUID: %v", err)
+	if !isValidStringID(userID) {
+		return nil, fmt.Errorf("user_id is not a valid string ID (must be %d characters)", UserIDLength)
 	}
 
 	query := fmt.Sprintf("or=(buyer_id.eq.%s,vendor_id.eq.%s)", userID, userID)
@@ -775,15 +794,16 @@ func (cs *SupabaseChatService) MarkMessagesAsRead(chatRoomID, userID string) err
 	if _, err := uuid.Parse(chatRoomID); err != nil {
 		return fmt.Errorf("chat_room_id is not a valid UUID: %v", err)
 	}
-	if _, err := uuid.Parse(userID); err != nil {
-		return fmt.Errorf("user_id is not a valid UUID: %v", err)
+	if !isValidStringID(userID) {
+		return fmt.Errorf("user_id is not a valid string ID (must be %d characters)", UserIDLength)
 	}
 
 	data := map[string]interface{}{
-		"is_read":      true,
+		"is_read": true,
 		"delivered_at": time.Now().UTC().Format(time.RFC3339Nano),
 	}
 
+	// PATCH only messages not sent by the user AND not already read
 	query := fmt.Sprintf("chat_room_id=eq.%s&sender_id=neq.%s&is_read=eq.false", chatRoomID, userID)
 	endpoint := fmt.Sprintf("/rest/v1/messages?%s", query)
 	resp, err := db.MakeDBRequest("PATCH", endpoint, data, nil)
@@ -803,8 +823,8 @@ func (cs *SupabaseChatService) MarkMessagesAsRead(chatRoomID, userID string) err
 }
 
 func (cs *SupabaseChatService) GetUnreadMessageCount(userID string) (int, error) {
-	if _, err := uuid.Parse(userID); err != nil {
-		return 0, fmt.Errorf("user_id is not a valid UUID: %v", err)
+	if !isValidStringID(userID) {
+		return 0, fmt.Errorf("user_id is not a valid string ID (must be %d characters)", UserIDLength)
 	}
 
 	chatRooms, err := cs.GetUserChatRooms(userID)
@@ -815,6 +835,7 @@ func (cs *SupabaseChatService) GetUnreadMessageCount(userID string) (int, error)
 
 	totalUnread := 0
 	for _, room := range chatRooms {
+		// Only count messages sent by the other party and not read
 		query := fmt.Sprintf("chat_room_id=eq.%s&sender_id=neq.%s&is_read=eq.false", room.ID, userID)
 		endpoint := fmt.Sprintf("/rest/v1/messages?%s&select=id", query)
 		resp, err := db.MakeDBRequest("GET", endpoint, nil, nil)
@@ -822,32 +843,37 @@ func (cs *SupabaseChatService) GetUnreadMessageCount(userID string) (int, error)
 			log.Printf("Error making DB request for unread messages in room %s: %v", room.ID, err)
 			continue
 		}
-		defer resp.Body.Close()
+		// NOTE: Deferring outside the loop is risky as it only executes at the end of GetUnreadMessageCount. 
+		// Since the original code placed it inside the loop, we will stick to that to ensure connections are closed promptly.
+		// defer resp.Body.Close() 
 
 		if resp.StatusCode == http.StatusOK {
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				log.Printf("Error reading response body for unread messages in room %s: %v", room.ID, err)
+				resp.Body.Close() // Ensure connection is closed after reading/error
 				continue
 			}
 
 			var messages []map[string]interface{}
 			if err := json.Unmarshal(body, &messages); err != nil {
 				log.Printf("Error parsing unread messages response for room %s: %v, body: %s", room.ID, err, string(body))
+				resp.Body.Close() // Ensure connection is closed after error
 				continue
 			}
 			totalUnread += len(messages)
 		} else {
 			log.Printf("Failed to get unread messages for room %s, status: %d", room.ID, resp.StatusCode)
 		}
+		resp.Body.Close() // Explicitly close the body for each loop iteration
 	}
 
 	return totalUnread, nil
 }
 
 func (cs *SupabaseChatService) GetUserChatRoomsWithLastMessage(userID string) ([]map[string]interface{}, error) {
-	if _, err := uuid.Parse(userID); err != nil {
-		return nil, fmt.Errorf("user_id is not a valid UUID: %v", err)
+	if !isValidStringID(userID) {
+		return nil, fmt.Errorf("user_id is not a valid string ID (must be %d characters)", UserIDLength)
 	}
 
 	chatRooms, err := cs.GetUserChatRooms(userID)
@@ -859,33 +885,35 @@ func (cs *SupabaseChatService) GetUserChatRoomsWithLastMessage(userID string) ([
 	var result []map[string]interface{}
 	for _, room := range chatRooms {
 		roomData := map[string]interface{}{
-			"id":         room.ID,
-			"buyer_id":   room.BuyerID,
-			"vendor_id":  room.VendorID,
+			"id": room.ID,
+			"buyer_id": room.BuyerID,
+			"vendor_id": room.VendorID,
 			"product_id": room.ProductID,
 			"created_at": room.CreatedAt,
 			"updated_at": room.UpdatedAt,
 		}
 
+		// 1. Get Last Message
 		messages, err := cs.GetChatHistory(room.ID, 1, 0)
 		if err == nil && len(messages) > 0 {
 			lastMessage := messages[0]
 			roomData["last_message"] = map[string]interface{}{
-				"id":         lastMessage.ID,
-				"content":    lastMessage.Content,
+				"id": lastMessage.ID,
+				"content": lastMessage.Content,
 				"created_at": lastMessage.CreatedAt,
-				"sender_id":  lastMessage.SenderID,
-				"is_read":    lastMessage.IsRead,
+				"sender_id": lastMessage.SenderID,
+				"is_read": lastMessage.IsRead,
 			}
 		} else if err != nil {
 			log.Printf("Warning: Could not get last message for room %s: %v", room.ID, err)
 		}
 
+		// 2. Get Unread Count
 		query := fmt.Sprintf("chat_room_id=eq.%s&sender_id=neq.%s&is_read=eq.false", room.ID, userID)
 		endpoint := fmt.Sprintf("/rest/v1/messages?%s&select=id", query)
 		resp, err := db.MakeDBRequest("GET", endpoint, nil, nil)
 		if err == nil {
-			defer resp.Body.Close()
+			// defer resp.Body.Close() // Moved inside if block or handled explicitly
 			if resp.StatusCode == http.StatusOK {
 				body, _ := io.ReadAll(resp.Body)
 				var unreadMessages []map[string]interface{}
@@ -893,12 +921,16 @@ func (cs *SupabaseChatService) GetUserChatRoomsWithLastMessage(userID string) ([
 					roomData["unread_count"] = len(unreadMessages)
 				} else {
 					log.Printf("Warning: Could not parse unread count response for room %s: %v", room.ID, err)
+					roomData["unread_count"] = 0
 				}
 			} else {
 				log.Printf("Warning: Failed to get unread count for room %s, status: %d", room.ID, resp.StatusCode)
+				roomData["unread_count"] = 0
 			}
+			resp.Body.Close() // Close the body
 		} else {
-			log.Printf("Warning: Could not make DB request for unread count for room %s: %v", room.ID, err)
+			log.Printf("Warning: Error requesting unread count for room %s: %v", room.ID, err)
+			roomData["unread_count"] = 0
 		}
 
 		result = append(result, roomData)
@@ -907,277 +939,192 @@ func (cs *SupabaseChatService) GetUserChatRoomsWithLastMessage(userID string) ([
 	return result, nil
 }
 
-// --- HTTP Handlers ---
+// -------------------------------------------------------------
+// HTTP HANDLERS (THE MISSING METHODS)
+// -------------------------------------------------------------
 
+// Helper for consistent error responses
+func respondWithError(w http.ResponseWriter, code int, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	// Ignore error on encoding simple error response
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": message})
+}
+
+// HandleWebSocket upgrades the HTTP connection to a WebSocket.
 func (cs *SupabaseChatService) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
-	userID := r.Header.Get("id")
-	username := r.Header.Get("username")
-
-	if userID == "" || username == "" {
-		log.Printf("WebSocket Unauthorized: Missing user credentials")
-		http.Error(w, "Unauthorized: Missing user credentials", http.StatusUnauthorized)
+	userID := r.URL.Query().Get("user_id")
+	if !isValidStringID(userID) {
+		log.Printf("WebSocket connection refused: Invalid user_id format: %s", userID)
+		respondWithError(w, http.StatusUnauthorized, "Invalid or missing user_id (must be 7 characters)")
 		return
 	}
-	if _, err := uuid.Parse(userID); err != nil {
-		log.Printf("WebSocket Unauthorized: Invalid user_id UUID: %s", userID)
-		http.Error(w, "Unauthorized: Invalid user_id format", http.StatusUnauthorized)
+	
+	if cs.hub == nil {
+		respondWithError(w, http.StatusServiceUnavailable, "Chat service is not fully initialized. Hub is missing.")
 		return
 	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Printf("WebSocket upgrade error for user %s: %v", userID, err)
-		http.Error(w, "WebSocket upgrade failed", http.StatusInternalServerError)
+		log.Println("WebSocket upgrade failed:", err)
 		return
 	}
 
 	client := &Client{
-		UserID:   userID,
-		Username: username,
-		Conn:     conn,
-		Hub:      cs.hub,
-		Send:     make(chan WSMessage, 256),
+		UserID: userID,
+		Conn: conn,
+		Hub: cs.hub,
+		Send: make(chan WSMessage, 256),
 	}
 
 	cs.hub.Register <- client
+
 	go client.WritePump()
 	go client.ReadPump()
-	log.Printf("Client %s connected via WebSocket.", client.UserID)
 }
 
+// CreateChatRoomHandler handles the creation of a new chat room.
 func (cs *SupabaseChatService) CreateChatRoomHandler(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		BuyerID   string  `json:"buyer_id"`
 		VendorID  string  `json:"vendor_id"`
 		ProductID *string `json:"product_id,omitempty"`
 	}
-
+	
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
-	if req.BuyerID == "" || req.VendorID == "" {
-		http.Error(w, "Buyer ID and Vendor ID are required", http.StatusBadRequest)
-		return
-	}
-	if _, err := uuid.Parse(req.BuyerID); err != nil {
-		http.Error(w, "Invalid buyer_id format", http.StatusBadRequest)
-		return
-	}
-	if _, err := uuid.Parse(req.VendorID); err != nil {
-		http.Error(w, "Invalid vendor_id format", http.StatusBadRequest)
-		return
-	}
-	if req.ProductID != nil {
-		if _, err := uuid.Parse(*req.ProductID); err != nil {
-			http.Error(w, "Invalid product_id format", http.StatusBadRequest)
-			return
-		}
-	}
-
-	chatRoom, err := cs.CreateChatRoom(req.BuyerID, req.VendorID, req.ProductID)
+	room, err := cs.CreateChatRoom(req.BuyerID, req.VendorID, req.ProductID)
 	if err != nil {
-		log.Printf("Error in CreateChatRoomHandler: %v", err)
-		http.Error(w, fmt.Sprintf("Failed to create chat room: %v", err), http.StatusInternalServerError)
+		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(chatRoom)
+	_ = json.NewEncoder(w).Encode(room)
 }
 
+// GetUserChatRoomsHandler retrieves all chat rooms associated with a user.
+func (cs *SupabaseChatService) GetUserChatRoomsHandler(w http.ResponseWriter, r *http.Request) {
+	userID := r.URL.Query().Get("user_id")
+	if !isValidStringID(userID) {
+		respondWithError(w, http.StatusBadRequest, "Invalid user_id format")
+		return
+	}
+
+	rooms, err := cs.GetUserChatRooms(userID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(rooms)
+}
+
+// GetUserChatRoomsWithLastMessageHandler retrieves rooms with last message and unread count.
+func (cs *SupabaseChatService) GetUserChatRoomsWithLastMessageHandler(w http.ResponseWriter, r *http.Request) {
+	userID := r.URL.Query().Get("user_id")
+	if !isValidStringID(userID) {
+		respondWithError(w, http.StatusBadRequest, "Invalid user_id format")
+		return
+	}
+
+	rooms, err := cs.GetUserChatRoomsWithLastMessage(userID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(rooms)
+}
+
+// SendMessageHandler sends a message via HTTP (for non-WS users).
 func (cs *SupabaseChatService) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		ChatRoomID string `json:"chat_room_id"`
-		SenderID   string `json:"sender_id"`
-		Content    string `json:"content"`
+		ChatRoomID string `json:"room_id"`
+		SenderID string `json:"sender_id"`
+		Content string `json:"content"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
-	if req.ChatRoomID == "" || req.SenderID == "" || req.Content == "" {
-		http.Error(w, "Missing required fields: chat_room_id, sender_id, or content", http.StatusBadRequest)
-		return
-	}
-	if _, err := uuid.Parse(req.ChatRoomID); err != nil {
-		http.Error(w, "Invalid chat_room_id format", http.StatusBadRequest)
-		return
-	}
-	if _, err := uuid.Parse(req.SenderID); err != nil {
-		http.Error(w, "Invalid sender_id format", http.StatusBadRequest)
-		return
-	}
-
+	// SendMessage handles validation and DB persistence
 	message, err := cs.SendMessage(req.ChatRoomID, req.SenderID, req.Content)
 	if err != nil {
-		log.Printf("Error in SendMessageHandler: %v", err)
-		http.Error(w, fmt.Sprintf("Failed to send message: %v", err), http.StatusInternalServerError)
+		respondWithError(w, http.StatusBadRequest, err.Error()) 
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(message)
+	_ = json.NewEncoder(w).Encode(message)
 }
 
+// GetChatHistoryHandler retrieves the history for a given room.
 func (cs *SupabaseChatService) GetChatHistoryHandler(w http.ResponseWriter, r *http.Request) {
-	chatRoomID := r.URL.Query().Get("room_id")
+	roomID := r.URL.Query().Get("room_id")
 	limitStr := r.URL.Query().Get("limit")
 	offsetStr := r.URL.Query().Get("offset")
 
-	if chatRoomID == "" {
-		http.Error(w, "Missing room_id", http.StatusBadRequest)
-		return
-	}
-	if _, err := uuid.Parse(chatRoomID); err != nil {
-		http.Error(w, "Invalid room_id format", http.StatusBadRequest)
-		return
-	}
-
+	// Parse limit and offset with defaults
 	limit, err := strconv.Atoi(limitStr)
-	if err != nil || limit == 0 {
-		limit = 50
-	}
-	if limit > 100 {
-		limit = 100
-	}
-
+	if err != nil || limit <= 0 { limit = 50 }
 	offset, err := strconv.Atoi(offsetStr)
-	if err != nil || offset < 0 {
-		offset = 0
-	}
+	if err != nil || offset < 0 { offset = 0 }
 
-	messages, err := cs.GetChatHistory(chatRoomID, limit, offset)
+	messages, err := cs.GetChatHistory(roomID, limit, offset)
 	if err != nil {
-		log.Printf("Error in GetChatHistoryHandler: %v", err)
-		http.Error(w, fmt.Sprintf("Failed to get chat history: %v", err), http.StatusInternalServerError)
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(messages)
+	_ = json.NewEncoder(w).Encode(messages)
 }
 
-func (cs *SupabaseChatService) GetUserChatRoomsHandler(w http.ResponseWriter, r *http.Request) {
-	userID := r.URL.Query().Get("user_id")
-	if userID == "" {
-		http.Error(w, "Missing user_id", http.StatusBadRequest)
-		return
-	}
-	if _, err := uuid.Parse(userID); err != nil {
-		http.Error(w, "Invalid user_id format", http.StatusBadRequest)
-		return
-	}
-
-	chatRooms, err := cs.GetUserChatRooms(userID)
-	if err != nil {
-		log.Printf("Error in GetUserChatRoomsHandler: %v", err)
-		http.Error(w, fmt.Sprintf("Failed to get chat rooms: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(chatRooms)
-}
-
+// MarkMessagesAsReadHandler marks all messages in a room, sent by the other party, as read.
 func (cs *SupabaseChatService) MarkMessagesAsReadHandler(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		ChatRoomID string `json:"chat_room_id"`
-		UserID     string `json:"user_id"`
+		ChatRoomID string `json:"room_id"`
+		UserID string `json:"user_id"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
-		return
-	}
-
-	if req.ChatRoomID == "" || req.UserID == "" {
-		http.Error(w, "Missing required fields: chat_room_id or user_id", http.StatusBadRequest)
-		return
-	}
-	if _, err := uuid.Parse(req.ChatRoomID); err != nil {
-		http.Error(w, "Invalid chat_room_id format", http.StatusBadRequest)
-		return
-	}
-	if _, err := uuid.Parse(req.UserID); err != nil {
-		http.Error(w, "Invalid user_id format", http.StatusBadRequest)
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
 	if err := cs.MarkMessagesAsRead(req.ChatRoomID, req.UserID); err != nil {
-		log.Printf("Error in MarkMessagesAsReadHandler: %v", err)
-		http.Error(w, fmt.Sprintf("Failed to mark messages as read: %v", err), http.StatusInternalServerError)
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": "Messages marked as read"})
+	w.WriteHeader(http.StatusNoContent)
 }
 
+// GetUnreadCountHandler retrieves the total number of unread messages for a user.
 func (cs *SupabaseChatService) GetUnreadCountHandler(w http.ResponseWriter, r *http.Request) {
 	userID := r.URL.Query().Get("user_id")
-	if userID == "" {
-		http.Error(w, "Missing user_id", http.StatusBadRequest)
-		return
-	}
-	if _, err := uuid.Parse(userID); err != nil {
-		http.Error(w, "Invalid user_id format", http.StatusBadRequest)
+	if !isValidStringID(userID) {
+		respondWithError(w, http.StatusBadRequest, "Invalid user_id format")
 		return
 	}
 
 	count, err := cs.GetUnreadMessageCount(userID)
 	if err != nil {
-		log.Printf("Error in GetUnreadCountHandler: %v", err)
-		http.Error(w, fmt.Sprintf("Failed to get unread count: %v", err), http.StatusInternalServerError)
+		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]int{"unread_count": count})
+	_ = json.NewEncoder(w).Encode(map[string]int{"unread_count": count})
 }
-
-func (cs *SupabaseChatService) GetUserChatRoomsWithLastMessageHandler(w http.ResponseWriter, r *http.Request) {
-	userID := r.URL.Query().Get("user_id")
-	if userID == "" {
-		http.Error(w, "Missing user_id", http.StatusBadRequest)
-		return
-	}
-	if _, err := uuid.Parse(userID); err != nil {
-		http.Error(w, "Invalid user_id format", http.StatusBadRequest)
-		return
-	}
-
-	chatRooms, err := cs.GetUserChatRoomsWithLastMessage(userID)
-	if err != nil {
-		log.Printf("Error in GetUserChatRoomsWithLastMessageHandler: %v", err)
-		http.Error(w, fmt.Sprintf("Failed to get chat rooms with last message: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(chatRooms)
-}
-
-// func SetupSupabaseChatRoutes(router *mux.Router) {
-// 	hub := NewHub()
-// 	go hub.Run()
-
-// 	chatService := NewSupabaseChatService(hub)
-
-// 	router.HandleFunc("/ws/chat", chatService.HandleWebSocket)
-// 	router.HandleFunc("/api/chat/rooms", chatService.CreateChatRoomHandler).Methods("POST")
-// 	router.HandleFunc("/api/chat/rooms", chatService.GetUserChatRoomsHandler).Methods("GET")
-// 	router.HandleFunc("/api/chat/rooms/with-last-message", chatService.GetUserChatRoomsWithLastMessageHandler).Methods("GET")
-// 	router.HandleFunc("/api/chat/messages", chatService.SendMessageHandler).Methods("POST")
-// 	router.HandleFunc("/api/chat/messages", chatService.GetChatHistoryHandler).Methods("GET")
-// 	router.HandleFunc("/api/chat/messages/mark-read", chatService.MarkMessagesAsReadHandler).Methods("POST")
-// 	router.HandleFunc("/api/chat/unread-count", chatService.GetUnreadCountHandler).Methods("GET")
-
-// 	log.Println("Chat routes registered successfully.")
-// }

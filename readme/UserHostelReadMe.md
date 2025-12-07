@@ -5,7 +5,7 @@ The base URL for all API requests:
 
 | Environment | URL |
 | :--- | :--- |
-| **Production** | `a` |
+| **Production** | `https://ufinda-v0-01.onrender.com` |
 | **Local Dev** | `http://localhost:8080` |
 
 -----

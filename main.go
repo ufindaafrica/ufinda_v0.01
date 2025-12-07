@@ -18,9 +18,7 @@ import (
 	"github.com/oladev/ufinda_v0.01/internal/routes/hostel/user"
 	"github.com/oladev/ufinda_v0.01/internal/webhooks"
 	"github.com/oladev/ufinda_v0.01/internal/sockets/kyc"
-
-
-	// "uFinda/internal/sockets"
+	"github.com/oladev/ufinda_v0.01/internal/sockets/chat"
 )
 
 var wsHub = hub.NewHub()
@@ -97,40 +95,17 @@ func main() {
 		hub.WSHandler(wsHub, c)
 	})
 
-	// Start the Gin router
-	// r.Run(":8080")
+	// Initialize chat service
+	chatService := chat.NewSupabaseChatService()
+	hub := chat.NewHub(chatService)
 
-	// // Initialize chat service
-	// hub := chat.NewHub()
-	// go hub.Run()
-	// chatService := chat.NewSupabaseChatService(hub)
-	// hub.ChatService = chatService
+	chatService.SetHub(hub)
 
-	// // Chat WebSocket endpoint
-	// r.GET("/ws/chat", gin.WrapH(http.HandlerFunc(chatService.HandleWebSocket)))
+	go hub.Run()
 
-	// // Chat API endpoints
-	// chatAPI := r.Group("/api/chat")
-	// {
-	// 	chatAPI.POST("/rooms", gin.WrapH(http.HandlerFunc(chatService.CreateChatRoomHandler)))
-	// 	chatAPI.GET("/rooms", gin.WrapH(http.HandlerFunc(chatService.GetUserChatRoomsHandler)))
-	// 	chatAPI.GET("/rooms/with-last-message", gin.WrapH(http.HandlerFunc(chatService.GetUserChatRoomsWithLastMessageHandler)))
-	// 	chatAPI.POST("/messages", gin.WrapH(http.HandlerFunc(chatService.SendMessageHandler)))
-	// 	chatAPI.GET("/messages", gin.WrapH(http.HandlerFunc(chatService.GetChatHistoryHandler)))
-	// 	chatAPI.POST("/messages/mark-read", gin.WrapH(http.HandlerFunc(chatService.MarkMessagesAsReadHandler)))
-	// 	chatAPI.GET("/unread-count", gin.WrapH(http.HandlerFunc(chatService.GetUnreadCountHandler)))
-	// }
-
-	// // Protected endpoints (require authentication)
-	// // protected := r.Group("/api")
-	// // protected.Use(routes.AuthMiddleware())
-
-	// // Example protected route
-	// // protected.GET("/profile", routes.GetProfile)
-
-	// log.Println("Chat service initialized and routes registered")
-	// log.Println("Server starting on :8080")
+	// Chat endpoints
+	chat.RegisterChat(r, chatService)
 	
-	// // Start server
+	// Start the Gin router
 	r.Run(":" + port)
 }
