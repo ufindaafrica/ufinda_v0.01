@@ -3,7 +3,6 @@ import LineBreak from "@/components/lineBreak";
 import Plus from "@/components/plus";
 import { chats, chatsType } from "@/constants/dummy_chats";
 import { images } from "@/constants/images";
-import { moderateScale, scale, verticalScale } from "@/deps/scale";
 import { chatStyles } from "@/styles/chat";
 import { colors, globals, roboto } from "@/styles/globals";
 import { router } from "expo-router";
@@ -53,7 +52,7 @@ export default function VendorChat() {
 
                 {
                     allChats.map((item, idx) =>
-                        <TouchableOpacity key={idx} style={chatStyles.padding}>
+                        <TouchableOpacity onPress={() => router.push("/pages/singleChat")} key={idx} style={chatStyles.padding}>
                             <View style={chatStyles.eachChatV}>
                                 <ImageBackground source={images.laptop} style={chatStyles.laptopV}>
                                     {item.profile_pic ? <Image source={item.profile_pic} style={chatStyles.profileImg} /> : <View style={[chatStyles.profileImg, chatStyles.nullPic]}>

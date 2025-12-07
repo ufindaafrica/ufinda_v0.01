@@ -3,6 +3,7 @@ import { globals } from "@/styles/globals";
 import { useCallback, useEffect, useState } from "react";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { GiftedChat } from 'react-native-gifted-chat'
+import { View } from "react-native";
 
 
 export default function SingleChat() {
