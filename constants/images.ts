@@ -78,4 +78,9 @@ export const images = {
     laptop: require("../assets/images/laptop.png"),
     onetick: require("../assets/images/onetick.png"),
     twoticks: require("../assets/images/twoticks.png"),
+    outlineCall: require("../assets/images/outlineCall.png"),
+    emoji: require("../assets/images/emoji-happy.png"),
+    camera: require("../assets/images/camera.png"),
+    mic: require("../assets/images/mic.png"),
+    send: require("../assets/images/send.png")
 }
