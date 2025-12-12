@@ -16,7 +16,7 @@ export default function Message ({ message, time, last, status, personal }: Mess
         <View>
                 <Text style={[roboto.bodyMedium, personal ? singleChatStyles.message : singleChatStyles.reversed, personal ? colors.white : colors.black]}>{message}</Text>
                 { 
-                last ? <Text style={[roboto.caption, colors.grays, personal ? singleChatStyles.timeText : singleChatStyles.reversedTime]}>{time} . Seen</Text> : null
+                last ? <Text style={[roboto.caption, colors.grays, personal ? singleChatStyles.timeText : singleChatStyles.reversedTime]}>{time}{personal ? " : Seen" : null}</Text> : null
                 }
         </View>
     )

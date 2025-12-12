@@ -2,15 +2,97 @@ import Avatar from "@/components/avatar";
 import BackArrow from "@/components/back";
 import Message from "@/components/message";
 import { images } from "@/constants/images";
-import { scale, verticalScale } from "@/deps/scale";
+import { verticalScale } from "@/deps/scale";
 import { colors, globals, roboto } from "@/styles/globals";
 import { singleChatStyles } from "@/styles/singleChat";
 import { router } from "expo-router";
-import { Image, KeyboardAvoidingView, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Image, Keyboard, KeyboardAvoidingView, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+type Message = {
+    content: string,
+    created_at: Date,
+    sender_id: string,
+    is_read: boolean,
+    personal?: boolean,
+    last?: boolean
+}
 
 export default function SingleChat() {
+
+    const sampleMessageList = [{
+            content: "hi, looking for a hostel?",
+            created_at: new Date(),
+            sender_id: "1234",
+            is_read: true,
+            last: true
+        },
+    {
+            content: "yes, somewhere in osun",
+            created_at: new Date(),
+            sender_id: "1234",
+            is_read: true,
+            personal: true,
+            last: true
+        },
+        {
+            content: "ok, i have selfcon and a single room. if you're looking for a flat, that is also available.",
+            created_at: new Date(),
+            sender_id: "1234",
+            is_read: true,
+            last: true
+        },
+        {
+            content: "alright, do you have a phone number.",
+            created_at: new Date(),
+            sender_id: "1234",
+            is_read: true,
+            personal: true
+        },
+        {
+            content: "i want to call you",
+            created_at: new Date(),
+            sender_id: "1234",
+            is_read: true,
+            personal: true,
+            last: true
+        },
+        {
+            content: "call 09033445566",
+            created_at: new Date(),
+            sender_id: "1234",
+            is_read: true,
+            last: true
+        }
+    ]
+
+    const [message, setMessage] = useState("")
+    const [allMessages, setAllMessages] = useState<Array<Message>>([])
+
+    const sendMessage = (message: string) => {
+        const newMessage = {
+            content: message,
+            created_at: new Date(),
+            sender_id: "1234",
+            is_read: true,
+            personal: true,
+            last: true
+        }
+
+        setAllMessages(prev => {
+            const messages = [...prev]
+            messages.push(newMessage)
+            return messages
+        })
+
+        Keyboard.dismiss()
+        setMessage("")
+    }
+
+    useEffect(() => {
+        setAllMessages(sampleMessageList)
+    }, [])
 
     return (
         <SafeAreaView style={[globals.container, globals.lightContainer]}>
@@ -40,25 +122,29 @@ export default function SingleChat() {
                 <ScrollView>
                     <Text style={[roboto.bodySmall, colors.darkBurntOrange, singleChatStyles.encrypted]}>Messages are encrypted</Text>
 
-                    <Message message="hi, i'm looking for a hostel" last={true} time="9:00 pm" />
-
-                    <Message message="i have a self con" last time="9:50 pm" personal />
+                    {
+                        allMessages.map((item, idx) => 
+                        <Message key={idx} message={item.content} personal={item.personal} last={item.last} time={item.created_at.toTimeString().slice(0,5)} />)
+                    }
 
                 </ScrollView>
 
-                <View style={[singleChatStyles.row, singleChatStyles.jCenter, singleChatStyles.gap, {paddingBottom: 16}]}>
+                <View style={[singleChatStyles.row, singleChatStyles.jCenter, singleChatStyles.gap, {paddingVertical: 16}]}>
                     <View style={[globals.lightContainer, singleChatStyles.messageBox, singleChatStyles.row, singleChatStyles.jCenter, singleChatStyles.messageBoxHeight]}>
                         <View style={[singleChatStyles.row, singleChatStyles.gap]}>
                             <Image source={images.emoji} style={singleChatStyles.smallImg} />
                             <TextInput 
-                                style={[singleChatStyles.messageBoxHeight, roboto.bodySmall]}/>
+                                style={[singleChatStyles.messageBoxHeight, roboto.bodySmall, singleChatStyles.input]}
+                                multiline
+                                value={message}
+                                onChangeText={(text) => {setMessage(text)}}/>
                         </View>
                         <TouchableOpacity>
                             <Image source={images.camera} style={singleChatStyles.smallImg} />
                         </TouchableOpacity>
                     </View>
-                    <TouchableOpacity style={[singleChatStyles.sendView]}>
-                        <Image source={images.mic} style={singleChatStyles.smallImg}/>
+                    <TouchableOpacity onPress={() => message && sendMessage(message)} style={[singleChatStyles.sendView]}>
+                        <Image source={message ? images.send : images.mic} style={singleChatStyles.smallImg}/>
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>

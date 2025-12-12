@@ -80,7 +80,8 @@ export const singleChatStyles = StyleSheet.create({
         verticalAlign: 'middle', 
         borderRadius: 24, 
         borderTopRightRadius: 18, 
-        borderBottomRightRadius: 8
+        borderBottomRightRadius: 8,
+        minWidth: '15%'
     },
 
     reversed: {
@@ -104,5 +105,9 @@ export const singleChatStyles = StyleSheet.create({
     reversedTime: {
         alignSelf: "flex-start", 
         paddingTop: 4
+    },
+
+    input: {
+        width: scale(230)
     }
 })
