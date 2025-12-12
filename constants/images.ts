@@ -82,5 +82,7 @@ export const images = {
     emoji: require("../assets/images/emoji-happy.png"),
     camera: require("../assets/images/camera.png"),
     mic: require("../assets/images/mic.png"),
-    send: require("../assets/images/send.png")
+    send: require("../assets/images/send.png"),
+    settingArrowBlack: require("../assets/images/settingArrowBlack.png"),
+    settingArrowOrange: require("../assets/images/settingArrowOrange.png"),
 }

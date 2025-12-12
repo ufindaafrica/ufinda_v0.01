@@ -109,5 +109,10 @@ export const singleChatStyles = StyleSheet.create({
 
     input: {
         width: scale(230)
+    },
+
+    settings: {
+        paddingVertical: 16, 
+        paddingLeft: 16
     }
 })

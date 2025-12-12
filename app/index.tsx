@@ -52,7 +52,7 @@ export default function Index() {
         // router.replace("/auth/mode")
         // router.replace("/auth/otp")
         // router.replace("/auth/login")
-        // router.replace("/(tabs)/home")
+        router.replace("/(tabs)/home")
         // router.replace("/auth/pic")
         // router.replace("/auth/login")
         // router.replace("/onboarding")
@@ -60,7 +60,7 @@ export default function Index() {
         // router.replace("/dashboard")
         // router.replace("/(vendor)/ads")
         // router.replace("/vendorPages/newHostel")
-        router.replace("/(vendor)/chat")
+        // router.replace("/(vendor)/chat")
       } else {
         // router.replace("/(tabs)/home")
         // router.replace("/auth/mode")
