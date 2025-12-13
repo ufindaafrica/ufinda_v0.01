@@ -6,6 +6,7 @@ import { colors, globals, roboto } from "@/styles/globals";
 import { images } from "@/constants/images";
 import { singleChatStyles } from "@/styles/singleChat";
 import Setting from "./setting";
+import { router } from "expo-router";
 
 
 export default function MemberProfile() {
@@ -13,13 +14,13 @@ export default function MemberProfile() {
     return (
         <ScrollView style={{flex: 1}}>
             <View style={[singleChatStyles.row, singleChatStyles.jCenter, globals.authContainer]}>
-                <View style={[singleChatStyles.row, singleChatStyles.gap]}>
+                <TouchableOpacity onPress={() => router.push("/pages/profileDetails")} style={[singleChatStyles.row, singleChatStyles.gap]}>
                     <Avatar />
                     <View>
                         <Text style={roboto.titleSmallBold}>Timothy Okoli</Text>
                         <Text style={[roboto.bodySmall, colors.darkBurntOrange]}>Premium member</Text>
                     </View>
-                </View>
+                </TouchableOpacity>
                 <TouchableOpacity>
                     <Image source={images.bell} style={[singleChatStyles.img]} />
                 </TouchableOpacity>

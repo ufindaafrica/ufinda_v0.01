@@ -10,8 +10,11 @@ import { useEffect, useState } from "react";
 import { Image, ImageBackground, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+type VendorChatProps = {
+    student?: boolean
+}
 
-export default function VendorChat() {
+export default function VendorChat({ student }: VendorChatProps) {
 
     const [activated, setActivated] = useState("All")
     const [allChats, setAllChats] = useState<Array<chatsType>>([])
@@ -32,7 +35,9 @@ export default function VendorChat() {
 
     return (
         <SafeAreaView style={[globals.container, globals.lightContainer]}>
-            <Plus />
+            {
+                !student && <Plus />
+            }
 
             <View style={[chatStyles.padding]}>
                 <ChatAppHeader />
@@ -68,7 +73,7 @@ export default function VendorChat() {
                                     </View>
                                     <View>
                                         <Text style={[roboto.caption, item.unread && colors.foundationWarningDark]}>{item.last_mes_date.toLocaleTimeString()}</Text>
-                                        { item.unread ? <View style={chatStyles.unread}><Text style={[roboto.caption, colors.white]}>
+                                        {item.unread ? <View style={chatStyles.unread}><Text style={[roboto.caption, colors.white]}>
                                             {item.unread_mes}</Text></View> : null}
                                     </View>
                                 </View>

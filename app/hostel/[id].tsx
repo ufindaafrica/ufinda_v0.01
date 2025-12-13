@@ -156,7 +156,7 @@ export default function HostelDetails() {
 
                     <View style={idStyles.outerAgentV}>
                         <View style={[hostelCardStyles.agentInfo, idStyles.innerAgentV]}>
-                            <View style={hostelCardStyles.agentCard}>
+                            <TouchableOpacity onPress={() => router.push("/pages/profileDetails")} style={hostelCardStyles.agentCard}>
                                 <Image source={hostelDetails?.agent?.pic} style={hostelCardStyles.agentPic} />
                                 <View>
                                     <Text style={[roboto.bodyMediumBold, hostelCardStyles.agentMargin]}>{hostelDetails?.agent?.name}</Text>
@@ -174,7 +174,7 @@ export default function HostelDetails() {
                                         <Text style={[hostelCardStyles.verifiedAgentT, roboto.caption]}>Verified Agent</Text>
                                     </View> : null}
                                 </View>
-                            </View>
+                            </TouchableOpacity>
                             <TouchableOpacity style={hostelCardStyles.phoneView}>
                                 <Image source={images.call} style={hostelCardStyles.phoneImg} />
                             </TouchableOpacity>

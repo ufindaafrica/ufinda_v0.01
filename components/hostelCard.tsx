@@ -91,7 +91,7 @@ export default function HostelCard({ hostel, isSaved, reload }: HostelCardProps)
             </TouchableOpacity>
 
             <View style={hostelCardStyles.agentInfo}>
-                <View style={hostelCardStyles.agentCard}>
+                <TouchableOpacity onPress={() => router.push("/pages/profileDetails")} style={hostelCardStyles.agentCard}>
                     <Image source={hostel.agent?.pic} style={hostelCardStyles.agentPic} />
                     <View>
                         <Text style={[roboto.bodyMediumBold, hostelCardStyles.agentMargin]}>{hostel.agent?.name}</Text>
@@ -109,7 +109,7 @@ export default function HostelCard({ hostel, isSaved, reload }: HostelCardProps)
                             <Text style={[hostelCardStyles.verifiedAgentT, roboto.caption]}>Verified Agent</Text>
                         </View> : null}
                     </View>
-                </View>
+                </TouchableOpacity>
                 <TouchableOpacity style={hostelCardStyles.phoneView}>
                     <Image source={images.call} style={hostelCardStyles.phoneImg} />
                 </TouchableOpacity>

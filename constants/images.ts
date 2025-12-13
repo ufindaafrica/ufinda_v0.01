@@ -85,4 +85,8 @@ export const images = {
     send: require("../assets/images/send.png"),
     settingArrowBlack: require("../assets/images/settingArrowBlack.png"),
     settingArrowOrange: require("../assets/images/settingArrowOrange.png"),
+    like: require("../assets/images/like.png"),
+    darkOrangeStar: require("../assets/images/darkOrangeStar.png"),
+    orangeProfileTick: require("../assets/images/orangeProfileTick.png"),
+    greenCall: require("../assets/images/greenCall.png")
 }
