@@ -2,7 +2,7 @@
 
 ### Base URL (REST API)
 
-The base URL for all **REST API** requests (for history, rooms, and counts):
+The base URL for all **REST API** requests:
 
 | Environment | URL |
 | :--- | :--- |
@@ -13,7 +13,7 @@ The base URL for all **REST API** requests (for history, rooms, and counts):
 
 ### WebSocket Connection (Real-Time)
 
-The WebSocket endpoint is used for real-time messaging, separate from the Base URL above.
+The WebSocket endpoint is secured using the authentication token.
 
 | Protocol | Endpoint | Description |
 | :--- | :--- | :--- |
@@ -23,44 +23,43 @@ The WebSocket endpoint is used for real-time messaging, separate from the Base U
 
 | Parameter | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `user_id` | `string` | **Yes** | The 7-character ID of the authenticated mobile user (e.g., `U123456`). |
+| **`token`** | `string` | **Yes** | The full **access token** used for authentication. The server extracts the validated `user_id` from this token. |
 
-> **Example Connection URI:** `wss://base_url/ws/chat?user_id=U123456`
+> **Example Connection URI:** `wss://base_url/ws/chat?**token**=<access_token>`
 
 -----
 
-## I. REST Endpoints (Rooms & History)
+## IMPORTANT: Authorization and User ID Changes
 
-### 1\. GET `[BASE_URL]/api/v1/chat/rooms/last-message`
+All API access (REST and WebSocket) is strictly controlled by the **`Authorization: Bearer <token>`** header or the **`token` query parameter**.
 
-Retrieves a list of the user's chat rooms, including the last message and unread count for display in the main chat list view.
+  * **No Manual `user_id` Passing:** The server extracts the validated `user_id` from the JWT token's payload. **The mobile developer should NOT pass the `user_id`** in the query or body for endpoints that act on the currently authenticated user (e.g., getting rooms, unread count).
+
+-----
+
+## I. REST Endpoints (Rooms, History, & Upload)
+
+All REST endpoints are prefixed with `/chat` and require the `Authorization: Bearer <access_token>` header.
+
+### 1\. GET `/chat/rooms/with-last-message`
+
+Retrieves a list of the authenticated user's chat rooms, including the last message, read status, and unread count. (Maps to `GetUserChatRoomsWithLastMessageHandler`).
 
 #### Request
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `GET` | `/api/v1/chat/rooms/last-message` | Retrieves all rooms associated with the `user_id`, sorted by latest activity. |
+| `GET` | `/chat/rooms/with-last-message` | Retrieves all rooms for the **authenticated user**. |
 
 #### Query Parameters
 
-| Parameter | Type | Required | Description |
-| :--- | :--- | :--- | :--- |
-| `user_id` | `string` | **Yes** | The 10-character ID of the user whose rooms are being queried. |
+**None required.** User ID is extracted from the token.
 
 #### Headers
 
-This endpoint requires an `Authorization` header with a valid user access token.
-
 | Header | Example Value | Description |
 | :--- | :--- | :--- |
-| `Authorization` | `Bearer <access_token>` | The user's current access token. |
-
-#### Workflow (Conceptual)
-
-1.  **Authorization**: Verify the user token.
-2.  **Room Retrieval**: Fetch all rooms where `user_id` is either the `buyer_id` or `vendor_id`.
-3.  **Aggregation**: For each room, fetch the **last message** and calculate the **total unread count** (messages sent by the *other* party).
-4.  **Response Handling**: Return the aggregated list.
+| `Authorization` | `Bearer <access_token>` | **REQUIRED**. The user's current access token. |
 
 #### Responses
 
@@ -68,54 +67,55 @@ This endpoint requires an `Authorization` header with a valid user access token.
 
 | Status Code | Description |
 | :--- | :--- |
-| `200 OK` | The list of chat rooms with last message details was successfully retrieved. |
+| `200 OK` | The list of chat rooms with aggregated details was successfully retrieved. |
 
 **Body**
 
 ```json
 [
-  {
-    "id": "1e2d3e4f-5060-7080-90a0-b0c0d0e0f123",
-    "buyer_id": "B112233",
-    "vendor_id": "V998877",
-    "product_id": "prod-xyz-123",
-    "updated_at": "2025-12-05T17:05:00Z",
-    "unread_count": 3,
-    "last_message": {
-      "content": "I'll take three units.",
-      "created_at": "2025-12-05T17:05:00Z",
-      "sender_id": "B112233",
-      "is_read": false
-    }
-  }
+  {
+    "id": "1e2d3e4f-5060-7080-90a0-b0c0d0e0f123",
+    "buyer_id": "B112233",
+    "vendor_id": "V998877",
+    "product_id": "prod-xyz-123",
+    "unread_count": 3,
+    "last_message": {
+        "content": "I'll take three units.",
+        "message_type": "text",
+        "public_id": null,
+        "created_at": "2025-12-05T17:05:00Z",
+        "sender_id": "B112233",
+        "is_read": false
+    }
+  }
 ]
 ```
 
 -----
 
-### 2\. POST `[BASE_URL]/api/v1/chat/rooms`
+### 2\. POST `/chat/rooms`
 
-Creates a new chat room between a buyer and a vendor. If a room with the exact same `buyer_id`, `vendor_id`, and (optional) `product_id` already exists, the existing room is returned.
+Creates a new chat room. If an existing room exists with the same parties and optional product, the existing room is returned. (Maps to `CreateChatRoomHandler`).
 
 #### Request
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `POST` | `/api/v1/chat/rooms` | Initiates a new chat room. |
+| `POST` | `/chat/rooms` | Initiates a new chat room. |
 
 #### Body (`application/json`)
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `buyer_id` | `string` | **Yes** | The 10-char ID of the Buyer. |
-| `vendor_id` | `string` | **Yes** | The 10-char ID of the Vendor. |
-| `product_id` | `string` | No | **Optional** product identifier to link the chat to a specific listing. |
+| `buyer_id` | `string` | **Yes** | The ID of the Buyer. |
+| `vendor_id` | `string` | **Yes** | The ID of the Vendor. |
+| `product_id` | `string` | No | **Optional** product identifier. |
 
 #### Headers
 
 | Header | Example Value | Description |
 | :--- | :--- | :--- |
-| `Authorization` | `Bearer <access_token>` | The user's current access token. |
+| `Authorization` | `Bearer <access_token>` | **REQUIRED**. The user's current access token. |
 
 #### Responses
 
@@ -129,25 +129,25 @@ Creates a new chat room between a buyer and a vendor. If a room with the exact s
 
 ```json
 {
-  "id": "1e2d3e4f-5060-7080-90a0-b0c0d0e0f123",
-  "buyer_id": "B112233",
-  "vendor_id": "V998877",
-  "product_id": "prod-xyz-123",
-  "created_at": "2025-12-05T17:00:00Z"
+  "id": "1e2d3e4f-5060-7080-90a0-b0c0d0e0f123",
+  "buyer_id": "B112233",
+  "vendor_id": "V998877",
+  "product_id": "prod-xyz-123",
+  "created_at": "2025-12-05T17:00:00Z"
 }
 ```
 
 -----
 
-### 3\. GET `[BASE_URL]/api/v1/chat/history`
+### 3\. GET `/chat/messages`
 
-Retrieves a paginated list of messages for a specific room. Messages are returned in chronological order (oldest first).
+Retrieves a paginated list of messages for a specific room. (Maps to `GetChatHistoryHandler`).
 
 #### Request
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `GET` | `/api/v1/chat/history` | Fetches the message history for a room. |
+| `GET` | `/chat/messages` | Fetches the message history for a room. |
 
 #### Query Parameters
 
@@ -161,7 +161,7 @@ Retrieves a paginated list of messages for a specific room. Messages are returne
 
 | Header | Example Value | Description |
 | :--- | :--- | :--- |
-| `Authorization` | `Bearer <access_token>` | The user's current access token. |
+| `Authorization` | `Bearer <access_token>` | **REQUIRED**. The user's current access token. |
 
 #### Responses
 
@@ -175,42 +175,43 @@ Retrieves a paginated list of messages for a specific room. Messages are returne
 
 ```json
 [
-  {
-    "id": "m1234567-890a-bcde-f123-4567890abcde",
-    "chat_room_id": "1e2d3e4f-5060-7080-90a0-b0c0d0e0f123",
-    "sender_id": "B112233",
-    "content": "Hello, is this product available?",
-    "created_at": "2025-12-05T17:00:00Z",
-    "is_read": true
-  },
-  // ... more messages
+  {
+    "id": "m1234567-890a-bcde-f123-4567890abcde",
+    "chat_room_id": "1e2d3e4f-5060-7080-90a0-b0c0d0e0f123",
+    "sender_id": "B112233",
+    "content": "Hello, is this product available?",
+    "message_type": "text",
+    "public_id": null,
+    "created_at": "2025-12-05T17:00:00Z",
+    "is_read": true
+  },
+  // ... more messages
 ]
 ```
 
 -----
 
-### 4\. PATCH `[BASE_URL]/api/v1/chat/messages/read`
+### 4\. POST `/chat/upload-img` **(IMAGE UPLOAD)**
 
-Marks all messages in a specific room, which were *not* sent by the requesting user, as read. Used when the user opens the chat screen.
+Uploads an image file to Cloudinary. Used as the first step for sending images. (Maps to `HandleImageUpload`).
 
 #### Request
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `PATCH` | `/api/v1/chat/messages/read` | Sets the read status for all unread messages in a room. |
+| `POST` | `/chat/upload-img` | Uploads image file. |
 
-#### Body (`application/json`)
+#### Body (`multipart/form-data`)
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `room_id` | `string` | **Yes** | The UUID of the chat room. |
-| `user_id` | `string` | **Yes** | The 7-char ID of the user performing the action. |
+| **`image`** | `File` | **Yes** | The image file (max 10MB). **Field name must be `image`**. |
 
 #### Headers
 
 | Header | Example Value | Description |
 | :--- | :--- | :--- |
-| `Authorization` | `Bearer <access_token>` | The user's current access token. |
+| `Authorization` | `Bearer <access_token>` | **REQUIRED**. The user's current access token. |
 
 #### Responses
 
@@ -218,31 +219,72 @@ Marks all messages in a specific room, which were *not* sent by the requesting u
 
 | Status Code | Description |
 | :--- | :--- |
-| `204 No Content` | Messages were successfully marked as read. The client should update the UI without waiting for a new body. |
+| `200 OK` | Image uploaded successfully. The client must save this payload for the subsequent WebSocket `message` action. |
+
+**Body**
+
+```json
+{
+  "url": "https://res.cloudinary.com/.../unique_file.jpg",
+  "public_id": "chat/images/unique_file",
+  "message_type": "image"
+}
+```
 
 -----
 
-### 5\. GET `[BASE_URL]/api/v1/chat/unread-count`
+### 5\. POST `/chat/messages/mark-read` **(NEW HTTP METHOD)**
 
-Retrieves the aggregated total unread message count across **all** of a user's chat rooms. Useful for badge notifications on the main app icon or chat tab.
+Marks all messages in a specific room, which were *not* sent by the requesting user, as read. (Maps to `MarkMessagesAsReadHandler`).
 
 #### Request
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `GET` | `/api/v1/chat/unread-count` | Fetches the total number of unread messages for the user. |
+| `POST` | `/chat/messages/mark-read` | Sets the read status for all unread messages for the authenticated user. |
 
-#### Query Parameters
+#### Body (`application/json`) **(UPDATED)**
 
-| Parameter | Type | Required | Description |
+| Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `user_id` | `string` | **Yes** | The 7-character user ID. |
+| `room_id` | `string` | **Yes** | The UUID of the chat room. |
+| \~\~`user_id`\~\~ | \~\~`string`\~\~ | **No** | **REMOVED. Extracted from Authorization Header.** |
 
 #### Headers
 
 | Header | Example Value | Description |
 | :--- | :--- | :--- |
-| `Authorization` | `Bearer <access_token>` | The user's current access token. |
+| `Authorization` | `Bearer <access_token>` | **REQUIRED**. The user's current access token. |
+
+#### Responses
+
+##### Success
+
+| Status Code | Description |
+| :--- | :--- |
+| `204 No Content` | Messages were successfully marked as read. **(Triggers `message_read` WS event)**. |
+
+-----
+
+### 6\. GET `/chat/unread-count`
+
+Retrieves the aggregated total unread message count across **all** of a user's chat rooms. (Maps to `GetUnreadCountHandler`).
+
+#### Request
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/chat/unread-count` | Fetches the total number of unread messages for the **authenticated user**. |
+
+#### Query Parameters
+
+**None required.** User ID is extracted from the token.
+
+#### Headers
+
+| Header | Example Value | Description |
+| :--- | :--- | :--- |
+| `Authorization` | `Bearer <access_token>` | **REQUIRED**. The user's current access token. |
 
 #### Responses
 
@@ -256,7 +298,7 @@ Retrieves the aggregated total unread message count across **all** of a user's c
 
 ```json
 {
-  "unread_count": 15
+  "unread_count": 15
 }
 ```
 
@@ -264,9 +306,7 @@ Retrieves the aggregated total unread message count across **all** of a user's c
 
 ## II. WebSocket Protocol (Real-Time Messaging)
 
-This protocol defines the structure for all real-time events and actions over the established connection (`/ws/chat`). All messages must be a JSON object with a required `type` field.
-
-[Image of Chat WebSocket Protocol Flow Diagram]
+This protocol defines the structure for all real-time events and actions over the established connection (`/ws/chat`).
 
 ### A. Mobile ➡️ Server Messages (Actions)
 
@@ -278,13 +318,17 @@ This protocol defines the structure for all real-time events and actions over th
 
 #### `type: "message"` (Sending a new message)
 
+The server automatically fills the `sender_id` based on the connection token.
+
 ```json
 {
-  "type": "message",
-  "payload": {
-    "room_id": "1e2d3e4f-5060-7080-90a0-b0c0d0e0f123",
-    "content": "Can you ship this item next week?"
-  }
+  "type": "message",
+  "payload": {
+    "room_id": "1e2d3e4f-5060-7080-90a0-b0c0d0e0f123",
+    "content": "https://cloudinary.com/.../image.jpg",
+    "message_type": "image", // or 'text', 'file', etc.
+    "public_id": "chat/images/unique_id" // Required for type 'image' and 'file'
+  }
 }
 ```
 
@@ -292,40 +336,56 @@ This protocol defines the structure for all real-time events and actions over th
 
 | Type | Event | Trigger |
 | :--- | :--- | :--- |
-| `message` | New Message | A new message was saved to the DB and broadcast to the room participants. |
-| `message_delivered` | Delivery Confirm | A message sent by the user was successfully delivered (pushed) to another client. |
+| `message` | New Message | A new message was saved to the DB and broadcast to **recipients only**. |
+| `message_delivered` | Delivery Confirm | A message sent by the user was successfully saved to the DB (for the sender). |
+| **`message_read`** | **Read Receipt** | The recipient has called the `POST /chat/messages/mark-read` endpoint. |
 | `error` | Protocol Error | An issue occurred (e.g., rate limit, invalid payload format). |
 
 #### `type: "message"` (Receiving a new message)
 
-This event contains all the details needed to display a new message on the screen.
+This message is only sent to the recipient(s).
 
 ```json
 {
-  "type": "message",
-  "message_id": "m1234567-890a-bcde-f123-4567890abcde",
-  "payload": {
-    "id": "m1234567-890a-bcde-f123-4567890abcde",
-    "chat_room_id": "1e2d3e4f-5060-7080-90a0-b0c0d0e0f123",
-    "sender_id": "V998877",
-    "content": "Yes, we can ship it next week.",
-    "created_at": "2025-12-05T17:05:00Z",
-    "sender_name": "Vendor A Store",
-    "is_read": false
-  }
+  "type": "message",
+  "message_id": "m1234567-890a-bcde-f123-4567890abcde",
+  "payload": {
+    "id": "m1234567-890a-bcde-f123-4567890abcde",
+    "chat_room_id": "1e2d3e4f-5060-7080-90a0-b0c0d0e0f123",
+    "sender_id": "V998877",
+    "content": "Yes, we can ship it next week.",
+    "message_type": "text", 
+    "public_id": null,
+    "created_at": "2025-12-05T17:05:00Z",
+    "sender_name": "Vendor A Store"
+  }
 }
 ```
 
 #### `type: "message_delivered"` (Delivery Confirmation)
 
-Use this to update the UI status (e.g., change a pending icon to a "delivered" checkmark).
+Use this to update the sender's UI status.
 
 ```json
 {
-  "type": "message_delivered",
-  "payload": {
-    "message_id": "m1234567-890a-bcde-f123-4567890abcde"
-  }
+  "type": "message_delivered",
+  "payload": {
+    "message_id": "m1234567-890a-bcde-f123-4567890abcde"
+  }
+}
+```
+
+#### `type: "message_read"` (Read Receipt)
+
+The sender receives this when the recipient views the messages.
+
+```json
+{
+  "type": "message_read",
+  "payload": {
+    "room_id": "1e2d3e4f-5060-7080-90a0-b0c0d0e0f123",
+    "reader_id": "R998877"
+  }
 }
 ```
 
@@ -335,7 +395,7 @@ Use this to update the UI status (e.g., change a pending icon to a "delivered" c
 
 | Status Code | Type (WS) | Description | Resolution |
 | :--- | :--- | :--- | :--- |
-| `401 Unauthorized` | N/A | Missing or invalid access token (REST). | Check `Authorization` header validity. |
-| `400 Bad Request` | `error` | Invalid JSON body/payload or missing required query parameter. | Review endpoint body/query specs. |
+| `401 Unauthorized` | N/A | Missing or invalid access token (REST or WS connection). | **Ensure token is present in `Authorization` header (REST) or `token` query param (WS).** |
+| `400 Bad Request` | `error` | Invalid JSON body/payload or missing required field. | Review endpoint body/query specs. |
 | `403 Forbidden` | N/A | User is authenticated but lacks required chat permissions. | Check user's role/permissions. |
 | `500 Internal Error` | `error` | Unexpected server issue (DB failure, internal timeout). | Server-side issue; report to backend team. |

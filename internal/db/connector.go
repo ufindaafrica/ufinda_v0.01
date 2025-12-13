@@ -94,7 +94,8 @@ func MakeDBRequest(method, endpoint string, data interface{}, headers map[string
 	req.Header.Set("apikey", ServiceRoleKey)
 	req.Header.Set("Authorization", "Bearer "+ServiceRoleKey)
 	req.Header.Set("Content-Type", "application/json")
-
+	req.Header.Set("Connection", "close")
+	
 	// Add any additional headers passed in
 	if headers != nil {
 		for k, v := range headers {

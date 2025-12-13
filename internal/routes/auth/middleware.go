@@ -24,16 +24,22 @@ func handleAuthError(c *gin.Context, status int, message string, logEntry db.Sec
 
 func AuthMiddleware() gin.HandlerFunc {
     return func(c *gin.Context) {
+        tokenString := ""
         authHeader := c.GetHeader("Authorization")
-        if authHeader == "" {
-            c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
-            c.Abort()
-            return
+        // --- FIX FOR AUTH HEADER ---
+        if authHeader != "" {
+            tokenString = strings.TrimPrefix(authHeader, "Bearer ")
+        } else if tokenString == "" {
+            // If authHeader was empty, check query parameter.
+            // This is the clean way to merge the logic.
+            tokenString = c.Query("token")
         }
 
-
-        // Validate token
-        tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+        if tokenString == "" || tokenString == "Bearer " { // Check if token is still empty/invalid prefix
+            c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or missing authentication token"})
+            return
+        }
+        // ---------------------------
         claims, err := token.ValidateToken(tokenString)
         if err != nil {
             logData := authlog.Logs["4"]

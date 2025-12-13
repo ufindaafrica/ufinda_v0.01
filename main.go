@@ -96,7 +96,7 @@ func main() {
 	})
 
 	// Initialize chat service
-	chatService := chat.NewSupabaseChatService()
+	chatService := chat.NewSupabaseChatService(cld)
 	hub := chat.NewHub(chatService)
 
 	chatService.SetHub(hub)

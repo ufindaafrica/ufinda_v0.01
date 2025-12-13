@@ -7,9 +7,12 @@ import (
 )
 
 func RegisterChat(r *gin.Engine, chatService *SupabaseChatService) {
-	r.GET("/ws/chat", gin.WrapH(http.HandlerFunc(chatService.HandleWebSocket)))
+	wsGroup := r.Group("/ws", auth.AuthMiddleware()) 
+    {
+        wsGroup.GET("/chat", chatService.HandleWebSocket) // <--- FIX IS HERE
+    }
 
-	chatAPI := r.Group("/api/chat")
+	chatAPI := r.Group("/chat")
 	{
 		chatAPI.POST("/rooms", auth.AuthMiddleware(), gin.WrapH(http.HandlerFunc(chatService.CreateChatRoomHandler)))
 		chatAPI.GET("/rooms", auth.AuthMiddleware(), gin.WrapH(http.HandlerFunc(chatService.GetUserChatRoomsHandler)))
@@ -18,5 +21,6 @@ func RegisterChat(r *gin.Engine, chatService *SupabaseChatService) {
 		chatAPI.GET("/messages", auth.AuthMiddleware(), gin.WrapH(http.HandlerFunc(chatService.GetChatHistoryHandler)))
 		chatAPI.POST("/messages/mark-read", auth.AuthMiddleware(), gin.WrapH(http.HandlerFunc(chatService.MarkMessagesAsReadHandler)))
 		chatAPI.GET("/unread-count", auth.AuthMiddleware(), gin.WrapH(http.HandlerFunc(chatService.GetUnreadCountHandler)))
+		chatAPI.POST("/upload-img", auth.AuthMiddleware(), gin.WrapH(http.HandlerFunc(chatService.HandleImageUpload)))
 	}
 }
