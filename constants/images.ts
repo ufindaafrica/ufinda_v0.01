@@ -88,5 +88,6 @@ export const images = {
     like: require("../assets/images/like.png"),
     darkOrangeStar: require("../assets/images/darkOrangeStar.png"),
     orangeProfileTick: require("../assets/images/orangeProfileTick.png"),
-    greenCall: require("../assets/images/greenCall.png")
+    greenCall: require("../assets/images/greenCall.png"),
+    chat1: require("../assets/images/chat1.png"),
 }

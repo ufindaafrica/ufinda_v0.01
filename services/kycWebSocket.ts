@@ -21,6 +21,7 @@ export const kycWebSocket = (vendorId: string) => {
         }
 
         ws.onmessage = (event) => {
+            console.log("event => ", event)
             const data = JSON.parse(event.data)
             console.log("kyc update received:", data)
             clearTimeout(timeout)
@@ -43,7 +44,7 @@ export const kycWebSocket = (vendorId: string) => {
             console.log("websocket time out")
             ws?.close()
             reject(new Error("timeout"))
-        }, 20000)
+        }, 180000)
     })
 
     return {

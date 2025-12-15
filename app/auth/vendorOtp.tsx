@@ -37,6 +37,11 @@ export default function VendorOtp() {
         setLoaderVisible(true)
     }
 
+    const cancelVerification = () => {
+        setShowWebView(false)
+        setLoaderVisible(false)
+    }
+
     const vendorId = "sample"
     const [otpDone, setOtpDone] = useState(false)
 
@@ -49,7 +54,7 @@ export default function VendorOtp() {
 
         const result = await getVendorOtpUrl()
 
-        setLoaderVisible(false)
+        // setLoaderVisible(false)
 
         if (result[0] != 200) {
             seterrorModal(true)
@@ -60,28 +65,30 @@ export default function VendorOtp() {
             console.log(vendorOtpUrl)
 
             const parsed = new URL(vendorOtpUrl)
-            const value = parsed.searchParams.get("metadata%5Buser_id%5D")
+            const value = parsed.searchParams.get("metadata[user_id]")
             console.log(value)
+
+            const wsSession = kycWebSocket(value ?? '')
+            const wsPromise = wsSession.promise
+
+            setLoaderVisible(false)
 
             // show webview
             setShowWebView(true)
 
-            // setLoaderVisible(true)
+            try {
+                const result = await wsPromise
+                console.log("i reached here at the end")
+                console.log("final kyc result:", result)
+                setShowWebView(false)
+                setLoaderVisible(false)
+                router.push("/auth/pic")
+            } catch (error) {
+                console.log("failed to get kyc results")
+            }
 
-            // const wsSession = kycWebSocket(vendorId)
-            // const { promise: wsPromise, cancel } = wsSession
-
-            // try {
-            //     const result = await wsPromise
-            //     console.log("final kyc result:", result)
-
-            // } catch (error) {
-            //     console.log("failed to get kyc results")
-            // }
-
-            // setLoaderVisible(false)
-
-            // console.log("all done")
+            setShowWebView(false)
+            setLoaderVisible(false)
         }
 
     }
@@ -92,12 +99,16 @@ export default function VendorOtp() {
 
         try {
             const result = await wsPromise
+            console.log("i reached here at the end")
             console.log("final kyc result:", result)
-
+            setShowWebView(false)
+            setLoaderVisible(false)
+            router.push("/auth/pic")
         } catch (error) {
             console.log("failed to get kyc results")
         }
 
+        setShowWebView(false)
         setLoaderVisible(false)
 
         console.log("all done")
@@ -190,12 +201,10 @@ export default function VendorOtp() {
                         onComplete={() => {
                             console.log("WebView finished, but websocket still listening...");
                             closeWebView();
-                            getSocketResults()
                         }}
                         onCancel={() => {
                             console.log("User cancelled verification");
-                            closeWebView();
-                            getSocketResults()
+                            cancelVerification();
                         }}
                     />
                 )}

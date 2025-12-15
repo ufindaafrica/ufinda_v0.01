@@ -3,8 +3,8 @@ import Thumbnail from "./thumbnail";
 import { images } from "@/constants/images";
 import { hostelCardStyles } from "@/styles/hostelCard"
 import { DummyHostelsType } from "@/constants/dummy_data";
-import { router, useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import { getItemAsync, setItemAsync } from "expo-secure-store";
 import { roboto } from "@/styles/globals";
 
@@ -111,7 +111,7 @@ export default function HostelCard({ hostel, isSaved, reload }: HostelCardProps)
                     </View>
                 </TouchableOpacity>
                 <TouchableOpacity style={hostelCardStyles.phoneView}>
-                    <Image source={images.call} style={hostelCardStyles.phoneImg} />
+                    <Image source={images.chat1} style={hostelCardStyles.phoneImg} />
                 </TouchableOpacity>
             </View>
         </View>
