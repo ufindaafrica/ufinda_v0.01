@@ -3,10 +3,11 @@ import BackArrow from "@/components/back";
 import Message from "@/components/message";
 import { images } from "@/constants/images";
 import { verticalScale } from "@/deps/scale";
+import { getChatMessages } from "@/services/chatMes";
 import { colors, globals, roboto } from "@/styles/globals";
 import { singleChatStyles } from "@/styles/singleChat";
-import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import { Image, Keyboard, KeyboardAvoidingView, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -21,51 +22,53 @@ type Message = {
 
 export default function SingleChat() {
 
-    const sampleMessageList = [{
-            content: "hi, looking for a hostel?",
-            created_at: new Date(),
-            sender_id: "1234",
-            is_read: true,
-            last: true
-        },
-    {
-            content: "yes, somewhere in osun",
-            created_at: new Date(),
-            sender_id: "1234",
-            is_read: true,
-            personal: true,
-            last: true
-        },
-        {
-            content: "ok, i have selfcon and a single room. if you're looking for a flat, that is also available.",
-            created_at: new Date(),
-            sender_id: "1234",
-            is_read: true,
-            last: true
-        },
-        {
-            content: "alright, do you have a phone number.",
-            created_at: new Date(),
-            sender_id: "1234",
-            is_read: true,
-            personal: true
-        },
-        {
-            content: "i want to call you",
-            created_at: new Date(),
-            sender_id: "1234",
-            is_read: true,
-            personal: true,
-            last: true
-        },
-        {
-            content: "call 09033445566",
-            created_at: new Date(),
-            sender_id: "1234",
-            is_read: true,
-            last: true
-        }
-    ]
+    const { id } = useLocalSearchParams()
+
+    // const sampleMessageList = [{
+    //         content: "hi, looking for a hostel?",
+    //         created_at: new Date(),
+    //         sender_id: "1234",
+    //         is_read: true,
+    //         last: true
+    //     },
+    // {
+    //         content: "yes, somewhere in osun",
+    //         created_at: new Date(),
+    //         sender_id: "1234",
+    //         is_read: true,
+    //         personal: true,
+    //         last: true
+    //     },
+    //     {
+    //         content: "ok, i have selfcon and a single room. if you're looking for a flat, that is also available.",
+    //         created_at: new Date(),
+    //         sender_id: "1234",
+    //         is_read: true,
+    //         last: true
+    //     },
+    //     {
+    //         content: "alright, do you have a phone number.",
+    //         created_at: new Date(),
+    //         sender_id: "1234",
+    //         is_read: true,
+    //         personal: true
+    //     },
+    //     {
+    //         content: "i want to call you",
+    //         created_at: new Date(),
+    //         sender_id: "1234",
+    //         is_read: true,
+    //         personal: true,
+    //         last: true
+    //     },
+    //     {
+    //         content: "call 09033445566",
+    //         created_at: new Date(),
+    //         sender_id: "1234",
+    //         is_read: true,
+    //         last: true
+    //     }
+    // ]
 
     const [message, setMessage] = useState("")
     const [allMessages, setAllMessages] = useState<Array<Message>>([])
@@ -90,9 +93,17 @@ export default function SingleChat() {
         setMessage("")
     }
 
-    useEffect(() => {
-        setAllMessages(sampleMessageList)
-    }, [])
+    useFocusEffect(useCallback(() => {
+        const getMessages = async () => {
+            const mes = await getChatMessages({room_id: id})
+            if (mes[0] == "200") {
+                setAllMessages(mes[1])
+            }
+            console.log(mes[1])
+        }
+
+        getMessages()
+    }, []))
 
     return (
         <SafeAreaView style={[globals.container, globals.lightContainer]}>

@@ -7,6 +7,7 @@ import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { getItemAsync, setItemAsync } from "expo-secure-store";
 import { roboto } from "@/styles/globals";
+import { createNewChat } from "@/services/newChat";
 
 type HostelCardProps = {
     hostel: DummyHostelsType,
@@ -49,6 +50,26 @@ export default function HostelCard({ hostel, isSaved, reload }: HostelCardProps)
     const unstars = 5 - stars
 
     const [archiveImg, setArchiveImg] = useState(saved ? images.savedIcon : images.archiveAdd)
+
+    const handleNewChat = async (id: string) => {
+        const data = {
+            buyer_id: "1234",
+            vendor_id: id
+        }
+
+        const newchat = await createNewChat(data)
+
+        if (newchat[0] == "200") {
+            console.log("newchat =>", newchat)
+            console.log(newchat[1])
+            router.push({
+                pathname: '/pages/singleChat',
+                params: {
+                    id: newchat[1]
+                }
+            })
+        }
+    }
 
     return (
         <View style={hostelCardStyles.card}>
@@ -110,7 +131,7 @@ export default function HostelCard({ hostel, isSaved, reload }: HostelCardProps)
                         </View> : null}
                     </View>
                 </TouchableOpacity>
-                <TouchableOpacity style={hostelCardStyles.phoneView}>
+                <TouchableOpacity onPress={() => handleNewChat(hostel.agent?.id)} style={hostelCardStyles.phoneView}>
                     <Image source={images.chat1} style={hostelCardStyles.phoneImg} />
                 </TouchableOpacity>
             </View>
