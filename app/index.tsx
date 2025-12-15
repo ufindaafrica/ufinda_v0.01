@@ -51,11 +51,11 @@ export default function Index() {
       if (SecureStore.getItem("AUTH") == null) {
         // router.replace("/auth/mode")
         // router.replace("/auth/otp")
-        // router.replace("/auth/login")
+        router.replace("/auth/login")
         // router.replace("/(tabs)/home")
         // router.replace("/auth/pic")
         // router.replace("/auth/login")
-        router.replace("/onboarding")
+        // router.replace("/onboarding")
         // router.replace("/auth/vendorOtp")
         // router.replace("/dashboard")
         // router.replace("/(vendor)/ads")
