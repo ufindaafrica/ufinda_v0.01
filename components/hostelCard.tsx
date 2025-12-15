@@ -65,7 +65,8 @@ export default function HostelCard({ hostel, isSaved, reload }: HostelCardProps)
             router.push({
                 pathname: '/pages/singleChat',
                 params: {
-                    id: newchat[1]
+                    id: newchat[1],
+                    vendor_id: id
                 }
             })
         }

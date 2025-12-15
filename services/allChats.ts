@@ -20,6 +20,7 @@ export const getAllChats = async () => {
 
         result[0] = "200"
         result[1] = res.data
+        console.log("res.data ==> ", res.data)
 
     } catch (err: unknown) {
 

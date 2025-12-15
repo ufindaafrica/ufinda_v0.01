@@ -7,22 +7,20 @@ export const getChatMessages = async (data : any) => {
     const token = await getAccessToken()
 
     try {
-        const res = await axios.post(
+        const res = await axios.get(
             "/chat/messages",
-            data,
             {
                 baseURL: BASE_URL,
                 timeout: timeout,
                 headers: {
-                    "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`
-                }
+                },
+                params: data
             }
         )
 
         result[0] = "200"
         result[1] = res.data
-        console.log("res.data =>", res.data)
 
     } catch (err: unknown) {
 

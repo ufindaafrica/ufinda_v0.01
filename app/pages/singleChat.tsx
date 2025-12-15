@@ -1,6 +1,7 @@
 import Avatar from "@/components/avatar";
 import BackArrow from "@/components/back";
 import Message from "@/components/message";
+import { dummyHostels } from "@/constants/dummy_data";
 import { images } from "@/constants/images";
 import { verticalScale } from "@/deps/scale";
 import { getChatMessages } from "@/services/chatMes";
@@ -23,6 +24,8 @@ type Message = {
 export default function SingleChat() {
 
     const { id } = useLocalSearchParams()
+    const { vendor_id } = useLocalSearchParams()
+    const vendorIdString = Array.isArray(vendor_id) ? vendor_id[0] : vendor_id
 
     // const sampleMessageList = [{
     //         content: "hi, looking for a hostel?",
@@ -95,15 +98,20 @@ export default function SingleChat() {
 
     useFocusEffect(useCallback(() => {
         const getMessages = async () => {
-            const mes = await getChatMessages({room_id: id})
+            const idString = Array.isArray(id) ? id[0] : id
+            const mes = await getChatMessages({ room_id: idString })
             if (mes[0] == "200") {
                 setAllMessages(mes[1])
             }
-            console.log(mes[1])
         }
 
         getMessages()
     }, []))
+
+    const getAgentName = (id: string) => {
+        const hostel = dummyHostels.find(h => h.agent.id === id)
+        return hostel?.agent.name ?? ""
+    }
 
     return (
         <SafeAreaView style={[globals.container, globals.lightContainer]}>
@@ -114,7 +122,7 @@ export default function SingleChat() {
                     <View style={[singleChatStyles.row, singleChatStyles.gap]}>
                         <Avatar />
                         <View>
-                            <Text style={[roboto.titleSmallBold, singleChatStyles.bottomPadding]}>Timothy Okoli</Text>
+                            <Text style={[roboto.titleSmallBold, singleChatStyles.bottomPadding]}>{getAgentName(vendorIdString)}</Text>
                             <Text style={roboto.caption}>Online</Text>
                         </View>
                     </View>
@@ -134,28 +142,28 @@ export default function SingleChat() {
                     <Text style={[roboto.bodySmall, colors.darkBurntOrange, singleChatStyles.encrypted]}>Messages are encrypted</Text>
 
                     {
-                        allMessages.map((item, idx) => 
-                        <Message key={idx} message={item.content} personal={item.personal} last={item.last} time={item.created_at.toTimeString().slice(0,5)} />)
+                        allMessages.map((item, idx) =>
+                            <Message key={idx} message={item.content} personal={item.personal} last={item.last} time={item.created_at.toTimeString().slice(0, 5)} />)
                     }
 
                 </ScrollView>
 
-                <View style={[singleChatStyles.row, singleChatStyles.jCenter, singleChatStyles.gap, {paddingVertical: 16}]}>
+                <View style={[singleChatStyles.row, singleChatStyles.jCenter, singleChatStyles.gap, { paddingVertical: 16 }]}>
                     <View style={[globals.lightContainer, singleChatStyles.messageBox, singleChatStyles.row, singleChatStyles.jCenter, singleChatStyles.messageBoxHeight]}>
                         <View style={[singleChatStyles.row, singleChatStyles.gap]}>
                             <Image source={images.emoji} style={singleChatStyles.smallImg} />
-                            <TextInput 
+                            <TextInput
                                 style={[singleChatStyles.messageBoxHeight, roboto.bodySmall, singleChatStyles.input]}
                                 multiline
                                 value={message}
-                                onChangeText={(text) => {setMessage(text)}}/>
+                                onChangeText={(text) => { setMessage(text) }} />
                         </View>
                         <TouchableOpacity>
                             <Image source={images.camera} style={singleChatStyles.smallImg} />
                         </TouchableOpacity>
                     </View>
                     <TouchableOpacity onPress={() => message && sendMessage(message)} style={[singleChatStyles.sendView]}>
-                        <Image source={message ? images.send : images.mic} style={singleChatStyles.smallImg}/>
+                        <Image source={message ? images.send : images.mic} style={singleChatStyles.smallImg} />
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
