@@ -237,7 +237,8 @@ export default function NewHostel() {
                     <Input
                         hint="ex: 12, Gwani Street"
                         value={address}
-                        editable={false}
+                        onChangeText={(e) => setAddress(e)}
+                        onSubmitEditing={() => Keyboard.dismiss()}
                     />
                 </View>
                 <View style={newHostelStyles.inputV}>
