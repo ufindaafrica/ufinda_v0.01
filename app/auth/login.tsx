@@ -59,7 +59,8 @@ export default function Login() {
         if (result[0] != "200") {
             setErrorText(result[1])
         } else {
-            router.replace("/(tabs)/home")
+            if (result[1] == "user") router.replace("/(tabs)/home")
+            else router.replace("/(vendor)/dashboard")
         }
 
     }
@@ -162,7 +163,7 @@ export default function Login() {
                         loaderVisible || errorModal ? null : <View style={signupStyles.bottomView}>
                             <View style={signupStyles.policyView}>
                                 <Text style={[roboto.bodyMedium, signupStyles.grayText]}>Don't have an account? </Text>
-                                <Link href={"/auth/signup"} style={[roboto.bodyMediumBold, { color: "#008000" }]}>Register</Link>
+                                <Link href={"/auth/mode"} style={[roboto.bodyMediumBold, { color: "#008000" }]}>Register</Link>
                             </View>
                         </View>
                     }

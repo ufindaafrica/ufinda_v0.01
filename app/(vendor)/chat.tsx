@@ -55,7 +55,8 @@ export default function VendorChat({ student }: VendorChatProps) {
         // setAllChats(currentChats())
 
         const loadId = async () => {
-            const id = await getItemAsync('MY_ID')
+            const id = await getItemAsync('ID')
+            console.log(id)
             setMyId(id ?? "1234")
         }
 
@@ -66,7 +67,7 @@ export default function VendorChat({ student }: VendorChatProps) {
         const getChats = async () => {
             const everyChat = (await getAllChats())[1]
             setAllChats(everyChat)
-            console.log(everyChat)
+            console.log("all chats =>", everyChat)
         }
 
         getChats()

@@ -45,7 +45,7 @@ export const dummyHostels: DummyHostelsType[] = [
             "verified": true,
             "contact": 234808080,
             "pic": images.user0,
-            "id": "vnd-473488"
+            "id": "vnd-452096"
         }
     },
 
