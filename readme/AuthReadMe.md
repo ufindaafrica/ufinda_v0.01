@@ -196,7 +196,9 @@ No special headers are required.
 {
   "message": "verification successful",
   "access_token": "eyJhbGciOiJIUzI1Ni...",
-  "refresh_token": "eyJhbGciOiJIUzI1Ni..."
+  "refresh_token": "eyJhbGciOiJIUzI1Ni...",
+  "id": "usr-895659",
+  "role": "user"|"vendor"
 }
 ```
 

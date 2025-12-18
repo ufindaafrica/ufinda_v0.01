@@ -185,6 +185,8 @@ func VerifyOtpHandler(c *gin.Context) {
 		"message": "verification successful",
 		"access_token": accessToken,
 		"refresh_token": refreshToken,
+		"id": user.ID,
+		"role": user.Role,
 	})
 }
 // <---------------------> End Sign Up And Verify OTP <---------------------->
