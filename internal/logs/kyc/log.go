@@ -2,8 +2,6 @@ package kyclog
 
 import (
 	"fmt"
-	"github.com/google/uuid"
-
 	"os"
 	"github.com/oladev/ufinda_v0.01/internal/db"
 	"github.com/oladev/ufinda_v0.01/internal/logs"
@@ -13,7 +11,6 @@ import (
 // Helper function to log KYC failures, ensuring the log creation itself doesn't cause a fatal error.
 func LogKYC(userID string, reason error) {
     newLog := db.KycLog {
-		ID: uuid.New(),
         UserID: userID,
         Reason: reason.Error(),
     }

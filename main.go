@@ -19,6 +19,7 @@ import (
 	"github.com/oladev/ufinda_v0.01/internal/webhooks"
 	"github.com/oladev/ufinda_v0.01/internal/sockets/kyc"
 	"github.com/oladev/ufinda_v0.01/internal/sockets/chat"
+	"github.com/oladev/ufinda_v0.01/internal/routes/rating"
 )
 
 var wsHub = hub.NewHub()
@@ -84,6 +85,7 @@ func main() {
 	auth.RegisterAuth(r, cld)
 	userkyc.RegisterKYC(r, cld)
 	vendorkyc.RegisterKYC(r, cld)
+	rating.RegisterRating(r)
 	webhook.RegisterWebhooks(r, wsHub)
 	
 	// Pass the Cloudinary client and the Asynq client to the hostel registration

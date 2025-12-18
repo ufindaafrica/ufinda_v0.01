@@ -3,7 +3,6 @@ package hostellog
 import (
 	"fmt"
 	"os"
-	"github.com/google/uuid"
 	"github.com/oladev/ufinda_v0.01/internal/db"
 	"github.com/oladev/ufinda_v0.01/internal/logs"
 )
@@ -11,7 +10,6 @@ import (
 
 func LogHostel(userID string, hostelID *string, reason error) {
 	newLog := db.HostelLog{
-		ID: uuid.New(),
 		VendorID: userID,
 		HostelID: hostelID,
 		Reason: reason.Error(),

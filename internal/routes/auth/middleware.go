@@ -11,7 +11,6 @@ import (
 	"github.com/oladev/ufinda_v0.01/internal/logs/auth"
 	"github.com/oladev/ufinda_v0.01/internal/db"
     "github.com/oladev/ufinda_v0.01/internal/db/auth"
-    "github.com/google/uuid"
 )
 
 func handleAuthError(c *gin.Context, status int, message string, logEntry db.SecurityLog) {
@@ -44,7 +43,6 @@ func AuthMiddleware() gin.HandlerFunc {
         if err != nil {
             logData := authlog.Logs["4"]
             logEntry := db.SecurityLog{
-                ID: uuid.New(),
                 Log:   logData.Message,
                 Level: logData.Level,
             }
@@ -87,7 +85,6 @@ func UserAuthMiddleware() gin.HandlerFunc {
         if err != nil {
             logData := authlog.Logs["4"]
             logEntry := db.SecurityLog{
-                ID: uuid.New(),
                 Log:   logData.Message,
                 Level: logData.Level,
             }
@@ -149,7 +146,6 @@ func VendorAuthMiddleware() gin.HandlerFunc {
         if err != nil {
             logData := authlog.Logs["4"]
             logEntry := db.SecurityLog{
-                ID: uuid.New(),
                 Log:   logData.Message,
                 Level: logData.Level,
             }

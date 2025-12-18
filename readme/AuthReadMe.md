@@ -263,7 +263,9 @@ The endpoint employs a Redis-based rate-limiting system to prevent brute-force l
 ```json
 {
   "access_token": "eyJhbGciOiJIUzI1Ni...",
-  "refresh_token": "eyJhbGciOiJIUzI1Ni..."
+  "refresh_token": "eyJhbGciOiJIUzI1Ni...",
+  "id": "usr-xxxx",
+  "role": "user"|"vendor"
 }
 ```
 

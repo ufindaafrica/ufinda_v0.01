@@ -9,7 +9,6 @@ import (
 	"log"
 	"errors"
 	// "strings"
-	"github.com/google/uuid"
 	// "net/http"
 )
 
@@ -111,7 +110,6 @@ func HandleVerificationPayload(payload db.DojahWebhookPayload, h *hub.Hub) {
     
     // Prepare the final data structure (MUST include the determined finalStatus)
     kycdata := db.VendorKYC {
-        ID:               uuid.New(),
         UserID:           result.UserID,
         Status:           finalStatus,
         NIN:              result.NIN,

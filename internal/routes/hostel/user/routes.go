@@ -9,56 +9,68 @@ import (
     "net/url"
     "strconv"
 	"fmt"
-	"github.com/google/uuid"
-    "errors"
+    // "errors"
     "encoding/json"
 	"github.com/oladev/ufinda_v0.01/internal/db"
     "github.com/oladev/ufinda_v0.01/internal/db/hostel"
 )
 
-// return available hostels
 func GetAvailableHostelHandler(c *gin.Context) {
-    url := fmt.Sprintf("/rest/v1/hostels?is_available=eq.true")
+    // 1. Extract Limit and Page from Query String
+    // Default to 10 items per page if not specified
+    limitStr := c.DefaultQuery("limit", "10")
+    pageStr := c.DefaultQuery("page", "1")
 
-    resp, err := db.MakeDBRequest("GET", url, nil, nil)
+    limit, err := strconv.Atoi(limitStr)
+    if err != nil || limit <= 0 {
+        limit = 10
+    }
 
+    page, err := strconv.Atoi(pageStr)
+    if err != nil || page < 1 {
+        page = 1
+    }
+
+    // Calculate offset for PostgREST (page 1 starts at 0, page 2 at limit, etc.)
+    offset := (page - 1) * limit
+
+    // 2. Build the Enriched Query
+    // Note: I'm using url.Values to safely encode the parameters
+    selectQuery := "*,vendor_info:fk_hostel_agent(first_name,last_name,phone,vendor_metrics(current_rating,total_ratings),fk_kyc_user(profile_img))"
+    
+    params := url.Values{}
+    params.Set("select", selectQuery)
+    params.Set("is_available", "eq.true")
+    params.Set("limit", strconv.Itoa(limit))
+    params.Set("offset", strconv.Itoa(offset))
+    params.Set("order", "created_at.desc") // Usually best to show newest first
+
+    finalURL := fmt.Sprintf("/rest/v1/hostels?%s", params.Encode())
+
+    // 3. Make the Request
+    resp, err := db.MakeDBRequest("GET", finalURL, nil, nil)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to connect to database API"})
         return
     }
-
-    // Ensure the response body is always closed
-    defer resp.Body.Close() 
+    defer resp.Body.Close()
 
     if resp.StatusCode != http.StatusOK {
-        // ... (Error handling remains the same) ...
-        bodyBytes, readErr := io.ReadAll(resp.Body)
-        if readErr != nil {
-            log.Printf("DB API Error: Failed to read error response body (Status: %d)", resp.StatusCode)
-        } else {
-            // Note: The variable 'url' is the correct one to log here.
-            log.Printf("DB API Error: Status %d for URL %s. Response: %s", resp.StatusCode, url, string(bodyBytes))
-        }
-
+        bodyBytes, _ := io.ReadAll(resp.Body)
+        log.Printf("DB API Error: Status %d for URL %s. Response: %s", resp.StatusCode, finalURL, string(bodyBytes))
         c.JSON(http.StatusInternalServerError, gin.H{"error": "database retrieval failed"})
         return
     }
 
-    var hostels []db.Hostel 
-    
-    // Decode directly from resp.Body. The Decode function will read the stream once.
+    var hostels []db.EnrichedHostel 
     if err := json.NewDecoder(resp.Body).Decode(&hostels); err != nil {
-        // Log the decoding error for debugging (e.g., mismatch between DB schema and Go struct)
         log.Printf("ERROR decoding DB response: %v", err)
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "error processing hostel data"})
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "error processing enriched hostel data"})
         return
     }
 
-    // Return the successfully decoded slice of structs as JSON to the client.
     c.JSON(http.StatusOK, hostels)
 }
-
-const DefaultPageSize = 20
 
 func GetHostelBySearchQueryHandler(c *gin.Context) {
 	// --- 1. Get and Sanitize Query Parameters ---
@@ -125,54 +137,48 @@ func GetHostelBySearchQueryHandler(c *gin.Context) {
 	params.Add("limit", fmt.Sprintf("%d", DefaultPageSize))
 	params.Add("offset", fmt.Sprintf("%d", offset))
 
-	finalURL := fmt.Sprintf("%s?%s", baseURL, params.Encode())
-	
-	resp, err := db.MakeDBRequest("GET", finalURL, nil, nil)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to connect to database API"})
-		return
-	}
+	enrichedHostels, err := makeEnrichedHostelRequest(
+        "GET", 
+        baseURL, 
+        params.Encode(),
+    )
+    
+    if err != nil {
+        log.Printf("ERROR during enriched search request: %v", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve enriched hostel data"})
+        return
+    }
 
-	defer resp.Body.Close() 
-
-	if resp.StatusCode != http.StatusOK {
-
-		bodyBytes, readErr := io.ReadAll(resp.Body)
-		if readErr != nil {
-			log.Printf("DB API Error: Failed to read error response body (Status: %d)", resp.StatusCode)
-		} else {
-			// Using finalURL for accurate logging
-			log.Printf("DB API Error: Status %d for URL %s. Response: %s", resp.StatusCode, finalURL, string(bodyBytes))
-		}
-
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "database retrieval failed"})
-		return
-	}
-
-	var hostel []db.Hostel
-	if err := json.NewDecoder(resp.Body).Decode(&hostel); err != nil {
-		log.Printf("ERROR decoding DB response: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error processing hostel data"})
-		return
-	}
-
-	c.JSON(http.StatusOK, hostel)
+    // --- 5. Return the Results ---
+    // Return the new enriched struct type
+    c.JSON(http.StatusOK, enrichedHostels)
 }
 
 func GetHostelByIdHandler(c *gin.Context) {
     id := c.Param("id")
-    getHostel, err := hosteldb.FindHostelByID(id)
+    
+    // Build parameters to filter by ID
+    params := url.Values{}
+    params.Add("id", fmt.Sprintf("eq.%s", id))
+    
+    enrichedHostels, err := makeEnrichedHostelRequest(
+        "GET", 
+        "/rest/v1/hostels", 
+        params.Encode(),
+    )
+    
     if err != nil {
-        if errors.Is(err, hosteldb.ErrorHostelNotFound) {
-            c.JSON(http.StatusNotFound, gin.H{"error": "hostel not found"})
-            return
-        }else {
-            c.JSON(http.StatusInternalServerError, gin.H{"error": "error fetching hostel"})
-            return
-        }
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "error fetching enriched hostel"})
+        return
     }
 
-    c.JSON(http.StatusOK, getHostel)
+    if len(enrichedHostels) == 0 {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Hostel not found"})
+        return
+    }
+    
+    // Return the single enriched hostel object
+    c.JSON(http.StatusOK, enrichedHostels[0]) 
 }
 
 func GetSimilarHostelsHandler() gin.HandlerFunc {
@@ -249,7 +255,6 @@ func AddToFavoritesHandler(c *gin.Context) {
 	}
 
 	favorite := db.Favorites{
-		ID: uuid.New(),
 		UserID: user.ID,
 		HostelID: hostelId,
 	}

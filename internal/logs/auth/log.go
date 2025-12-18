@@ -3,7 +3,6 @@ package authlog
 import (
 	"fmt"
 	"os"
-	"github.com/google/uuid"
 	"github.com/oladev/ufinda_v0.01/internal/db"
 	"github.com/oladev/ufinda_v0.01/internal/logs"
 )
@@ -43,7 +42,6 @@ func SecurityLog(securitylog db.SecurityLog) {
 func LogAuth(userID string, reason error) {
 	url := fmt.Sprintf("/rest/v1/auth_log")
 	newLog := db.AuthLog{
-		ID: uuid.New(),
 		UserID: userID,
 		Reason: reason.Error(),
 	}

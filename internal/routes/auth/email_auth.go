@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/go-redis/redis/v8"
 	"github.com/oladev/ufinda_v0.01/internal/db"
 	"github.com/oladev/ufinda_v0.01/internal/db/kyc/user"
@@ -69,7 +68,6 @@ func EmailSignUpHandler(c *gin.Context) {
 	}
 
 	pendinguser := db.PendingUser {
-		ID: uuid.New(),
 		Email: req.Email,
 		Password: string(hashedPwd),
 		OTP: otp,
@@ -77,7 +75,6 @@ func EmailSignUpHandler(c *gin.Context) {
 		FirstName: req.FirstName,
 		LastName: req.LastName,
 		Phone: req.Phone,
-		CreatedAt: time.Now(),
 		ExpiresAt: time.Now().Add(15 * time.Minute),
 	}
 
@@ -227,7 +224,6 @@ func EmailLoginHandler(c *gin.Context) {
 		log := authlog.Logs["3"]
 		fmtMessage := fmt.Sprintf(log.Message, "login attempt exceeded")
 		newLog := db.SecurityLog {
-			ID: uuid.New(),
 			UserID: user.ID,
 			Log: fmtMessage,
 			Level: log.Level,
@@ -269,6 +265,7 @@ func EmailLoginHandler(c *gin.Context) {
         "access_token": accessToken,
         "refresh_token": refreshToken,
 		"role": user.Role,
+		"id": user.ID,
     })
 }
 // <---------------------> End Login <---------------------->
@@ -360,7 +357,6 @@ func LogoutHandler(c *gin.Context) {
 		log := authlog.Logs["4"]
 		userID := accessclaims.UserID
 		newLog := db.SecurityLog {
-			ID: uuid.New(),
 			UserID: userID,
 			Log: log.Message,
 			Level: log.Level,
@@ -385,7 +381,6 @@ func LogoutHandler(c *gin.Context) {
 		log  := authlog.Logs["1"]
 		fmtMessage := fmt.Sprintf(log.Message, refreshtoken)
 		newLog := db.SecurityLog{
-			ID: uuid.New(),
 			UserID: refreshclaims.UserID,
 			Log: fmtMessage,
 			Level: log.Level,
@@ -427,7 +422,6 @@ func RefreshTokenHandler(c *gin.Context) {
 	if err != nil {
 		log := authlog.Logs["4"]
 		newLog := db.SecurityLog {
-			ID: uuid.New(),
 			Log: log.Message,
 			Level: log.Level,
 		}
@@ -450,7 +444,6 @@ func RefreshTokenHandler(c *gin.Context) {
 		log  := authlog.Logs["1"]
 		fmtMessage := fmt.Sprintf(log.Message, refreshToken)
 		newLog := db.SecurityLog{
-			ID: uuid.New(),
 			UserID: refreshclaims.UserID,
 			Log: fmtMessage,
 			Level: log.Level,
@@ -566,7 +559,6 @@ func ForgetPwd(c *gin.Context) {
 	}
 	expiresAt := time.Now().Add(15*time.Minute)
 	resetData := db.ResetPwdData{
-		ID: uuid.New(),
 		UserID: user.ID,
 		Token: newToken,
 		ExpiresAt: expiresAt,
@@ -606,7 +598,7 @@ func ResetPwd(c *gin.Context) {
     }
 
     // --- 2. CHECK FOR TOKEN EXPIRATION (THE FIX) ---
-    // getToken.ExpiresAt is assumed to be a time.Time value
+    //getToken.ExpiresAt is assumed to be a time.Time value
     if time.Now().After(getToken.ExpiresAt) {
         authdb.DeleteResetToken(getToken.Token) 
         

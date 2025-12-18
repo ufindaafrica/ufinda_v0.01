@@ -27,6 +27,13 @@ type hostelVideoResponse struct {
     HostelVideos []db.UploadedFile `json:"hostel_videos"`
 }
 
+
+// Function to generate the consistent SELECT query parameter
+func GetEnrichedSelectQuery() string {
+    return "*,vendor_info:fk_hostel_agent(id,first_name,last_name,phone,vendor_metrics(current_rating,total_ratings),fk_kyc_user(profile_img))"
+}
+
+
 func UploadHostelImages(cld *cloudinary.Cloudinary, reader io.Reader, filename string) (string, string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
@@ -108,40 +115,39 @@ func UpdateHostel(id string, data interface{}) error {
 	return nil
 }
 
-// find hostel
-func FindHostelByID(id string) (*db.Hostel, error) {
-	url := fmt.Sprintf("/rest/v1/hostels?id=eq.%s", url.QueryEscape(id))
+func FindHostelByID(id string) (*db.EnrichedHostel, error) {
+    selectQuery := GetEnrichedSelectQuery()
+    urlPath := fmt.Sprintf("/rest/v1/hostels?id=eq.%s&select=%s", url.QueryEscape(id), selectQuery)
 
-	resp, err := db.MakeDBRequest("GET", url, nil, nil)
-	if err != nil {
-		return nil, err
-	}
+    resp, err := db.MakeDBRequest("GET", urlPath, nil, nil)
+    if err != nil {
+        return nil, err
+    }
 
-	defer resp.Body.Close()
+    defer resp.Body.Close()
 
     if resp.StatusCode != http.StatusOK {
-        // Read the error body for logging purposes
         bodyBytes, readErr := io.ReadAll(resp.Body)
         if readErr != nil {
             log.Printf("DB API Error: Failed to read error response body (Status: %d)", resp.StatusCode)
         } else {
-            log.Printf("DB API Error: Status %d for URL %s. Response: %s", resp.StatusCode, url, string(bodyBytes))
+            log.Printf("DB API Error: Status %d for URL %s. Response: %s", resp.StatusCode, urlPath, string(bodyBytes))
         }
         return nil, fmt.Errorf("failed to get hostel")
     }
 
+    var hostel []db.EnrichedHostel
 
-	var hostel []db.Hostel
+    if err := json.NewDecoder(resp.Body).Decode(&hostel); err != nil {
+        return nil, err
+    }
 
-	if err := json.NewDecoder(resp.Body).Decode(&hostel); err != nil {
-		return nil, err
-	}
+    if len(hostel) == 0 {
+        return nil, ErrorHostelNotFound
+    }
 
-	if len(hostel) == 0 {
-		return nil, ErrorHostelNotFound
-	}
-
-	return &hostel[0], nil
+    // Return the enriched hostel pointer
+    return &hostel[0], nil
 }
 
 func GetHostelImagesPublicIDAndUrl(id string) ([]db.UploadedFile, error) {
@@ -264,57 +270,57 @@ func FindVendorHostels(vendorID string) ([]db.Hostel, error) {
 	return hostel, nil
 }
 
-func FindSimilarHostels(baseHostel *db.Hostel, limit int, offset int) ([]db.Hostel, error) {
-	// --- 1. Calculate Rent Range (in Naira) ---
-	const NairaTolerance int64 = 50000 
-	const TableName = "hostels"
-	
-	minRent := baseHostel.RentPerYear - NairaTolerance
-	if minRent < 0 {
-		minRent = 0
-	}
-	maxRent := baseHostel.RentPerYear + NairaTolerance
+func FindSimilarHostels(baseHostel *db.EnrichedHostel, limit int, offset int) ([]db.EnrichedHostel, error) {
+    // --- 1. Calculate Rent Range (in Naira) ---
+    const NairaTolerance int64 = 50000 
+    const TableName = "hostels"
+    
+    minRent := baseHostel.RentPerYear - NairaTolerance
+    if minRent < 0 {
+        minRent = 0
+    }
+    maxRent := baseHostel.RentPerYear + NairaTolerance
 
-	// --- 2. Construct the Supabase URL Query ---
-	query := url.Values{}
-	query.Set("select", "*")
-	query.Set("limit", strconv.Itoa(limit))
-	query.Set("offset", strconv.Itoa(offset))
+    // --- 2. Construct the Supabase URL Query ---
+    query := url.Values{}
+    
+    // *** MODIFICATION A: Set the ENRICHED SELECT query ***
+    query.Set("select", GetEnrichedSelectQuery()) 
+    
+    query.Set("limit", strconv.Itoa(limit))
+    query.Set("offset", strconv.Itoa(offset))
+    // ... (All other filters remain the same) ...
 
-	query.Set("id", fmt.Sprintf("neq.%s", baseHostel.ID))
+    query.Set("id", fmt.Sprintf("neq.%s", baseHostel.ID))
+    query.Set("location", fmt.Sprintf("ilike.%s", baseHostel.Location))
+    query.Set("room_type", fmt.Sprintf("ilike.%s", baseHostel.RoomType))
+    query.Set("landlord_resides", fmt.Sprintf("eq.%s", url.QueryEscape(baseHostel.LandlordResides)))
+    query.Set("roommates_allowed", fmt.Sprintf("eq.%s", url.QueryEscape(baseHostel.RoommatesAllowed)))
+    query.Set("kitchen_access", fmt.Sprintf("eq.%s", url.QueryEscape(baseHostel.KitchenAccess)))
+    query.Set("toilet_access", fmt.Sprintf("eq.%s", url.QueryEscape(baseHostel.ToiletAccess)))
+    query.Set("rent_per_year", fmt.Sprintf("gte.%d", minRent))
+    query.Add("rent_per_year", fmt.Sprintf("lte.%d", maxRent))
+    query.Set("order", "created_at.desc")
 
-	query.Set("location", fmt.Sprintf("ilike.%s", baseHostel.Location))
+    urlPath := fmt.Sprintf("/rest/v1/%s?%s", TableName, query.Encode())
 
-	query.Set("room_type", fmt.Sprintf("ilike.%s", baseHostel.RoomType))
+    resp, err := db.MakeDBRequest("GET", urlPath, nil, nil) 
+    if err != nil {
+        return nil, fmt.Errorf("failed to make database request for similar hostels: %w", err)
+    }
+    defer resp.Body.Close()
 
-	query.Set("landlord_resides", fmt.Sprintf("eq.%s", url.QueryEscape(baseHostel.LandlordResides)))
-	query.Set("roommates_allowed", fmt.Sprintf("eq.%s", url.QueryEscape(baseHostel.RoommatesAllowed)))
-	query.Set("kitchen_access", fmt.Sprintf("eq.%s", url.QueryEscape(baseHostel.KitchenAccess)))
-	query.Set("toilet_access", fmt.Sprintf("eq.%s", url.QueryEscape(baseHostel.ToiletAccess)))
+    if resp.StatusCode != http.StatusOK {
+        bodyBytes, _ := io.ReadAll(resp.Body)
+        return nil, fmt.Errorf("failed to retrieve similar hostels from API (Status: %d). Response: %s", resp.StatusCode, string(bodyBytes))
+    }
 
-	query.Set("rent_per_year", fmt.Sprintf("gte.%d", minRent))
-	query.Add("rent_per_year", fmt.Sprintf("lte.%d", maxRent))
-
-	query.Set("order", "created_at.desc")
-
-	urlPath := fmt.Sprintf("/rest/v1/%s?%s", TableName, query.Encode())
-
-	resp, err := db.MakeDBRequest("GET", urlPath, nil, nil) 
-	if err != nil {
-		return nil, fmt.Errorf("failed to make database request for similar hostels: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("failed to retrieve similar hostels from API (Status: %d). Response: %s", resp.StatusCode, string(bodyBytes))
-	}
-
-	var similarHostels []db.Hostel
-	if err := json.NewDecoder(resp.Body).Decode(&similarHostels); err != nil {
-		return nil, fmt.Errorf("failed to decode similar hostels response: %w", err)
-	}
-	return similarHostels, nil
+    // *** MODIFICATION B: Decode into the ENRICHED HOSTEL slice ***
+    var similarHostels []db.EnrichedHostel
+    if err := json.NewDecoder(resp.Body).Decode(&similarHostels); err != nil {
+        return nil, fmt.Errorf("failed to decode similar hostels response: %w", err)
+    }
+    return similarHostels, nil
 }
 
 func AddToFavorites(fav db.Favorites) error {

@@ -9,7 +9,6 @@ import (
     "github.com/cloudinary/cloudinary-go/v2"
 	// "github.com/oladev/ufinda_v0.01/internal/logs/auth"
     "github.com/oladev/ufinda_v0.01/internal/db/auth"
-    "github.com/google/uuid"
     "github.com/oladev/ufinda_v0.01/internal/logs/kyc"
     "github.com/oladev/ufinda_v0.01/internal/db/kyc/user"
 )
@@ -144,8 +143,6 @@ func UserKYCHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
             }
 
             // Fix 1: Corrected spelling from checkUniqunessFunc to checkUniquenessFunc
-
-            newKYC.ID = uuid.New()
 
             opErr = userkycdb.CreateUserKYC(newKYC)
             message = "KYC created successfully"

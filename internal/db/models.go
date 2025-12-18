@@ -15,13 +15,14 @@ type User struct {
 	Role string `json:"role" binding:"required"`
 	Phone        string    `json:"phone" binding:"required"`
 	IsVerified bool `json:"is_verified"`
+	Rating int`json:"rating,omitempty"`
 	AuthProvider string     `json:"auth_provider"`
-	CreatedAt    time.Time `json:"created_at,omitempty"`
-	UpdatedAt    time.Time `json:"updated_at,omitempty"`
+	CreatedAt    *time.Time `json:"created_at,omitempty"`
+	UpdatedAt    *time.Time `json:"updated_at,omitempty"`
 }
 
 type PendingUser struct {
-	ID        uuid.UUID    `json:"id"`
+	ID        *uuid.UUID    `json:"id,omitempty"`
 	Email     string    `json:"email" binding:"required"`
 	Password  string    `json:"password" binding:"required"`
 	FirstName string    `json:"first_name" binding:"required"`
@@ -29,12 +30,12 @@ type PendingUser struct {
 	Role string         `json:"role" binding: required`
 	Phone     string    `json:"phone" binding:"required"`
 	OTP       string    `json:"otp" binding:"required"`
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 	ExpiresAt time.Time `json:"expire_at"`
 }
 
 type UserKYC struct {
-	ID        uuid.UUID    `json:"id,omitempty"`
+	ID        *uuid.UUID    `json:"id,omitempty"`
 	UserID    string    `json:"user_id"`
 	Level     string    `json:"level,omitempty"`
 	Faculty   string    `json:"faculty,omitempty"`
@@ -43,17 +44,17 @@ type UserKYC struct {
 	AboutMe string `json:"about_me,omitempty"`
 	ProfileImg UploadedFile `json:"profile_img,omitempty"`
 	IsStudent bool 	`json:"is_student,omitempty"`
-	CreatedAt time.Time `json:"created_at,omitempty"`
-	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
 }
 
 type SecurityLog struct {
-	ID        uuid.UUID `json:"id"`
+	ID        *uuid.UUID `json:"id,omitempty"`
 	UserID    string `json:"user_id"`
 	Log       string `json:"log" binding:"required"`
 	Level     string `json:"level" binding:"required"`
-	CreatedAt string `json:"created_at,omitempty"`
-	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
 }
 
 type UploadedFile struct {
@@ -76,41 +77,43 @@ type Hostel struct {
     HostelImages     []UploadedFile  `json:"hostel_images"`
     HostelVideos     []UploadedFile  `json:"hostel_videos"`
 	Description      string    `json:"description"`
-	CreatedAt        time.Time `json:"created_at,omitempty"`
-	UpdatedAt        time.Time `json:"updated_at,omitempty"`
+	CreatedAt        *time.Time `json:"created_at,omitempty"`
+	UpdatedAt        *time.Time `json:"updated_at,omitempty"`
 }
 
+
+
 type KycLog struct {
-	ID uuid.UUID `json:"id,omitempty"`
+	ID *uuid.UUID `json:"id,omitempty"`
 	UserID string `json:"user_id" binding:"required"`
 	Reason string `json:"reason" binding:"required"`
-	CreatedAt time.Time `json:"created_at,omitempty"`
-	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
 }
 
 type HostelLog struct {
-	ID uuid.UUID `json:"id"`
+	ID *uuid.UUID `json:"id,omitempty"`
 	VendorID string `json:"vendor_id"`
 	HostelID *string `json:"hostel_id,omitempty"`
 	Reason string `json:"reason"`
-	CreatedAt time.Time `json:"created_at,omitempty"`
-	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
 }
 
 type AuthLog struct {
-	ID uuid.UUID `json:"id"`
+	ID *uuid.UUID `json:"id,omitempty"`
 	UserID string `json:"user_id"`
 	Reason string `json:"reason"`
-	CreatedAt time.Time `json:"created_at,omitempty"`
-	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
 }
 
 type ResetPwdData struct {
-	ID uuid.UUID `json:"id"`
+	ID *uuid.UUID `json:"id,omitempty"`
 	Token string `json:"token"`
 	UserID string `json:"user_id"`
 	ExpiresAt time.Time `json:"expires_at"`
-	CreatedAt time.Time `json:"created_at,omitempty"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 }
 
 type DojahWebhookPayload struct {
@@ -161,7 +164,7 @@ type IpInfo struct {
 }
 
 type VendorKYC struct {
-	ID uuid.UUID `json:"id"`
+	ID *uuid.UUID `json:"id,omitempty"`
 	UserID string `json:"user_id"`
 	NIN string `json:"nin"`
 	IsVerified bool `json:"is_verified"`
@@ -179,7 +182,61 @@ type VendorKYC struct {
 }
 
 type Favorites struct {
-	ID uuid.UUID `json:"id"`
+	ID *uuid.UUID `json:"id,omitempty"`
 	UserID string `json:"user_id"`
 	HostelID string `json:"hostel_id" binding:"required"`
+}
+
+type Product struct {
+	ID string `json:"id"`
+	SellerID string `json:"seller_id"`
+	Title string `json:"title`
+	Price int64 `json:"price"`
+	Condition string `json:"condition"`
+	IsAvailable bool `json:"is_available"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
+}
+
+type Rating struct {
+	ID *uuid.UUID `json:"id,omitempty"`
+	VendorID string `json:"vendor_id"`
+	ReviewerID string `json:"reviewer_id"`
+	Score int `json:"score"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+	Review string `json:"review"`
+}
+
+// VendorMetrics matches the data retrieved from the 'vendor_metrics' table
+type VendorMetrics struct {
+    CurrentRating float64 `json:"current_rating"`
+    TotalRatings  int     `json:"total_ratings"` // Included for completeness, even if not extracted
+}
+
+// VendorKycInfo matches the data retrieved from the 'vendor_kyc' table
+type VendorKycInfo struct {
+    ProfileImg UploadedFile `json:"profile_img"` 
+}
+
+// UserAgentInfo is the main structure for the agent's data joined through 'users'
+type UserAgentInfo struct {
+    FirstName    string          `json:"first_name"`
+    LastName     string          `json:"last_name"`
+    Phone        string          `json:"phone"`
+    
+    // Nested structure to capture the rating from the vendor_metrics table
+    VendorMetrics VendorMetrics `json:"vendor_metrics"`
+    
+    // Nested structure to capture the profile image from the vendor_kyc table
+    VendorKyc     VendorKycInfo `json:"vendor_kyc"`
+}
+
+// db/models.go (or similar)
+
+type EnrichedHostel struct {
+    // Embed the base Hostel struct to inherit all its fields (id, total_price, etc.)
+    Hostel 
+    
+    // This field MUST match the relationship name in the SQL query (i.e., 'users')
+    Users UserAgentInfo `json:"vendor_info"`
 }

@@ -15,7 +15,6 @@ import (
 	"github.com/oladev/ufinda_v0.01/internal/db/hostel"
 	"github.com/oladev/ufinda_v0.01/internal/logs/auth"
 	"github.com/oladev/ufinda_v0.01/internal/token"
-	"github.com/google/uuid"
 	"github.com/oladev/ufinda_v0.01/internal/tasks/hostel"
 	"github.com/oladev/ufinda_v0.01/internal/logs/hostel"
 )
@@ -175,7 +174,6 @@ func UpdateHostelHandler() gin.HandlerFunc {
 			logData := authlog.Logs["3"]
 			formattedMessage := fmt.Sprintf(logData.Message, "user tries to update hostel")
             logEntry := db.SecurityLog{
-                ID: uuid.New(),
                 Log:   formattedMessage,
                 Level: logData.Level,
             }
@@ -271,7 +269,6 @@ func DeleteHostelHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 			logData := authlog.Logs["3"]
 			formattedMessage := fmt.Sprintf(logData.Message, "user tries to delete hostel")
             logEntry := db.SecurityLog{
-                ID: uuid.New(),
                 Log:   formattedMessage,
                 Level: logData.Level,
             }
