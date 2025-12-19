@@ -52,8 +52,10 @@ export default function HostelCard({ hostel, isSaved, reload }: HostelCardProps)
     const [archiveImg, setArchiveImg] = useState(saved ? images.savedIcon : images.archiveAdd)
 
     const handleNewChat = async (id: string) => {
+        const userId = await getItemAsync('ID') ?? ""
+
         const data = {
-            buyer_id: "1234",
+            buyer_id: userId,
             vendor_id: id
         }
 
@@ -69,6 +71,8 @@ export default function HostelCard({ hostel, isSaved, reload }: HostelCardProps)
                     vendor_id: id
                 }
             })
+            console.log("buyer id => ", userId)
+            console.log("vendor_id => ", id)
         }
     }
 

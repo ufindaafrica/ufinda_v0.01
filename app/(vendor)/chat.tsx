@@ -22,7 +22,7 @@ type Chat = {
     vendor_id?: string,
     product_id?: string,
     unread_count?: number,
-    last_message?: LastMessage,
+    messages?: Array<LastMessage>,
     sender_profile_pic?: any | null
 }
 
@@ -42,8 +42,8 @@ export default function VendorChat({ student }: VendorChatProps) {
     const [myId, setMyId] = useState("")
 
     const currentChats = () => {
-        // if (activated === "Unread") return allChats.filter(item => item?.last_message?)
-        // if (activated === "Read" || activated === "Sent") return allChats.filter(item => item?.last_message)
+        // if (activated === "Unread") return allChats.filter(item => item?.messages?)
+        // if (activated === "Read" || activated === "Sent") return allChats.filter(item => item?.messages)
         return allChats
     }
 
@@ -102,7 +102,16 @@ export default function VendorChat({ student }: VendorChatProps) {
 
                 {
                     allChats?.map((item, idx) =>
-                        <TouchableOpacity onPress={() => router.push("/pages/singleChat")} key={idx} style={chatStyles.padding}>
+                        <TouchableOpacity onPress={() => {
+                            const chatPersonId = myId === item.buyer_id ? item.vendor_id : item.buyer_id
+                            router.push({
+                                pathname: "/pages/singleChat",
+                                params: {
+                                    id: item.id,
+                                    vendor_id: chatPersonId
+                                }
+                            })
+                        }} key={idx} style={chatStyles.padding}>
                             <View style={chatStyles.eachChatV}>
                                 <ImageBackground source={images.laptop} style={chatStyles.laptopV}>
                                     {item?.sender_profile_pic ? <Image source={item?.sender_profile_pic} style={chatStyles.profileImg} /> : <View style={[chatStyles.profileImg, chatStyles.nullPic]}>
@@ -112,14 +121,14 @@ export default function VendorChat({ student }: VendorChatProps) {
                                     <View>
                                         <Text style={roboto.bodyLargeBold}>{getAgentName(item?.vendor_id ?? "")}</Text>
                                         <View style={chatStyles.tickV}>
-                                            <Image source={item?.last_message ? images.onetick : images.twoticks} style={chatStyles.tick} />
-                                            <Text>demo of the message</Text>
+                                            <Image source={item?.messages ? images.onetick : images.twoticks} style={chatStyles.tick} />
+                                            <Text>{item?.messages?.[0]?.content ?? ""}</Text>
                                         </View>
                                     </View>
                                     <View>
-                                        <Text style={[roboto.caption, item?.last_message && colors.foundationWarningDark]}>{item?.last_message?.created_at ? (new Date(item?.last_message.created_at)).toDateString() : ""}</Text>
+                                        <Text style={[roboto.caption, item?.messages && colors.foundationWarningDark]}>{item?.messages?.[0]?.created_at ? (new Date(item?.messages[0].created_at)).toDateString() : ""}</Text>
                                         {item?.unread_count ? <View style={chatStyles.unread}><Text style={[roboto.caption, colors.white]}>
-                                            {item?.last_message?.content}</Text></View> : null}
+                                            {item?.messages?.[0]?.content ?? ""}</Text></View> : null}
                                     </View>
                                 </View>
                             </View>

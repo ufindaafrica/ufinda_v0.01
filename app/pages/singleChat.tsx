@@ -37,6 +37,8 @@ export default function SingleChat() {
     const chatSocket = useRef<WebSocket | null>(null)
     const [userId, setUserId] = useState("")
 
+    const scrollViewRef = useRef<ScrollView>(null)
+
     useFocusEffect(useCallback(() => {
         let active = true
 
@@ -110,8 +112,7 @@ export default function SingleChat() {
         }))
 
         setAllMessages(prev => {
-            const messages = [...prev]
-            messages.push(newMessage)
+            const messages = [newMessage, ...prev]
             return messages
         })
 
@@ -139,6 +140,14 @@ export default function SingleChat() {
         return hostel?.agent.name ?? ""
     }
 
+    useEffect(() => {
+        const keyboardDidShow = Keyboard.addListener('keyboardDidShow', () => {
+            scrollViewRef.current?.scrollToEnd({animated: true})
+        })
+
+        return () => keyboardDidShow?.remove()
+    }, [])
+
     return (
         <SafeAreaView style={[globals.container, globals.lightContainer]}>
 
@@ -164,11 +173,15 @@ export default function SingleChat() {
             </View>
 
             <KeyboardAvoidingView style={singleChatStyles.kAView} behavior="padding" keyboardVerticalOffset={verticalScale(5)}>
-                <ScrollView>
+                <ScrollView 
+                    ref={scrollViewRef}
+                    onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({animated: true})}
+                    showsVerticalScrollIndicator={false}>
+                        
                     <Text style={[roboto.bodySmall, colors.darkBurntOrange, singleChatStyles.encrypted]}>Messages are encrypted</Text>
 
                     {
-                        allMessages.map((item, idx) =>
+                        allMessages.slice().reverse().map((item, idx) =>
                             <Message key={idx} message={item.content} personal={item.personal ? item.personal : item.sender_id === userId ? true : false} last={item.last} time={item.created_at ? new Date(item.created_at).toTimeString().slice(0, 5) : ""} />)
                     }
 
