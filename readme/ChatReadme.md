@@ -55,21 +55,24 @@ Retrieves chat rooms for the authenticated user, fetching only the **most recent
 
 ```json
 [
-  {
-    "id": "1e2d3e4f-5060-7080-90a0-b0c0d0e0f123",
-    "buyer_id": "user_uuid_123",
-    "vendor_id": "vendor_uuid_456",
-    "product_id": null,
-    "created_at": "2025-12-13T12:27:24.097662+00:00",
-    "updated_at": "2025-12-13T12:27:24.097662+00:00",
-    "messages": [
-      {
-        "content": "Is this still available?",
-        "created_at": "2025-12-05T17:05:00Z",
-        "message_type": "text"|"image"
-      }
-    ]
-  }
+    {
+        "buyer_id": "usr-415938",
+        "created_at": "2025-12-13T11:27:40.630759Z",
+        "id": "996d626f-2d88-4f33-85af-84f8a59f8072",
+        "last_message": {
+            "content": "https://res.cloudinary.com/dfrew920h/image/upload/v1765627787/chat/images/devilfishwin.JPG.jpg",
+            "created_at": "2025-12-13T12:27:24.097662Z",
+            "id": "b6b1985f-82eb-47e1-b6a3-d7707748b985",
+            "is_read": false,
+            "message_type": "image",
+            "public_id": "chat/images/devilfishwin.JPG",
+            "sender_id": "usr-415938"
+        },
+        "product_id": null,
+        "unread_count": 6,
+        "updated_at": "2025-12-13T12:27:24.097662Z",
+        "vendor_id": "vnd-414824"
+    }
 ]
 
 ```
@@ -84,9 +87,11 @@ Creates a new room or returns an existing one between two parties.
 
 ```json
 {
-  "buyer_id": "UUID",
-  "vendor_id": "UUID",
-  "product_id": "UUID (Optional)"
+    "id": "996d626f-2d88-4f33-85af-84f8a59f8072",
+    "buyer_id": "usr-415938",
+    "vendor_id": "vnd-414824",
+    "created_at": "2025-12-13T11:27:40.630759Z",
+    "updated_at": "2025-12-13T12:27:24.097662Z"
 }
 
 ```
@@ -116,15 +121,16 @@ Fetches paginated message history for a specific room.
 
 ```json
 [
-  {
-    "id": "msg_uuid_1",
-    "chat_room_id": "room_uuid",
-    "sender_id": "user_uuid",
-    "content": "Hello!",
-    "message_type": "text",
-    "is_read": true,
-    "created_at": "2025-12-05T17:00:00Z"
-  }
+    {
+        "id": "3c8ffd4b-096c-4099-b19b-bb92f79d7345",
+        "chat_room_id": "996d626f-2d88-4f33-85af-84f8a59f8072",
+        "sender_id": "usr-415938",
+        "content": "Good afternoon sir",
+        "message_type": "text",
+        "is_read": true,
+        "created_at": "2025-12-13T11:35:32.720532Z",
+        "delivered_at": "2025-12-13T12:03:59.148784Z"
+    }
 ]
 
 ```
