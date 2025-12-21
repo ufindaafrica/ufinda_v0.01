@@ -3,6 +3,7 @@ import LineBreak from "@/components/lineBreak";
 import Plus from "@/components/plus";
 import { dummyHostels } from "@/constants/dummy_data";
 import { images } from "@/constants/images";
+import { lastMessageSentTime } from "@/deps/chatTime";
 import { getAllChats } from "@/services/allChats";
 import { chatStyles } from "@/styles/chat";
 import { colors, globals, roboto } from "@/styles/globals";
@@ -22,7 +23,7 @@ type Chat = {
     vendor_id?: string,
     product_id?: string,
     unread_count?: number,
-    messages?: Array<LastMessage>,
+    last_message?: LastMessage,
     sender_profile_pic?: any | null
 }
 
@@ -32,7 +33,8 @@ type LastMessage = {
     public_id?: string | null,
     created_at?: string,
     sender_id?: string,
-    is_read?: boolean
+    is_read?: boolean,
+    id?: string
 }
 
 export default function VendorChat({ student }: VendorChatProps) {
@@ -42,22 +44,20 @@ export default function VendorChat({ student }: VendorChatProps) {
     const [myId, setMyId] = useState("")
 
     const currentChats = () => {
-        // if (activated === "Unread") return allChats.filter(item => item?.messages?)
-        // if (activated === "Read" || activated === "Sent") return allChats.filter(item => item?.messages)
+        if (activated === "Unread") return allChats.filter(item => (item.last_message?.is_read == false && item.last_message?.sender_id !== myId))
+
+        if (activated === "Read") return allChats.filter(item => item.last_message?.is_read == true && item.last_message?.sender_id === myId)
+
+        if (activated === "Sent") return allChats.filter(item => item.last_message?.sender_id === myId)
+        
         return allChats
     }
 
     useEffect(() => {
-        setAllChats(currentChats())
-    }, [activated])
-
-    useEffect(() => {
-        // setAllChats(currentChats())
 
         const loadId = async () => {
             const id = await getItemAsync('ID')
-            console.log(id)
-            setMyId(id ?? "1234")
+            setMyId(id ?? "")
         }
 
         loadId()
@@ -67,7 +67,6 @@ export default function VendorChat({ student }: VendorChatProps) {
         const getChats = async () => {
             const everyChat = (await getAllChats())[1]
             setAllChats(everyChat)
-            console.log("all chats =>", everyChat)
         }
 
         getChats()
@@ -101,7 +100,7 @@ export default function VendorChat({ student }: VendorChatProps) {
                 <LineBreak />
 
                 {
-                    allChats?.map((item, idx) =>
+                    currentChats().map((item, idx) =>
                         <TouchableOpacity onPress={() => {
                             const chatPersonId = myId === item.buyer_id ? item.vendor_id : item.buyer_id
                             router.push({
@@ -121,14 +120,16 @@ export default function VendorChat({ student }: VendorChatProps) {
                                     <View>
                                         <Text style={roboto.bodyLargeBold}>{getAgentName(item?.vendor_id ?? "")}</Text>
                                         <View style={chatStyles.tickV}>
-                                            <Image source={item?.messages ? images.onetick : images.twoticks} style={chatStyles.tick} />
-                                            <Text>{item?.messages?.[0]?.content ?? ""}</Text>
+                                            {
+                                                (item?.unread_count ?? 0) > 0 ? null : (item?.last_message?.sender_id ?? "") === myId && <Image source={(item?.unread_count ?? 0) > 0 ? null : item?.last_message?.is_read ? images.greenTicks : images.twoticks} style={chatStyles.tick} />
+                                            }
+                                            <Text style={[roboto.bodySmall, colors.grays]}>{item?.last_message?.content ?? ""}</Text>
                                         </View>
                                     </View>
                                     <View>
-                                        <Text style={[roboto.caption, item?.messages && colors.foundationWarningDark]}>{item?.messages?.[0]?.created_at ? (new Date(item?.messages[0].created_at)).toDateString() : ""}</Text>
+                                        <Text style={[roboto.caption, (item?.unread_count ?? 0) > 0 && colors.foundationWarningDark]}>{lastMessageSentTime(item?.last_message?.created_at) ?? ""}</Text>
                                         {item?.unread_count ? <View style={chatStyles.unread}><Text style={[roboto.caption, colors.white]}>
-                                            {item?.messages?.[0]?.content ?? ""}</Text></View> : null}
+                                            {item?.unread_count ?? ""}</Text></View> : null}
                                     </View>
                                 </View>
                             </View>

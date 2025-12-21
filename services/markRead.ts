@@ -1,25 +1,26 @@
 import axios from "axios"
 import { BASE_URL, getAccessToken, timeout } from "./apiConstants"
 
-export const getAllChats = async () => {
+export const markAsRead = async (data : any) => {
 
-    const token = await getAccessToken()
     const result: Array<any> = []
+    const token = await getAccessToken()
 
     try {
-        const res = await axios.get(
-            "/chat/rooms/with-last-message",
+        const res = await axios.post(
+            "/chat/messages/mark-read",
+            data,
             {
                 baseURL: BASE_URL,
                 timeout: timeout,
                 headers: {
+                    "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`
                 }
             }
         )
 
         result[0] = "200"
-        result[1] = res.data
 
     } catch (err: unknown) {
 

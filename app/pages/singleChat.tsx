@@ -3,9 +3,11 @@ import BackArrow from "@/components/back";
 import Message from "@/components/message";
 import { dummyHostels } from "@/constants/dummy_data";
 import { images } from "@/constants/images";
+import { isLast, isLastInGroup } from "@/deps/chatTime";
 import { verticalScale } from "@/deps/scale";
 import { BARE_URL, getAccessToken } from "@/services/apiConstants";
 import { getChatMessages } from "@/services/chatMes";
+import { markAsRead } from "@/services/markRead";
 import { colors, globals, roboto } from "@/styles/globals";
 import { singleChatStyles } from "@/styles/singleChat";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -14,13 +16,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Image, Keyboard, KeyboardAvoidingView, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-type Message = {
+export type Message = {
     content: string,
     created_at: Date,
     sender_id?: string,
     is_read?: boolean,
     personal?: boolean,
-    last?: boolean
+    last?: boolean,
+    id?: string,
+    message_type?: string,
+    public_id?: string
 }
 
 export default function SingleChat() {
@@ -43,7 +48,7 @@ export default function SingleChat() {
         let active = true
 
         const joinChatRoom = async () => {
-            
+
             const token = await getAccessToken()
             if (!token || !active) return
 
@@ -52,19 +57,16 @@ export default function SingleChat() {
             chatSocket.current = chatS
 
             chatS.onopen = () => {
-                console.log("in chat socket, about to connect")
                 chatS.send(JSON.stringify({
                     type: "join_room",
                     payload: {
                         room_id: id
                     }
                 }))
-                console.log("chat joined")
             }
 
             chatS.onmessage = (event) => {
                 const msg = JSON.parse(event.data)
-                console.log(msg)
                 if (msg.type === "message") {
                     setAllMessages(prev => [...prev, msg.payload])
                 }
@@ -77,9 +79,15 @@ export default function SingleChat() {
             chatS.onclose = () => {
                 chatSocket.current = null
             }
+            
+        }
+
+        const markRead = async () => {
+            await markAsRead({room_id: id})
         }
 
         joinChatRoom()
+        markRead()
 
         return () => {
             active = false
@@ -100,6 +108,7 @@ export default function SingleChat() {
             message_type: "text",
             created_at: new Date(),
             personal: true,
+            sender_id: userId
         }
 
         chatSocket.current?.send(JSON.stringify({
@@ -112,7 +121,7 @@ export default function SingleChat() {
         }))
 
         setAllMessages(prev => {
-            const messages = [newMessage, ...prev]
+            const messages = [...prev, newMessage]
             return messages
         })
 
@@ -135,6 +144,14 @@ export default function SingleChat() {
         getMessages()
     }, [])
 
+    useFocusEffect(useCallback(() => {
+        const setId = async () => {
+            const storedId = await getItemAsync("ID") ?? ""
+            setUserId(storedId)
+        }
+        setId()
+    }, []))
+
     const getAgentName = (id: string) => {
         const hostel = dummyHostels.find(h => h.agent.id === id)
         return hostel?.agent.name ?? ""
@@ -142,11 +159,13 @@ export default function SingleChat() {
 
     useEffect(() => {
         const keyboardDidShow = Keyboard.addListener('keyboardDidShow', () => {
-            scrollViewRef.current?.scrollToEnd({animated: true})
+            scrollViewRef.current?.scrollToEnd({ animated: true })
         })
 
         return () => keyboardDidShow?.remove()
     }, [])
+
+    
 
     return (
         <SafeAreaView style={[globals.container, globals.lightContainer]}>
@@ -158,7 +177,7 @@ export default function SingleChat() {
                         <Avatar />
                         <View>
                             <Text style={[roboto.titleSmallBold, singleChatStyles.bottomPadding]}>{getAgentName(vendorIdString)}</Text>
-                            <Text style={roboto.caption}>Online</Text>
+                            <Text style={roboto.caption}>Active recently</Text>
                         </View>
                     </View>
                 </View>
@@ -173,16 +192,17 @@ export default function SingleChat() {
             </View>
 
             <KeyboardAvoidingView style={singleChatStyles.kAView} behavior="padding" keyboardVerticalOffset={verticalScale(5)}>
-                <ScrollView 
+                <ScrollView
                     ref={scrollViewRef}
-                    onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({animated: true})}
-                    showsVerticalScrollIndicator={false}>
-                        
+                    onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{paddingBottom: 10}}>
+
                     <Text style={[roboto.bodySmall, colors.darkBurntOrange, singleChatStyles.encrypted]}>Messages are encrypted</Text>
 
                     {
-                        allMessages.slice().reverse().map((item, idx) =>
-                            <Message key={idx} message={item.content} personal={item.personal ? item.personal : item.sender_id === userId ? true : false} last={item.last} time={item.created_at ? new Date(item.created_at).toTimeString().slice(0, 5) : ""} />)
+                        allMessages.map((item, idx) =>
+                            <Message key={idx} message={item.content} personal={item.personal ? item.personal : item.sender_id === userId ? true : false} last={isLastInGroup(idx, allMessages)} time={item.created_at ? new Date(item.created_at).toTimeString().slice(0, 5) : ""} status={isLast(idx, allMessages) && item.is_read} />)
                     }
 
                 </ScrollView>
