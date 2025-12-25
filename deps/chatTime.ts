@@ -12,6 +12,7 @@ export const lastMessageSentTime = (dateString: string | null | undefined) => {
             minute: '2-digit',
             hour12: true
         }).toLowerCase()
+        if (diff >= 0 && diff <= 48 * 60 * 60 * 1000) return "Yesterday"
         if (diff >= 0 && diff <= 7 * 24 * 60 * 60 * 1000) return date.toLocaleDateString('en-NG', { weekday: 'long' })
         else return date.toLocaleDateString('en-NG')
     }

@@ -36,6 +36,7 @@ export default function NewHostel() {
     const [bulkPrice, setBulkPrice] = useState("")
 
     const [descLength, setDescLength] = useState("0")
+    const [adPrice, setAdPrice] = useState("2,999")
 
     type Media = {
         media: string;
@@ -84,9 +85,24 @@ export default function NewHostel() {
     }
 
     const onContinue = async () => {
-
         console.log("title", title)
         console.log("categories", categories)
+        console.log("photos", hostelImages)
+        console.log("video", hostelVideo)
+        console.log("address", address)
+        console.log("hostel type", hostelType)
+        console.log("number of rooms", numberOfRooms)
+        console.log("total rooms", totalRooms)
+        console.log("roomate", roomate)
+        console.log("power supply", power)
+        console.log("kitchen access", kitchen)
+        console.log("toilet access", toilet)
+        console.log("landlord resides", landlord)
+        console.log("description", desc)
+        console.log("yearly rent", yearlyrent)
+        console.log("total price", totalPrice)
+        console.log('bulk price', bulkPrice)
+        console.log('ad price', adPrice)
     }
 
     // useEffect(() => {
@@ -97,7 +113,11 @@ export default function NewHostel() {
     //         }
 
     //         const loc = await Location.getCurrentPositionAsync({})
+    //         console.log("got the first one")
     //         const address = await Location.reverseGeocodeAsync(loc.coords)
+
+    //         console.log(loc)
+    //         console.log(address)
 
     //         if (address.length > 0) {
     //             console.log(address[0])
@@ -128,6 +148,7 @@ export default function NewHostel() {
             setTopAdView(true)
             if (!top7View && !top30View) {
                 setTop7View(true)
+                setAdPrice("2,999")
             }
             setBottomAdView(false)
         }
@@ -137,6 +158,7 @@ export default function NewHostel() {
             setTopAdView(true)
             setTop7View(false)
             setBottomAdView(false)
+            setAdPrice("9,999")
         }
 
         if (view === "7") {
@@ -144,6 +166,7 @@ export default function NewHostel() {
             setTopAdView(true)
             setTop30View(false)
             setBottomAdView(false)
+            setAdPrice("2,999")
         }
 
         if (view === "bottom") {
@@ -412,7 +435,7 @@ export default function NewHostel() {
                                 </View>
                             </View>
                             <View>
-                                <Text style={roboto.bodyLargeBold}>₦2,999</Text>
+                                <Text style={roboto.bodyLargeBold}>₦{adPrice}</Text>
                             </View>
                         </View>
                     </TouchableOpacity>

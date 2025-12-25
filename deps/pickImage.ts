@@ -21,7 +21,7 @@ import * as ImagePicker from "expo-image-picker"
 //         const compressedUri = type === "image" ? await ImageCompressor.compress(uri, {
 //             compressionMethod: "manual",
 //             maxWidth: 1024,
-//             quality: 0.8
+//             quality: 0.4
 //         }) : await VideoCompressor.compress(uri, {
 //             compressionMethod: "manual",
 //             maxSize: 15 * 1024 * 1024
