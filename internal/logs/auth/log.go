@@ -15,19 +15,19 @@ type LogEntry struct {
 var Logs = map[string]LogEntry{
 	"1": {
 		Message: "refresh token reused: %s",
-		Level:   "critical",
+		Level:   "warn",
 	},
 	"2": {
 		Message: "user not set in context (possible middleware bypass)",
-		Level:   "critical",
+		Level:   "warn",
 	},
 	"3": {
 		Message: "unauthorized access attempt: %s",
-		Level:   "high",
+		Level:   "critical",
 	},
 	"4": {
 		Message: "invalid token",
-		Level:   "high",
+		Level:   "critical",
 	},
 }
 
@@ -48,6 +48,6 @@ func LogAuth(userID string, reason error) {
 
 	
 	if err := log.CreateLog(newLog, url); err != nil {
-		fmt.Fprintf(os.Stderr, "CRITICAL: Failed to create Auth failure log for user %s: %v. Original reason: %s\n", userID, err, reason.Error())
+		fmt.Fprintf(os.Stderr, "[CRITICAL] Failed to create Auth failure log for user %s: %v. Original reason: %s\n", userID, err, reason.Error())
 	}
 }

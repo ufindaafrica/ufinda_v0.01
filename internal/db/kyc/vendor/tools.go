@@ -10,7 +10,7 @@ import (
 	"io"
 )
 
-var ErrorKYCNotFound = errors.New("no KYC found")
+var ErrorKYCNotFound = errors.New("no kyc found")
 
 func CreateVendorKyc(data db.VendorKYC) error {
 	// 1. Define the endpoint for creation
@@ -100,7 +100,6 @@ func FindVendorKYC(id string) (*db.VendorKYC, error) {
 
 	resp, err := db.MakeDBRequest("GET", endpoint, nil, nil)
 	if err != nil {
-		// Return a nil pointer and a detailed error for the request failure
 		return nil, fmt.Errorf("error executing DB request for KYC: %w", err)
 	}
 	defer resp.Body.Close()
@@ -120,19 +119,14 @@ func FindVendorKYC(id string) (*db.VendorKYC, error) {
 			resp.StatusCode, bodyString)
 	}
 
-	// Assuming a successful 200 OK response from the database API
-	var kyc []db.VendorKYC // Note: DB APIs often return an array even for single resource queries
+	var kyc []db.VendorKYC
 	if err := json.NewDecoder(resp.Body).Decode(&kyc); err != nil {
-		// Return a nil pointer and a detailed error for JSON decoding failure
-		// The error will include context on why the decoding failed (e.g., unexpected format)
 		return nil, fmt.Errorf("failed to decode KYC response into expected structure: %w", err)
 	}
 
 	if len(kyc) == 0 {
-		// This is the specific "not found" case, which should be returned as the custom error.
 		return nil, ErrorKYCNotFound
 	}
 
-	// Successfully found and decoded the KYC record
 	return &kyc[0], nil
 }

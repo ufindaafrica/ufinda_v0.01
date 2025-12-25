@@ -42,7 +42,7 @@ type UserKYC struct {
 	Dept      string    `json:"dept,omitempty"`
 	Matric    string    `json:"matric,omitempty"`
 	AboutMe string `json:"about_me,omitempty"`
-	ProfileImg UploadedFile `json:"profile_img,omitempty"`
+	ProfileImg *UploadedFile `json:"profile_img,omitempty"`
 	IsStudent bool 	`json:"is_student,omitempty"`
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 	UpdatedAt *time.Time `json:"updated_at,omitempty"`
@@ -50,7 +50,7 @@ type UserKYC struct {
 
 type SecurityLog struct {
 	ID        *uuid.UUID `json:"id,omitempty"`
-	UserID    string `json:"user_id"`
+	UserID    *string `json:"user_id"`
 	Log       string `json:"log" binding:"required"`
 	Level     string `json:"level" binding:"required"`
 	CreatedAt *time.Time `json:"created_at,omitempty"`
@@ -65,6 +65,7 @@ type UploadedFile struct {
 type Hostel struct {
 	ID               string    `json:"id,omitempty"`
 	VendorID string `json:"vendor_id"`
+	Title string `json:"title"`
 	TotalPrice       int64    `json:"total_price" binding:"required"`
 	Location         string    `json:"location" binding:"required"`
 	RoomType         string    `json:"room_type" binding:"required"`
@@ -95,6 +96,15 @@ type HostelLog struct {
 	ID *uuid.UUID `json:"id,omitempty"`
 	VendorID string `json:"vendor_id"`
 	HostelID *string `json:"hostel_id,omitempty"`
+	Reason string `json:"reason"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
+}
+
+type ProductLog struct {
+	ID *uuid.UUID `json:"id,omitempty"`
+	VendorID string `json:"vendor_id"`
+	ProductID *string `json:"product_id,omitempty"`
 	Reason string `json:"reason"`
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 	UpdatedAt *time.Time `json:"updated_at,omitempty"`
@@ -169,7 +179,7 @@ type VendorKYC struct {
 	NIN string `json:"nin"`
 	IsVerified bool `json:"is_verified"`
 	AboutMe string `json:"about_me"`
-	ProfileImg UploadedFile `json:"profile_img"`
+	ProfileImg *UploadedFile `json:"profile_img"`
 	Address string `json:"address"`
 	Status string `json:"status"`
 	VerificationMode string `json:"verification_mode"`
@@ -239,4 +249,18 @@ type EnrichedHostel struct {
     
     // This field MUST match the relationship name in the SQL query (i.e., 'users')
     Users UserAgentInfo `json:"vendor_info"`
+}
+
+
+type ProductItem struct {
+	ID string `json:"id"`
+	CategoryID uuid.UUID `json:"category_id"`
+	Title string `json:"title"`
+	Price int64 `json:"price"`
+	Description string `json:"description"`
+	Attributes map[string]interface{} `json:"attributes"`
+	Images []UploadedFile `json:"product_images"`
+	Video *UploadedFile `json:"product_video"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
 }

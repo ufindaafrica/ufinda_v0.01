@@ -139,7 +139,7 @@ func UserKYCHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
             // Handle profile picture for creation
             // Check if the uploadedFile struct is populated
             if uploadedFile.URL != "" {
-                newKYC.ProfileImg = uploadedFile
+                newKYC.ProfileImg = &uploadedFile
             }
 
             // Fix 1: Corrected spelling from checkUniqunessFunc to checkUniquenessFunc

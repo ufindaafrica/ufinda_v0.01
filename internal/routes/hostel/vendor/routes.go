@@ -6,7 +6,9 @@ import (
 	"strconv"
 	"fmt"
 	"errors"
+	"strings"
 	"context"
+	"mime/multipart"
 	"log"
 	"github.com/cloudinary/cloudinary-go/v2"
 	"encoding/json"
@@ -16,6 +18,7 @@ import (
 	"github.com/oladev/ufinda_v0.01/internal/logs/auth"
 	"github.com/oladev/ufinda_v0.01/internal/token"
 	"github.com/oladev/ufinda_v0.01/internal/tasks/hostel"
+	"github.com/oladev/ufinda_v0.01/internal/tasks"
 	"github.com/oladev/ufinda_v0.01/internal/logs/hostel"
 )
 
@@ -35,101 +38,141 @@ func CreateHostelHandler(asynqClient *asynq.Client) gin.HandlerFunc {
         }
 
 		if !getUser.IsVerified {
-			hostellog.LogHostel(getUser.ID, nil, fmt.Errorf("user not verified"))
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "not verified"})
+			hostellog.LogHostel(getUser.ID, nil, fmt.Errorf("vendor not verified"))
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not verified"})
 			return
 		}
 
 		// Parse the multipart form to access fields and files
-		if err := c.Request.ParseMultipartForm(50 << 20); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "file size exceed limit"})
+		form, err := c.MultipartForm()
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "error getting request"})
 			return
 		}
 
 		// Get files to send to the worker
-		imageHeaders := c.Request.MultipartForm.File["hostel_images"]
+		imageHeaders := form.File["hostel_images"]
 		if len(imageHeaders) < 1 {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "no images uploaded"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "no image provided"})
 			return
 		}
 
-		videoHeaders := c.Request.MultipartForm.File["hostel_videos"]
-
-		// Extract form data
-		totalPrice, err := strconv.ParseInt(c.PostForm("total_price"), 10, 64)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid total_price"})
-			return
-		}
-		totalRooms, err := strconv.Atoi(c.PostForm("total_hostel_rooms"))
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid total_hostel_rooms"})
+		if len(imageHeaders) > 3 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "max of 3 images allowed"})
 			return
 		}
 
-		// Convert the string to int64
-		rentPerYear, err := strconv.ParseInt(c.PostForm("rent_per_year"), 10, 64)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid rent_per_year"})
+		videoHeader,_ := c.FormFile("hostel_video")
+		var videoSlice []*multipart.FileHeader
+		if videoHeader != nil {
+			videoSlice = append(videoSlice, videoHeader)
+		}
+
+		getFormVal := func(key string) string {
+			return strings.TrimSpace((c.PostForm(key)))
+		}
+
+		totalPrice, err := strconv.ParseInt(getFormVal("total_price"), 10, 64)
+		if err != nil || totalPrice <= 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid total price."})
 			return
 		}
 
-		// Create the hostel object with basic data only
+		totalRooms, err := strconv.Atoi(getFormVal("total_hostel_rooms"))
+		if err != nil || totalRooms <= 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid total hostel rooms."})
+			return
+		}
+
+		rentPerYear, err := strconv.ParseInt(getFormVal("rent_per_year"), 10, 64)
+		if err != nil || rentPerYear <= 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid rent per year."})
+			return
+		}
+
+		// 2. Extract and Validate Text Data
+		title := getFormVal("title")
+		location := getFormVal("location")
+		description := getFormVal("description")
+
+		// Essential field checks
+		if title == "" || len(title) < 5 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Title is too short or empty."})
+			return
+		}
+		if location == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Location is required."})
+			return
+		}
+
 		checkUniquenessFunc := func(id string) (bool, error) {
-			return (token.IsIDUnique(id, "/rest/v1/hostels"))
+			return token.IsIDUnique(id, "/rest/v1/hostels")
 		}
 
 		hostelID, err := token.GenerateRandomID("hostel", checkUniquenessFunc)
 		if err != nil {
 			hostellog.LogHostel(getUser.ID, nil, fmt.Errorf("failed to generate hostel id: %w", err))
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate id"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 			return
 		}
 
 		newHostel := db.Hostel{
-			ID: hostelID,
+			ID:               hostelID,
 			VendorID:         getUser.ID,
+			Title:            title,
 			TotalPrice:       totalPrice,
-			Location:         c.PostForm("location"),
-			LandlordResides:  c.PostForm("landlord_resides"),
-			RoomType:         c.PostForm("room_type"),
+			Location:         location,
+			Description:      description,
 			RentPerYear:      rentPerYear,
 			TotalHostelRooms: totalRooms,
-			RoommatesAllowed: c.PostForm("roommates_allowed"),
-			KitchenAccess:    c.PostForm("kitchen_access"),
-			ToiletAccess:     c.PostForm("toilet_access"),
-			Description:      c.PostForm("description"),
+			LandlordResides:  getFormVal("landlord_resides"),
+			RoomType:         getFormVal("room_type"),
+			RoommatesAllowed: getFormVal("roommates_allowed"),
+			KitchenAccess:    getFormVal("kitchen_access"),
+			ToiletAccess:     getFormVal("toilet_access"),
 			HostelImages:     nil,
 			HostelVideos:     nil,
 		}
 
-		// Save the record to the database immediately
 		if err := hosteldb.CreateHostel(newHostel); err != nil {
+			hostellog.LogHostel(getUser.ID, &hostelID, err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
-		// Prepare payload for background task
-		payload, err := json.Marshal(tasks.HostelMediaUploadPayload{
-			HostelID:       hostelID,
-			VendorID: 		getUser.ID,
-			ImageFilesData: tasks.FilesToBytes(imageHeaders),
-			VideoFilesData: tasks.FilesToBytes(videoHeaders),
-		})
+		imagePath, err := tasks.SaveFilesToDisk(imageHeaders)
 		if err != nil {
-			log.Printf("Failed to marshal task payload: %v", err)
-			// Still return success to the user as the hostel record was created
+			hostellog.LogHostel(getUser.ID, &hostelID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+			return
 		}
 
-		// Enqueue the task
-		task := asynq.NewTask(tasks.TypeHostelMediaUpload, payload)
+		videoPath, err := tasks.SaveFilesToDisk(videoSlice)
+		if err != nil {
+			hostellog.LogHostel(getUser.ID, &hostelID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+			return
+		}
 
-		if _, err := asynqClient.Enqueue(task, asynq.MaxRetry(3)); err != nil {
-			log.Printf("Could not enqueue task: %v", err)
+		payload, err := json.Marshal(hosteltasks.HostelMediaUploadPayload{
+			HostelID:       hostelID,
+			VendorID: 		getUser.ID,
+			ImagePaths: imagePath,
+			VideoPaths: videoPath,
+		})
+
+		if err == nil {
+			// Enqueue the task
+			task := asynq.NewTask(hosteltasks.TypeHostelMediaUpload, payload)
+
+			if _, err := asynqClient.Enqueue(task, asynq.MaxRetry(3)); err != nil {
+				hostellog.LogHostel(getUser.ID, &hostelID, err)
+				log.Printf("Could not enqueue task: %v", err)
+			}
 		}
 
 		// Return a quick response to the user
-		c.JSON(http.StatusAccepted, gin.H{"message": "Hostel listing created. Media is being processed in the background."})
+		c.JSON(http.StatusAccepted, gin.H{"message": "Hostel listed. Media is being processed in the background."})
 	}
 }
 

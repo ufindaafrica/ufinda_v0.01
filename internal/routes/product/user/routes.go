@@ -20,7 +20,7 @@ func Product(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 		//type assert it
 		getUser, ok := user.(*db.User)
 		if !ok {
-            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user type"})
+            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user"})
             return
         }
 

@@ -108,10 +108,6 @@ func MakeDBRequest(method, endpoint string, data interface{}, headers map[string
 
 // DeleteCloudinaryAsset deletes an asset from Cloudinary using its Public ID and resource type.
 func DeleteCloudinaryAsset(ctx context.Context, cld *cloudinary.Cloudinary, publicID string, resourceType string) error {
-	if publicID == "" {
-		return fmt.Errorf("public ID cannot be empty")
-	}
-	
 	// Set deletion parameters
 	params := uploader.DestroyParams{
 		PublicID:     publicID,

@@ -21,9 +21,11 @@ import (
 	mrand"math/rand"
 	"crypto/rand"
 	"strings"
+	"errors"
 )
 
 var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
+var ErrInvalidToken = errors.New("invalid token")
 
 // Define the required prefixes for each entity type.
 var prefixes = map[string]string{
@@ -141,55 +143,41 @@ func RefreshToken(userID string, email string) (string, string, error) {
 
 // <-------------------------------> Begin OTP Tools <-------------------------------------->
 func GenerateOTP() (string, error) {
-	n, err := rand.Int(rand.Reader, big.NewInt(1000000)) // 0 to 999999
+	n, err := rand.Int(rand.Reader, big.NewInt(1000000))
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%06d", n.Int64()), nil // zero-padded
+	return fmt.Sprintf("%06d", n.Int64()), nil
 }
 
 // sending otp to email
 func SendOTP(email string, otp string) error {
-	// --- Postmark API Key Setup ---
-	// Postmark requires a Server API Token for sending messages.
 	apiKey := os.Getenv("POSTMARK_SERVER_KEY")
 	if apiKey == "" {
-		// Use a specific error message to help the user debug
 		return fmt.Errorf("POSTMARK_SERVER_KEY environment variable not set")
 	}
 
-	client := postmark.NewClient(apiKey, "") // The second argument is for Account Token, which is not needed for sending
+	client := postmark.NewClient(apiKey, "")
 
-	// --- Email Content Construction ---
 	subject := "Your uFinda One-Time Password"
 
-	// Plain text version
 	plainTextContent := fmt.Sprintf("Your one-time password is %s. This code will expire in 15 minutes.", otp)
 
-	// HTML version with the OTP in bold
 	htmlContent := fmt.Sprintf("<strong>Your one-time password is <b>%s</b>.</strong> This code will expire in 15 minutes.", otp)
 
-	// --- Postmark Email Message Configuration ---
 	emailMessage := postmark.Email{
-		// Set the From address with name and email, as requested.
-		// Note: This email MUST be a confirmed Sender Signature in Postmark.
 		From:    "uFinda <no-reply@ufinda.org>",
-		// Set the ReplyTo address, ensuring any replies go to the correct address (in this case, also no-reply).
 		ReplyTo: "no-reply@ufinda.org",
 		To:      email,
 		Subject: subject,
 		TextBody: plainTextContent,
 		HtmlBody: htmlContent,
-		// It's recommended to tag transactional emails for better statistics
 		Tag: "otp-transactional", 
 	}
 
-	// --- Send Email ---
 	_, err := client.SendEmail(emailMessage)
 
 	if err != nil {
-		// Postmark client typically returns a more descriptive error than SendGrid's simple error interface
-		// We'll wrap it to provide context
 		return fmt.Errorf("failed to send email via Postmark: %w", err)
 	}
 
@@ -322,7 +310,6 @@ func SendPasswordResetLink(email string, resetToken string) error {
 
 	// Construct the final link by appending the token as a query parameter
 	finalResetLink := fmt.Sprintf("%s?token=%s", baseURL, resetToken)
-	log.Printf("this is the final url: %s", finalResetLink)
 
 	// --- Email Content Construction ---
 	subject := "Password Reset Request for uFinda"

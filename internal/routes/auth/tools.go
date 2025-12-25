@@ -7,11 +7,15 @@ import (
 )
 
 // <-------------------------> Begin Error Tools <---------------------------->
-var ErrorGettingPendingUser = errors.New("Failed to get pending user")
-var ErrorGettingUser = errors.New("Failed to get user")
-var ErrorUserNotFound = errors.New("no user found")
-var ErrorPendingUserNotFound = errors.New("no pending user found")
-var InvalidRequest = "invalid request"
+var (
+	ErrGettingPendingUser = errors.New("Failed to get pending user")
+	ErrGettingUser = errors.New("Failed to get user")
+	ErrUserNotFound = errors.New("user not found")
+	InvalidRequest = "invalid request"
+	MsgAccountExists = "An account with this email already exists. Please check your inbox to verify."
+	MsgAccountCreated = "An account with this email already exists. Please login to your account."
+	MsgServerError = "An unexpected error occurred. Please try again."
+)
 // <-------------------------> End Error Tools <---------------------------->
 
 // <-------------------------> Begin Data Type Tools <---------------------------->

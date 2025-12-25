@@ -10,6 +10,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/oladev/ufinda_v0.01/internal/db"
 	"github.com/oladev/ufinda_v0.01/internal/tasks/hostel"
+	"github.com/oladev/ufinda_v0.01/internal/tasks/product"
 )
 
 func main() {
@@ -53,8 +54,12 @@ func main() {
 	mux := asynq.NewServeMux()
 	
 	// Register the task handler function using a closure
-	mux.HandleFunc(tasks.TypeHostelMediaUpload, func(ctx context.Context, t *asynq.Task) error {
-		return tasks.HandleHostelMediaUpload(cld, ctx, t)
+	mux.HandleFunc(hosteltasks.TypeHostelMediaUpload, func(ctx context.Context, t *asynq.Task) error {
+		return hosteltasks.HandleHostelMediaUpload(cld, ctx, t)
+	})
+
+	mux.HandleFunc(producttasks.TypeProductMediaUpload, func(ctx context.Context, t *asynq.Task) error {
+		return producttasks.HandleProductMediaUpload(cld, ctx, t)
 	})
 
 	if err := server.Run(mux); err != nil {

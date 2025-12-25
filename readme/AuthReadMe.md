@@ -313,7 +313,7 @@ No request body is required.
 ### Workflow
 
 1.  **Token Extraction**: The access token and refresh token are extracted from the `Authorization` and `X-Refresh-Token` headers, respectively.
-2.  **Token Validation**: Both tokens are validated to ensure they are legitimate and not expired. If a token is invalid, the request is logged and a `500` error is returned.
+2.  **Token Validation**: Both tokens are validated to ensure they are legitimate and not expired. If a token is invalid, the request is logged and a `401` error is returned.
 3.  **Token Revocation**: Upon successful validation, the unique ID (JTI) of both tokens is added to a Redis-based blacklist. The blacklist entries are set to expire at the same time as their corresponding tokens, ensuring a self-cleaning mechanism.
 4.  **Client-Side Cleanup**: After a successful logout, the client application is expected to delete the tokens from its local storage.
 
@@ -340,7 +340,8 @@ No request body is required.
 | Status Code | Description |
 | :--- | :--- |
 | `400 Bad Request` | The `X-Refresh-Token` header was not provided. |
-| `500 Internal Server Error` | An unexpected server error occurred (e.g., an invalid token was provided, or there was a failure to connect to the database). |
+| `401 Unauthorized` | Either of the `token` is invalid. |
+| `500 Internal Server Error` | An unexpected server error occurred (e.g there was a failure to connect to the database). |
 
 -----
 
@@ -439,7 +440,7 @@ No request body is required.
 1.  **Authentication & ID Retrieval**: The endpoint retrieves the user's ID from the request context, which is set by the authentication middleware.
 2.  **User Verification**: The full user record is fetched to verify existence and check the user's role.
 3.  **Asset Cleanup**:
-      * If the user's `Role` is `"user"`, the system attempts to find their KYC record.
+      * If the user has a kyc record, the system attempts to find their KYC record.
       * If a KYC record exists and contains a **Profile Image Public ID**, the corresponding image asset is deleted from Cloudinary (including forced CDN cache invalidation). Errors during KYC fetch (excluding `ErrorKYCNotFound`) or asset deletion are logged and cause a `500` error return.
 4.  **Account Deletion**: The final authenticated user record is deleted from the primary database.
 5.  **Confirmation**: A success message is returned to the client.
@@ -466,15 +467,10 @@ No request body is required.
 
 | Status Code | Description |
 | :--- | :--- |
+| `401 Unauthorized` | User not authenticated. |
 | `400 Bad Request` | An invalid user ID type was found in the context (middleware error). |
 | `404 Not Found` | The authenticated user's account could not be found in the database. |
 | `500 Internal Server Error` | An unexpected server error occurred (e.g., **database error**, **asset deletion failure**, or **KYC ID generation failure**). |
-
------
-
-I can certainly generate professional API documentation for your password management endpoints based on the structure you provided.
-
-Here is the documentation for the `ForgetPwd` and `ResetPwd` endpoints, detailing the request/response schema and the internal workflow.
 
 -----
 

@@ -157,7 +157,7 @@ func CreateOnboardVendorKycHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc{
 				kycData.AboutMe = aboutMe
 			}
 			if uploadedFile.URL != "" {
-				kycData.ProfileImg = uploadedFile
+				kycData.ProfileImg = &uploadedFile
 			}
 
 			// create the kyc

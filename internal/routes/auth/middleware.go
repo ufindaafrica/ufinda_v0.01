@@ -108,7 +108,7 @@ func UserAuthMiddleware() gin.HandlerFunc {
         // 2. Find the user based on the trusted ID
         createdUser, err := authdb.FindCreatedUserByID(claims.UserID)
         if err != nil {
-            if errors.Is(err, authdb.ErrorUserNotFound) {
+            if errors.Is(err, authdb.ErrUserNotFound) {
                 c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
             } else {
                 // Log the user retrieval failure
@@ -169,7 +169,7 @@ func VendorAuthMiddleware() gin.HandlerFunc {
         // 2. Find the user based on the trusted ID
         createdUser, err := authdb.FindCreatedUserByID(claims.UserID)
         if err != nil {
-            if errors.Is(err, authdb.ErrorUserNotFound) {
+            if errors.Is(err, authdb.ErrUserNotFound) {
                 c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
             } else {
                 // Log the user retrieval failure

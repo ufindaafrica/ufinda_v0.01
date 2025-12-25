@@ -5,7 +5,7 @@ The base URL for all API requests:
 
 | Environment | URL |
 | :--- | :--- |
-| **Production** | `a` |
+| **Production** | `http://ufinda-v0-01.onrender.com` |
 | **Local Dev** | `http://localhost:8080` |
 
 -----
@@ -20,7 +20,7 @@ This endpoint allows verified vendors to create a new hostel listing. It process
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `POST` | `[BASE_URL]/hostel/create` | Creates a new hostel listing. |
+| `POST` | `[BASE_URL]/hostels/create` | Creates a new hostel listing. |
 
 #### Body
 
@@ -29,6 +29,7 @@ The request body must be sent as `multipart/form-data`.
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | `total_price` | `string` | The total cost of the hostel. |
+| `title` | `string` | The title of the hostel which length must be greater than 5. |
 | `total_hostel_rooms` | `string` | The number of rooms available in the hostel. |
 | `rent_per_year` | `string` | The annual rent for a room. |
 | `location` | `string` | The physical location of the hostel. |
@@ -39,7 +40,7 @@ The request body must be sent as `multipart/form-data`.
 | `toilet_access` | `string` | Indicates if toilet access is provided. |
 | `description` | `string` | A detailed description of the hostel. |
 | `hostel_images` | `file[]` | An array of image files for the hostel. Max size 50MB. |
-| `hostel_videos` | `file[]` | An array of video files for the hostel. Max size 50MB. |
+| `hostel_video` | `file[]` | An array of video files for the hostel. Max size 50MB. |
 
 #### Headers
 

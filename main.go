@@ -20,6 +20,7 @@ import (
 	"github.com/oladev/ufinda_v0.01/internal/sockets/kyc"
 	"github.com/oladev/ufinda_v0.01/internal/sockets/chat"
 	"github.com/oladev/ufinda_v0.01/internal/routes/rating"
+	"github.com/oladev/ufinda_v0.01/internal/routes/product/vendor"
 )
 
 var wsHub = hub.NewHub()
@@ -85,6 +86,7 @@ func main() {
 	auth.RegisterAuth(r, cld)
 	userkyc.RegisterKYC(r, cld)
 	vendorkyc.RegisterKYC(r, cld)
+	vendorproduct.RegisterVendorProduct(r, asynqClient, cld)
 	rating.RegisterRating(r)
 	webhook.RegisterWebhooks(r, wsHub)
 	

@@ -73,7 +73,7 @@ func HandleVerificationPayload(payload db.DojahWebhookPayload, h *hub.Hub) {
     // Assume result.UserID holds the ID used to register the user initially
     getUser, err = authdb.FindCreatedUserByID(result.UserID) 
     if err != nil {
-        if errors.Is(err, authdb.ErrorUserNotFound) {
+        if errors.Is(err, authdb.ErrUserNotFound) {
             log.Printf("KYC_WARNING: User %s not found in internal DB. Cannot perform name match.", result.UserID)
             // Cannot confirm identity, so fail or pend. We default to FAILED_USER_ID.
             finalStatus = "FAILED_USER_ID"
