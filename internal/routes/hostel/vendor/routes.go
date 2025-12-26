@@ -136,7 +136,7 @@ func CreateHostelHandler(asynqClient *asynq.Client) gin.HandlerFunc {
 
 		if err := hosteldb.CreateHostel(newHostel); err != nil {
 			hostellog.LogHostel(getUser.ID, &hostelID, err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 			return
 		}
 

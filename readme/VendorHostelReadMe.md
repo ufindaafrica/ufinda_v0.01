@@ -10,84 +10,82 @@ The base URL for all API requests:
 
 -----
 
-### POST `[BASE_URL]/hostel/create`
+### POST `[BASE_URL]/hostels/create`
 
 This endpoint allows verified vendors to create a new hostel listing. It processes hostel details and media (images, videos) asynchronously to provide a fast response. The media is handled by a background worker.
 
------
+---
 
 ### Request
 
 | Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `[BASE_URL]/hostels/create` | Creates a new hostel listing. |
-
-#### Body
-
-The request body must be sent as `multipart/form-data`.
-
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| `total_price` | `string` | The total cost of the hostel. |
-| `title` | `string` | The title of the hostel which length must be greater than 5. |
-| `total_hostel_rooms` | `string` | The number of rooms available in the hostel. |
-| `rent_per_year` | `string` | The annual rent for a room. |
-| `location` | `string` | The physical location of the hostel. |
-| `landlord_resides` | `string` | Indicates if the landlord lives on the property. |
-| `room_type` | `string` | The type of room (e.g., single, shared). |
-| `roommates_allowed` | `string` | Indicates if roommates are permitted. |
-| `kitchen_access` | `string` | Indicates if kitchen access is provided. |
-| `toilet_access` | `string` | Indicates if toilet access is provided. |
-| `description` | `string` | A detailed description of the hostel. |
-| `hostel_images` | `file[]` | An array of image files for the hostel. Max size 50MB. |
-| `hostel_video` | `file[]` | An array of video files for the hostel. Max size 50MB. |
+| --- | --- | --- |
+| `POST` | `/hostels/create` | Creates a new hostel listing. |
 
 #### Headers
 
-This endpoint requires an `Authorization` header with a valid vendor access token.
-
 | Header | Example Value | Description |
-| :--- | :--- | :--- |
-| `Authorization` | `Bearer <access_token>` | The vendor's current access token. |
+| --- | --- | --- |
+| `Authorization` | `Bearer <access_token>` | Requires a valid vendor access token. |
+| `Content-Type` | `multipart/form-data` | Required for file uploads. |
 
------
+#### Body (`multipart/form-data`)
+
+| Field | Type | Description | Example / Required Value |
+| --- | --- | --- | --- |
+| `title` | `string` | Title of the listing (Min 5 chars). | `"Luxury 2 Bedroom Self-Contained"` |
+| `total_price` | `number` | Total cost (must be > 0). | `"550000"` |
+| `total_hostel_rooms` | `number` | Available rooms in the building. | `"12"` |
+| `rent_per_year` | `number` | Annual rent per room. | `"150000"` |
+| `location` | `string` | Physical address. | `"Near University Gate, Lagos"` |
+| `kitchen_access` | `string` | Type of kitchen available. | **`"personal"`** or **`"public"`** |
+| `toilet_access` | `string` | Type of toilet available. | **`"personal"`** or **`"public"`** |
+| `landlord_resides` | `string` | If landlord lives there. | `"yes"` or `"no"` |
+| `room_type` | `string` | Category of room. | `"Self-Contain"`, `"Flat"` |
+| `roommates_allowed` | `string` | Policy on roommates. | `"yes"` or `"no"` |
+| `description` | `string` | Full details about the hostel. | `"A quiet environment with 24/7 water..."` |
+| `hostel_images` | `file[]` | Array of images (Max 3). | `image1.jpg`, `image2.png` |
+| `hostel_video` | `file` | A single video file. | `tour_video.mp4` |
+
+---
 
 ### Workflow
 
-1.  **Authorization**: The endpoint verifies the user's authentication and role. It checks if the user is a `vendor` and if their KYC (Know Your Customer) is verified.
-2.  **Form Data Parsing**: It parses the `multipart/form-data` request, converting text fields like `total_price` and `total_hostel_rooms` to their correct data types.
-3.  **Hostel Record Creation**: A new hostel record is created in the database using the provided details. The media file fields are initially left empty.
-4.  **Asynchronous Media Processing**: The image and video files are extracted from the request. A background task is created and enqueued to handle the media uploads and updates the hostel record with the new media URLs.
-5.  **Quick Response**: A `202 Accepted` response is returned to the client immediately. This signals that the request was successful and media processing is underway.
+1. **Authentication & Verification**: The handler verifies the user's session and checks if the `IsVerified` flag is true.
+2. **Input Sanitization**: All text inputs are trimmed of leading/trailing whitespace. Numeric strings are converted to `int64` and validated to ensure they are positive values.
+3. **Synchronous DB Write**: A new `Hostel` record is created immediately with an auto-generated unique ID. Media fields (`hostel_images`, `hostel_videos`) are initialized as `null`.
+4. **Local Staging**: Uploaded files are sniffed for security (MIME type verification) and saved to a temporary local disk directory to keep RAM usage low.
+5. **Task Enqueueing**: A background task containing the **file paths** is sent to the Redis queue (Asynq).
+6. **Cleanup & Upload**: The background worker picks up the task, uploads the files to Cloudinary, deletes the local temporary files, and updates the database with the final URLs.
 
------
+---
 
 ### Responses
 
 #### Success
 
 | Status Code | Description |
-| :--- | :--- |
-| `202 Accepted` | The hostel listing was successfully created, and media is being processed asynchronously. |
+| --- | --- |
+| `202 Accepted` | Record created; media processing started. |
 
 **Body**
 
 ```json
 {
-  "message": "Hostel listing created. Media is being processed in the background."
+  "message": "Hostel listed. Media is being processed in the background."
 }
+
 ```
 
 #### Errors
 
-| Status Code | Description |
-| :--- | :--- |
-| `400 Bad Request` | The request is invalid due to a missing or invalid field, or the file size limit (50MB) is exceeded. |
-| `401 Unauthorized` | The access token is invalid, missing, or the user is not a verified vendor. |
-| `404 Not Found` | The authenticated user's ID is not found in the database. |
-| `500 Internal Server Error` | An unexpected server error occurred (e.g., a database connection issue or a problem retrieving user data). |
+| Status Code | Description | Example Error Message |
+| --- | --- | --- |
+| `400 Bad Request` | Validation failed or missing fields. | `{"error": "Title is too short or empty."}` |
+| `401 Unauthorized` | Not logged in or KYC not verified. | `{"error": "vendor not verified"}` |
+| `500 Internal Error` | Server-side failure (DB/Queue). | `{"error": "Internal server error"}` |
 
---------
+---
 
 ### PATCH `/hostel/:id`
 
