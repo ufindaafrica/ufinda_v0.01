@@ -174,7 +174,7 @@ func VerifyOtpHandler(c *gin.Context) {
 		log.Printf("[ERROR] Failed to delete pending user for %s: %v", req.Email, err)
 	}
 
-    accessToken, refreshToken, err := token.GenerateTokens(user.ID, user.Email)
+    accessToken, refreshToken, err := token.GenerateTokens(user.ID, user.Email, user.Role)
     if err != nil {
 		log.Printf("[CRITICAL] failed to generate token for user: %s: %v", user.Email, err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
@@ -261,7 +261,7 @@ func EmailLoginHandler(c *gin.Context) {
     // If password matches, clear the login attempts counter
     db.RedisClient.Del(ctx, loginKey)
 
-    accessToken, refreshToken, err := token.GenerateTokens(user.ID, user.Email)
+    accessToken, refreshToken, err := token.GenerateTokens(user.ID, user.Email, user.Role)
     if err != nil {
 		log.Printf("[CRITICAL] failed to generate token for user: %s: %w", user.ID, err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
@@ -464,7 +464,7 @@ func RefreshTokenHandler(c *gin.Context) {
 	}
 
 	// first generate token
-	access_token, refresh_token, err := token.RefreshToken(refreshClaims.UserID, refreshClaims.Email)
+	access_token, refresh_token, err := token.RefreshToken(refreshClaims.UserID, refreshClaims.Email, refreshClaims.Role)
 	if err != nil {
 		log.Print("[CRITICAL] failed to generate refresh token for user: %s: %w", refreshClaims.UserID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
@@ -483,6 +483,8 @@ func RefreshTokenHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"access_token": access_token,
 		"refresh_token": refresh_token,
+		"id": refreshClaims.UserID,
+		"role": refreshClaims.Role,
 	})
 
 }

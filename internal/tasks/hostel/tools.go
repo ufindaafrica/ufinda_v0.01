@@ -1,5 +1,7 @@
 package hosteltasks
-
+import (
+	"github.com/oladev/ufinda_v0.01/internal/tasks"
+)
 
 
 const (
@@ -11,7 +13,7 @@ const (
 type HostelMediaUploadPayload struct {
 	HostelID       string
 	VendorID 	   string
-	ImagePaths []string
-	VideoPaths []string
+	ImageFilesData []tasks.FileData
+	VideoFilesData []tasks.FileData
 }
 

@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"fmt"
+	"log"
 	"github.com/cloudinary/cloudinary-go/v2"
 	// "encoding/json"
     "github.com/oladev/ufinda_v0.01/internal/db/kyc/vendor"
@@ -125,11 +126,14 @@ func CreateOnboardVendorKycHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc{
 		var opErr error
 		var message string
 
-		if err != nil && !errors.Is(err, vendorkycdb.ErrorKYCNotFound) {
-			// Log database/fetching issue
-			kyclog.LogKYC(getUser.ID, fmt.Errorf("database error fetching existing KYC: %w", err))
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "database error fetching kyc"})
-			return
+		if err != nil {
+			if !errors.Is(err, vendorkycdb.ErrorKYCNotFound) {
+				// Log database/fetching issue
+				log.Printf("error getting kyc: %w", err)
+				kyclog.LogKYC(getUser.ID, fmt.Errorf("database error fetching existing KYC: %w", err))
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "database error fetching kyc"})
+				return
+			}
 		}
 
 		if isKYCFound {
@@ -165,6 +169,7 @@ func CreateOnboardVendorKycHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc{
 			message = "kyc created sucessfully"
 		}
 		if opErr != nil {
+			log.Printf("error creating or updating kyc: %w", opErr)
 			kyclog.LogKYC(getUser.ID, opErr)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "database request failed"})
 			return

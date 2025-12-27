@@ -47,7 +47,7 @@ func main() {
 	server := asynq.NewServer(
 		redisOpt,
 		asynq.Config{
-			Concurrency: 10,
+			Concurrency: 2,
 		},
 	)
 

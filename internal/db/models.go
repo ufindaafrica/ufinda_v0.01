@@ -95,7 +95,6 @@ type KycLog struct {
 type HostelLog struct {
 	ID *uuid.UUID `json:"id,omitempty"`
 	VendorID string `json:"vendor_id"`
-	HostelID *string `json:"hostel_id,omitempty"`
 	Reason string `json:"reason"`
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 	UpdatedAt *time.Time `json:"updated_at,omitempty"`

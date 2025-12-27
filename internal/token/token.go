@@ -38,6 +38,7 @@ var prefixes = map[string]string{
 type Claims struct {
 	UserID         string `json:"id"`
 	Email          string `json:"email"`
+	Role		   string `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -50,6 +51,7 @@ func init() {
 func GenerateTokens(
 	userID string,
 	email string,
+	role string,
 ) (string, string, error) {
 
 	// Generate a unique ID for this specific token
@@ -59,6 +61,7 @@ func GenerateTokens(
 	accessClaims := Claims{
 		UserID: userID,
 		Email:  email,
+		Role: role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -137,8 +140,8 @@ func IsTokenBlacklisted(ctx context.Context, tokenjti string) (bool, error) {
 	return true, nil
 }
 
-func RefreshToken(userID string, email string) (string, string, error) {
-	return GenerateTokens(userID, email)
+func RefreshToken(userID string, email string, role string) (string, string, error) {
+	return GenerateTokens(userID, email, role)
 }
 
 // <-------------------------------> Begin OTP Tools <-------------------------------------->

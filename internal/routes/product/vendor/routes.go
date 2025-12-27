@@ -124,25 +124,13 @@ func CreateProductHandler(asynqClient *asynq.Client) gin.HandlerFunc {
             return
         }
 
-        imagePath, err := tasks.SaveFilesToDisk(imageHeaders)
-        if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
-			return
-		}
-
-        videoPath, err := tasks.SaveFilesToDisk(videoSlice)
-        if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
-			return
-		}
-
         // Prepare payload for background task
         // Note: Check if your videoHeader needs to be handled as a slice or single
         payload, err := json.Marshal(producttasks.ProductMediaUploadPayload{
             ProductID:      productID,
             VendorID:       getUser.ID,
-            ImagePaths: imagePath, 
-            VideoPaths: videoPath, // Adjusted helper name for clarity
+            ImageFilesData: tasks.FilesToBytes(imageHeaders), 
+            VideoFilesData: tasks.FilesToBytes(videoSlice), // Adjusted helper name for clarity
         })
         
         if err == nil {

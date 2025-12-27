@@ -41,7 +41,7 @@ This endpoint allows verified vendors to create a new hostel listing. It process
 | `kitchen_access` | `string` | Type of kitchen available. | **`"personal"`** or **`"public"`** |
 | `toilet_access` | `string` | Type of toilet available. | **`"personal"`** or **`"public"`** |
 | `landlord_resides` | `string` | If landlord lives there. | `"yes"` or `"no"` |
-| `room_type` | `string` | Category of room. | `"Self-Contain"`, `"Flat"` |
+| `room_type` | `string` | Category of room. | `"self-contain"`, `"single room"`, `room and parlor`, `2 bedroom flat`, `3 bedroom flat`, `room in a flat` |
 | `roommates_allowed` | `string` | Policy on roommates. | `"yes"` or `"no"` |
 | `description` | `string` | Full details about the hostel. | `"A quiet environment with 24/7 water..."` |
 | `hostel_images` | `file[]` | Array of images (Max 3). | `image1.jpg`, `image2.png` |
@@ -87,7 +87,7 @@ This endpoint allows verified vendors to create a new hostel listing. It process
 
 ---
 
-### PATCH `/hostel/:id`
+### PATCH `/hostels/:id`
 
 This endpoint allows an authenticated and verified **Vendor** to update the details of a specific hostel they own. It accepts `multipart/form-data` for partial updates (PATCH-like behavior).
 
@@ -114,8 +114,8 @@ The request must be a **`multipart/form-data`** submission. All fields are **opt
 | `total_price` | `string` | The total annual price for the hostel (e.g., total fees). Must be an integer. |
 | `rent_per_year` | `string` | The cost of rent per year. Must be an integer. |
 | `total_hostel_rooms` | `string` | The total number of rooms in the hostel. Must be an integer. |
-| `landlord_resides` | `string` | Boolean-like string indicating if the landlord resides on the property. |
-| `roommates_allowed` | `string` | Boolean-like string indicating if roommates are permitted. |
+| `landlord_resides` | `string` | `yes` or `no` indicating if the landlord resides on the property. |
+| `roommates_allowed` | `string` | `yes` or `no`. |
 | `description` | `string` | A detailed description of the hostel. |
 
 #### Headers
@@ -164,3 +164,150 @@ The request must be a **`multipart/form-data`** submission. All fields are **opt
 | `500 Internal Server Error` | An unexpected server error occurred (e.g., database error fetching user/hostel, or failure to update the hostel record). |
 
 ----
+
+### DELETE `/hostels/:id`
+
+This endpoint allows an authenticated and verified **Vendor** to permanently delete a hostel listing that they own. This action also triggers the removal of all associated media (images and videos) from Cloudinary.
+
+---
+
+### Request
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `DELETE` | `[BASE_URL]/hostels/:id` | Deletes a specific hostel record and its associated media assets. |
+
+#### URL Parameters
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `:id` | `string` | The unique ID of the hostel listing to be deleted. |
+
+#### Body
+
+No request body is required for this endpoint.
+
+#### Headers
+
+| Header | Value | Description |
+| --- | --- | --- |
+| `Authorization` | `Bearer <access_token>` | **Required** for user authentication. |
+
+---
+
+### Workflow
+
+1. **Authentication & Verification**: The system retrieves the user from the context and verifies they are a **Vendor** with a **Verified (KYC)** account.
+2. **Hostel Retrieval**: The system fetches the existing hostel record from the database using the provided `:id`.
+3. **Ownership Check**: The system confirms that the `VendorID` of the hostel matches the ID of the authenticated user. If a mismatch is detected, a security log is generated and access is denied.
+4. **Asset Identification**: The system retrieves the `PublicID` and `URL` for all images and videos associated with the hostel from the database.
+5. **Cloudinary Cleanup**: The system loops through the identified assets and deletes them from Cloudinary storage to free up space and maintain data integrity.
+6. **Database Deletion**: Once the media cleanup is initiated, the hostel record is permanently removed from the database.
+
+---
+
+### Responses
+
+#### Success
+
+| Status Code | Description |
+| --- | --- |
+| `200 OK` | The hostel listing and its associated media were successfully deleted. |
+
+**Body**
+
+```json
+{
+  "message": "listing deleted successfully"
+}
+
+```
+
+#### Errors
+
+| Status Code | Description |
+| --- | --- |
+| `401 Unauthorized` | User is not authenticated, or the vendor is not KYC verified. |
+| `403 Forbidden` | The authenticated user does not own the hostel listing (Security Log triggered). |
+| `404 Not Found` | The specified hostel ID does not exist in the database. |
+| `500 Internal Server Error` | An unexpected error occurred while fetching media IDs or performing the database deletion. |
+
+---
+
+### GET `/hostels/agents`
+
+This endpoint allows an authenticated **Vendor** (Agent) to retrieve a list of all hostel listings they have created. It returns the full details of each hostel associated with the vendor's unique ID.
+
+---
+
+### Request
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `[BASE_URL]/hostels/agents` | Fetches all hostel listings belonging to the authenticated vendor. |
+
+#### URL Parameters
+
+No URL parameters are required. The system identifies the vendor automatically using the authentication token.
+
+#### Body
+
+No request body is required for this endpoint.
+
+#### Headers
+
+| Header | Value | Description |
+| --- | --- | --- |
+| `Authorization` | `Bearer <access_token>` | **Required** to identify the vendor and their associated listings. |
+
+---
+
+### Workflow
+
+1. **Authentication**: The system retrieves the user object from the request context (populated by the middleware).
+2. **Context Validation**: The system ensures the authenticated user is of the correct type (`*db.User`).
+3. **Database Query**: Using the `VendorID` extracted from the authenticated user's profile, the system queries the `hostels` table for all matching records.
+4. **Error Handling**:
+* If no records are found, the system returns a `404 Not Found` specifically noting that no hostels are listed for this vendor.
+* If a database error occurs, the error is logged, and a `500 Internal Server Error` is returned.
+
+
+5. **Data Return**: On success, the complete list of hostel objects (including pricing, location, and media URLs) is returned as a JSON array.
+
+---
+
+### Responses
+
+#### Success
+
+| Status Code | Description |
+| --- | --- |
+| `200 OK` | A list of hostels was successfully retrieved. |
+
+**Body (Array of Objects)**
+
+```json
+[
+  {
+    "id": "hostel-123",
+    "vendor_id": "vnd-456",
+    "title": "Modern Executive Self-Contain",
+    "total_price": 450000,
+    "location": "Unilag Road, Yaba",
+    "hostel_images": [...],
+    "hostel_videos": [...]
+    // ... other hostel fields
+  }
+]
+
+```
+
+#### Errors
+
+| Status Code | Description |
+| --- | --- |
+| `401 Unauthorized` | The access token is missing, invalid, or expired. |
+| `404 Not Found` | No hostel listings were found associated with this specific vendor account. |
+| `500 Internal Server Error` | An unexpected error occurred while querying the database. |
+
+---

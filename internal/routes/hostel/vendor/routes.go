@@ -38,7 +38,7 @@ func CreateHostelHandler(asynqClient *asynq.Client) gin.HandlerFunc {
         }
 
 		if !getUser.IsVerified {
-			hostellog.LogHostel(getUser.ID, nil, fmt.Errorf("vendor not verified"))
+			hostellog.LogHostel(getUser.ID, fmt.Errorf("vendor not verified"))
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not verified"})
 			return
 		}
@@ -111,7 +111,7 @@ func CreateHostelHandler(asynqClient *asynq.Client) gin.HandlerFunc {
 
 		hostelID, err := token.GenerateRandomID("hostel", checkUniquenessFunc)
 		if err != nil {
-			hostellog.LogHostel(getUser.ID, nil, fmt.Errorf("failed to generate hostel id: %w", err))
+			hostellog.LogHostel(getUser.ID, fmt.Errorf("failed to generate hostel id: %w", err))
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 			return
 		}
@@ -135,21 +135,7 @@ func CreateHostelHandler(asynqClient *asynq.Client) gin.HandlerFunc {
 		}
 
 		if err := hosteldb.CreateHostel(newHostel); err != nil {
-			hostellog.LogHostel(getUser.ID, &hostelID, err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
-			return
-		}
-
-		imagePath, err := tasks.SaveFilesToDisk(imageHeaders)
-		if err != nil {
-			hostellog.LogHostel(getUser.ID, &hostelID, err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
-			return
-		}
-
-		videoPath, err := tasks.SaveFilesToDisk(videoSlice)
-		if err != nil {
-			hostellog.LogHostel(getUser.ID, &hostelID, err)
+			hostellog.LogHostel(getUser.ID, err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 			return
 		}
@@ -157,8 +143,8 @@ func CreateHostelHandler(asynqClient *asynq.Client) gin.HandlerFunc {
 		payload, err := json.Marshal(hosteltasks.HostelMediaUploadPayload{
 			HostelID:       hostelID,
 			VendorID: 		getUser.ID,
-			ImagePaths: imagePath,
-			VideoPaths: videoPath,
+			ImageFilesData: tasks.FilesToBytes(imageHeaders),
+			VideoFilesData: tasks.FilesToBytes(videoSlice),
 		})
 
 		if err == nil {
@@ -166,7 +152,7 @@ func CreateHostelHandler(asynqClient *asynq.Client) gin.HandlerFunc {
 			task := asynq.NewTask(hosteltasks.TypeHostelMediaUpload, payload)
 
 			if _, err := asynqClient.Enqueue(task, asynq.MaxRetry(3)); err != nil {
-				hostellog.LogHostel(getUser.ID, &hostelID, err)
+				hostellog.LogHostel(getUser.ID, err)
 				log.Printf("Could not enqueue task: %v", err)
 			}
 		}
@@ -179,97 +165,75 @@ func CreateHostelHandler(asynqClient *asynq.Client) gin.HandlerFunc {
 
 func UpdateHostelHandler() gin.HandlerFunc {
     return func(c *gin.Context) {
-        // Get the hostel ID from the URL parameter
         hostelID := c.Param("id")
 
-        // 1. Verify that the user is a vendor and KYC verified
+        // 1. Auth & Verification
         user, exists := c.Get("user")
         if !exists {
-            c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not authenticated"})
             return
         }
 
-        getUser, ok := user.(*db.User)
-        if !ok {
-            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user type"})
-            return
-        }
-        
+        getUser := user.(*db.User)
         if !getUser.IsVerified {
-            hostellog.LogHostel(getUser.ID, &hostelID, fmt.Errorf("vendor not verified"))
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "not authorized or kyc not verified"})
+            hostellog.LogHostel(getUser.ID, fmt.Errorf("unverified vendor access"))
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not verified"})
             return
         }
 
-        // 2. Retrieve the existing hostel record
+        // 2. Bind and Validate Input
+        var req UpdateHostelRequest
+        if err := c.ShouldBind(&req); err != nil {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+            return
+        }
+
+        // 3. Ownership Check
         existingHostel, err := hosteldb.FindHostelByID(hostelID)
         if err != nil {
             if errors.Is(err, hosteldb.ErrorHostelNotFound) {
                 c.JSON(http.StatusNotFound, gin.H{"error": "hostel not found"})
             } else {
-                c.JSON(http.StatusInternalServerError, gin.H{"error": "error getting hostel record"})
+				hostellog.LogHostel(getUser.ID, err)
+                c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
             }
             return
         }
 
-        // 3. Verify the logged-in user owns the hostel
         if existingHostel.VendorID != getUser.ID {
-			logData := authlog.Logs["3"]
-			formattedMessage := fmt.Sprintf(logData.Message, "user tries to update hostel")
-            logEntry := db.SecurityLog{
-                Log:   formattedMessage,
-                Level: logData.Level,
-            }
-            authlog.SecurityLog(logEntry)
-			c.JSON(http.StatusForbidden, gin.H{"error": "no access"})
+            // Security Logging
+            authlog.SecurityLog(db.SecurityLog{
+                Log:   fmt.Sprintf("Unauthorized update attempt on hostel %s by user %s", hostelID, getUser.ID),
+                Level: "CRITICAL",
+            })
+            c.JSON(http.StatusForbidden, gin.H{"error": "no access"})
             return
         }
 
-        if totalPriceStr := c.PostForm("total_price"); totalPriceStr != "" {
-            totalPrice, err := strconv.ParseInt(totalPriceStr, 10, 64)
-            if err != nil {
-                c.JSON(http.StatusBadRequest, gin.H{"error": "invalid total_price"})
-                return
-            }
-            existingHostel.TotalPrice = totalPrice
-        }
+        // 4. Build the Update Map
+        // We use a map to ensure we ONLY update fields that were actually sent in the request
+        updateFields := make(map[string]interface{})
 
-        if rentPerYearStr := c.PostForm("rent_per_year"); rentPerYearStr != "" {
-            rentPerYear, err := strconv.ParseInt(rentPerYearStr, 10, 64)
-            if err != nil {
-                c.JSON(http.StatusBadRequest, gin.H{"error": "invalid rent_per_year"})
-                return
-            }
-            existingHostel.RentPerYear = rentPerYear
-        }
-        
-        if totalRoomsStr := c.PostForm("total_hostel_rooms"); totalRoomsStr != "" {
-            totalRooms, err := strconv.Atoi(totalRoomsStr)
-            if err != nil {
-                c.JSON(http.StatusBadRequest, gin.H{"error": "invalid total_hostel_rooms"})
-                return
-            }
-            existingHostel.TotalHostelRooms = totalRooms
-        }
-        
-        if c.PostForm("landlord_resides") != "" {
-            existingHostel.LandlordResides = c.PostForm("landlord_resides")
-        }
-        
-        if c.PostForm("roommates_allowed") != "" {
-            existingHostel.RoommatesAllowed = c.PostForm("roommates_allowed")
-        }
-        
-        if description := c.PostForm("description"); description != "" {
-            existingHostel.Description = description
-        }
+        if req.TotalPrice != nil { updateFields["total_price"] = *req.TotalPrice }
+        if req.RentPerYear != nil { updateFields["rent_per_year"] = *req.RentPerYear }
+        if req.TotalHostelRooms != nil { updateFields["total_hostel_rooms"] = *req.TotalHostelRooms }
+        if req.LandlordResides != nil { updateFields["landlord_resides"] = *req.LandlordResides }
+        if req.RoommatesAllowed != nil { updateFields["roommates_allowed"] = *req.RoommatesAllowed }
+        if req.Description != nil { updateFields["description"] = *req.Description }
+        if req.RoomType != nil { updateFields["room_type"] = *req.RoomType }
 
-        // 6. Save the updated hostel record
-        if err := hosteldb.UpdateHostel(existingHostel.ID, existingHostel); err != nil {
-            c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update hostel record"})
+        // 5. Perform Atomic Update
+        if len(updateFields) == 0 {
+            c.JSON(http.StatusOK, gin.H{"message": "no changes detected"})
             return
         }
-        
+
+        if err := hosteldb.UpdateHostel(hostelID, updateFields); err != nil {
+            hostellog.LogHostel(getUser.ID, err)
+            c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+            return
+        }
+
         c.JSON(http.StatusOK, gin.H{"message": "Hostel updated successfully."})
     }
 }
@@ -280,19 +244,19 @@ func DeleteHostelHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 		// 1. Verify that the user is a vendor and KYC verified
 		user, exists := c.Get("user")
         if !exists {
-            c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not authenticated"})
             return
-        }
+        }ser type
 
         getUser, ok := user.(*db.User)
         if !ok {
-            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user type"})
+            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user"})
             return
         }
 
 		if !getUser.IsVerified {
-			hostellog.LogHostel(getUser.ID, &hostelID, fmt.Errorf("vendor not verified"))
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "not authorized or kyc not verified"})
+			hostellog.LogHostel(getUser.ID, fmt.Errorf("unverified vendor access"))
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not verified"})
 			return
 		}
 
@@ -302,7 +266,8 @@ func DeleteHostelHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 			if errors.Is(err, hosteldb.ErrorHostelNotFound) {
 				c.JSON(http.StatusNotFound, gin.H{"error": "hostel not found"})
 			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "error getting hostel record"})
+				hostellog.LogHostel(getUser.ID, err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 			}
 			return
 		}
@@ -323,7 +288,8 @@ func DeleteHostelHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 		// first retrieve the images and videos for delete
 		images, err := hosteldb.GetHostelImagesPublicIDAndUrl(existingHostel.ID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get images"})
+			hostellog.LogHostel(getUser.ID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		}
 		
 		ctx := context.Background()
@@ -336,7 +302,8 @@ func DeleteHostelHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 
 		videos, err := hosteldb.GetHostelVideosPublicIDAndUrl(existingHostel.ID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get videos"})
+			hostellog.LogHostel(getUser.ID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		}
 
 		// loop through and delete
@@ -348,7 +315,8 @@ func DeleteHostelHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 
 		// delete the hostel
 		if err := hosteldb.DeleteHostel(existingHostel.ID); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete listing"})
+			hostellog.LogHostel(getUser.ID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 			return
 		}
 
@@ -374,7 +342,8 @@ func GetAllAgentsHostelHandler(c *gin.Context) {
 		if errors.Is(err, hosteldb.ErrorHostelNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "no listed hostel found for vendor"})
 		}else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get hostel"}) }
+			hostellog.LogHostel(getUser.ID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError}) }
 		return
 	}
 

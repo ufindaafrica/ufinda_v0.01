@@ -8,10 +8,9 @@ import (
 )
 
 
-func LogHostel(userID string, hostelID *string, reason error) {
+func LogHostel(userID string, reason error) {
 	newLog := db.HostelLog{
 		VendorID: userID,
-		HostelID: hostelID,
 		Reason: reason.Error(),
 	}
 	if err := log.CreateLog(newLog, "/rest/v1/hostel_log"); err != nil {

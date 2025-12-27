@@ -395,7 +395,9 @@ No request body is required.
 ```json
 {
   "access_token": "eyJhbGciOiJIUzI1Ni...",
-  "refresh_token": "eyJhbGciOiJIUzI1Ni..."
+  "refresh_token": "eyJhbGciOiJIUzI1Ni...",
+  "role": "vendor"|"user",
+  "id": "9jfiojeokde9r04or-o885" 
 }
 ```
 
