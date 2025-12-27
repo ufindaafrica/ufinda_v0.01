@@ -1,3 +1,12 @@
+## Base URL
+The base URL for all API requests:
+
+| Environment | URL |
+| :--- | :--- |
+| **Production** | `http://ufinda-v0-01.onrender.com` |
+| **Local Dev** | `http://localhost:8080` |
+
+-----
 
 ## Vendor KYC & Onboarding APIs
 

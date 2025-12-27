@@ -246,7 +246,7 @@ func DeleteHostelHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
         if !exists {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not authenticated"})
             return
-        }ser type
+        }
 
         getUser, ok := user.(*db.User)
         if !ok {
