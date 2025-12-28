@@ -10,9 +10,9 @@ The base URL for all API requests:
 
 -----
 
-### POST `[BASE_URL]/hostels/create`
+### GET `/hostels/signature`
 
-This endpoint allows verified vendors to create a new hostel listing. It processes hostel details and media (images, videos) asynchronously to provide a fast response. The media is handled by a background worker.
+This endpoint provides the necessary security credentials for the client (frontend) to upload media directly to **Cloudinary**. This prevents your backend from handling large file bytes, ensuring high performance and stability on limited-RAM hosting like Render.
 
 ---
 
@@ -20,43 +20,23 @@ This endpoint allows verified vendors to create a new hostel listing. It process
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
-| `POST` | `/hostels/create` | Creates a new hostel listing. |
+| `GET` | `/hostels/signature` | Generates a signed upload ticket for Cloudinary. |
 
 #### Headers
 
 | Header | Example Value | Description |
 | --- | --- | --- |
-| `Authorization` | `Bearer <access_token>` | Requires a valid vendor access token. |
-| `Content-Type` | `multipart/form-data` | Required for file uploads. |
-
-#### Body (`multipart/form-data`)
-
-| Field | Type | Description | Example / Required Value |
-| --- | --- | --- | --- |
-| `title` | `string` | Title of the listing (Min 5 chars). | `"Luxury 2 Bedroom Self-Contained"` |
-| `total_price` | `number` | Total cost (must be > 0). | `"550000"` |
-| `total_hostel_rooms` | `number` | Available rooms in the building. | `"12"` |
-| `rent_per_year` | `number` | Annual rent per room. | `"150000"` |
-| `location` | `string` | Physical address. | `"Near University Gate, Lagos"` |
-| `kitchen_access` | `string` | Type of kitchen available. | **`"personal"`** or **`"public"`** |
-| `toilet_access` | `string` | Type of toilet available. | **`"personal"`** or **`"public"`** |
-| `landlord_resides` | `string` | If landlord lives there. | `"yes"` or `"no"` |
-| `room_type` | `string` | Category of room. | `"self-contain"`, `"single room"`, `room and parlor`, `2 bedroom flat`, `3 bedroom flat`, `room in a flat` |
-| `roommates_allowed` | `string` | Policy on roommates. | `"yes"` or `"no"` |
-| `description` | `string` | Full details about the hostel. | `"A quiet environment with 24/7 water..."` |
-| `hostel_images` | `file[]` | Array of images (Max 3). | `image1.jpg`, `image2.png` |
-| `hostel_video` | `file` | A single video file. | `tour_video.mp4` |
+| `Authorization` | `Bearer <access_token>` | **Required**. Only authenticated vendors can request signatures. |
 
 ---
 
 ### Workflow
 
-1. **Authentication & Verification**: The handler verifies the user's session and checks if the `IsVerified` flag is true.
-2. **Input Sanitization**: All text inputs are trimmed of leading/trailing whitespace. Numeric strings are converted to `int64` and validated to ensure they are positive values.
-3. **Synchronous DB Write**: A new `Hostel` record is created immediately with an auto-generated unique ID. Media fields (`hostel_images`, `hostel_videos`) are initialized as `null`.
-4. **Local Staging**: Uploaded files are sniffed for security (MIME type verification) and saved to a temporary local disk directory to keep RAM usage low.
-5. **Task Enqueueing**: A background task containing the **file paths** is sent to the Redis queue (Asynq).
-6. **Cleanup & Upload**: The background worker picks up the task, uploads the files to Cloudinary, deletes the local temporary files, and updates the database with the final URLs.
+1. **Timestamp Generation**: The server generates a Unix timestamp to ensure the signature is time-sensitive and cannot be reused indefinitely.
+2. **Parameter Mapping**: The system prepares the required upload parameters (e.g., `folder: "hostels"`).
+3. **Cryptographic Signing**: The server uses your `CLOUDINARY_API_SECRET` to create a HMAC-SHA1 hash of the parameters.
+4. **Credential Delivery**: The server returns the signature, timestamp, and public API keys to the client.
+5. **Direct Upload**: The client sends the file and these credentials directly to Cloudinary's API.
 
 ---
 
@@ -66,104 +46,194 @@ This endpoint allows verified vendors to create a new hostel listing. It process
 
 | Status Code | Description |
 | --- | --- |
-| `202 Accepted` | Record created; media processing started. |
+| `200 OK` | Signature generated successfully. |
 
 **Body**
 
 ```json
 {
-  "message": "Hostel listed. Media is being processed in the background."
+  "api_key": "123456789012345",
+  "cloud_name": "ufinda-cloud",
+  "folder": "hostels",
+  "signature": "a5e8f230b8c7...8d2f",
+  "timestamp": 1735468200
 }
 
 ```
 
 #### Errors
 
-| Status Code | Description | Example Error Message |
-| --- | --- | --- |
-| `400 Bad Request` | Validation failed or missing fields. | `{"error": "Title is too short or empty."}` |
-| `401 Unauthorized` | Not logged in or KYC not verified. | `{"error": "vendor not verified"}` |
-| `500 Internal Error` | Server-side failure (DB/Queue). | `{"error": "Internal server error"}` |
+| Status Code | Description |
+| --- | --- |
+| `401 Unauthorized` | User is not logged in. |
+| `500 Internal Error` | Failed to generate signature due to configuration issues. |
 
 ---
 
-### PATCH `/hostels/:id`
+### Client Implementation Note
 
-This endpoint allows an authenticated and verified **Vendor** to update the details of a specific hostel they own. It accepts `multipart/form-data` for partial updates (PATCH-like behavior).
+To perform the upload after receiving this signature, the client should send a `POST` request to:
+`https://api.cloudinary.com/v1_1/<cloud_name>/auto/upload`
 
------
+**Form Data Fields:**
+
+* `file`: The media file.
+* `api_key`: From the response above.
+* `timestamp`: From the response above.
+* `signature`: From the response above.
+* `folder`: From the response above.
+
+---
+
+### POST `[BASE_URL]/hostels/create`
+
+This endpoint allows verified vendors to create a new hostel listing. It uses a **JSON payload**. Before calling this, the client must have already uploaded images/videos directly to Cloudinary using the signature generated by the `/hostels/signature` endpoint.
+
+---
 
 ### Request
 
 | Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `[BASE_URL]/hostel/:id` | Updates an existing hostel record identified by the `:id` URL parameter. |
-
-#### URL Parameters
-
-| Parameter | Type | Description |
-| :--- | :--- | :--- |
-| `:id` | `string` | The unique ID of the hostel to be updated. |
-
-#### Body
-
-The request must be a **`multipart/form-data`** submission. All fields are **optional**; only fields provided will overwrite the existing values.
-
-| Field Name | Type | Description |
-| :--- | :--- | :--- |
-| `total_price` | `string` | The total annual price for the hostel (e.g., total fees). Must be an integer. |
-| `rent_per_year` | `string` | The cost of rent per year. Must be an integer. |
-| `total_hostel_rooms` | `string` | The total number of rooms in the hostel. Must be an integer. |
-| `landlord_resides` | `string` | `yes` or `no` indicating if the landlord resides on the property. |
-| `roommates_allowed` | `string` | `yes` or `no`. |
-| `description` | `string` | A detailed description of the hostel. |
+| --- | --- | --- |
+| `POST` | `/hostels/create` | Creates a new hostel listing with pre-uploaded media URLs. |
 
 #### Headers
 
-| Header | Value | Description |
-| :--- | :--- | :--- |
-| `Authorization` | `Bearer <access_token>` | **Required** for user authentication. |
+| Header | Example Value | Description |
+| --- | --- | --- |
+| `Authorization` | `Bearer <access_token>` | Requires a valid verified vendor access token. |
+| `Content-Type` | `application/json` | Required for JSON payload. |
 
------
+#### Body (`application/json`)
+
+| Field | Type | Description | Required |
+| --- | --- | --- | --- |
+| `title` | `string` | Title of the listing (Min 5 chars). | Yes |
+| `total_price` | `number` | Total cost (must be > 0). | Yes |
+| `total_hostel_rooms` | `number` | Available rooms in the building. | Yes |
+| `rent_per_year` | `number` | Annual rent per room. | Yes |
+| `location` | `string` | Physical address. | Yes |
+| `kitchen_access` | `string` | `personal` or `public`. | No |
+| `toilet_access` | `string` | `personal` or `public`. | No |
+| `landlord_resides` | `string` | `yes` or `no`. | No |
+| `room_type` | `string` | e.g., `self-contain`, `single room`. | No |
+| `roommates_allowed` | `string` | `yes` or `no`. | No |
+| `description` | `string` | Full details about the hostel. | No |
+| `images` | `array` | Objects containing `url` and `public_id`. | Yes (Min=1, max=3) |
+| `videos` | `array` | Objects containing `url` and `public_id`. | No (Max=1)|
+
+**Example Body**
+
+```json
+{
+  "title": "Modern Self-Contain",
+  "total_price": 450000,
+  "rent_per_year": 400000,
+  "total_hostel_rooms": 5,
+  "location": "Lagos, Nigeria",
+  "images": [
+    { "url": "https://res.cloudinary.com/...", "public_id": "hostels/img1" }
+  ]
+}
+
+```
+
+---
 
 ### Workflow
 
-1.  **Authentication & Authorization**: The user's ID is retrieved from the context.
-2.  **Vendor Verification**: The system verifies that the authenticated user's `Role` is **`vendor`** and that their account is **`IsVerified: true`**. Access is denied if either condition fails.
-3.  **Hostel Retrieval**: The existing hostel record is retrieved using the ID from the URL.
-4.  **Ownership Check**: The authenticated user's ID is checked against the hostel's `VendorID` to ensure **only the owner** can modify the record.
-5.  **Data Update**: All provided form fields are parsed (including conversion of price and room fields to integers) and used to update the corresponding fields in the existing hostel object.
-6.  **Database Save**: The modified hostel object is saved to the database.
+1. **Direct Upload**: The client uploads files to Cloudinary using a signed request and receives a URL and Public ID.
+2. **JSON Submission**: The client sends the hostel data and the Cloudinary metadata to this endpoint.
+3. **Verification**: The system confirms the vendor is authenticated and KYC verified.
+4. **Validation**: JSON binding validates data types and mandatory fields (e.g., price > 0).
+5. **DB Persistence**: The hostel record is saved immediately with the provided media URLs.
 
------
+---
 
 ### Responses
 
 #### Success
 
 | Status Code | Description |
-| :--- | :--- |
-| `200 OK` | The hostel details were successfully updated. |
-
-**Body**
-
-```json
-{
-  "message": "Hostel updated successfully."
-}
-```
+| --- | --- |
+| `201 Created` | Hostel record created successfully. |
 
 #### Errors
 
 | Status Code | Description |
-| :--- | :--- |
-| `400 Bad Request` | Invalid format provided for numerical fields (`total_price`, `rent_per_year`, `total_hostel_rooms`). |
-| `401 Unauthorized` | User is not authenticated, is not a **Vendor**, or is a Vendor but is **not KYC verified**. |
-| `403 Forbidden` | The authenticated user is trying to update a hostel that they do not own. |
-| `404 Not Found` | The authenticated user's account or the specified hostel (`:id`) could not be found. |
-| `500 Internal Server Error` | An unexpected server error occurred (e.g., database error fetching user/hostel, or failure to update the hostel record). |
+| --- | --- |
+| `400 Bad Request` | Missing required fields or invalid JSON format. |
+| `401 Unauthorized` | Not logged in or vendor not verified. |
 
-----
+---
+
+### PATCH `/hostels/:id`
+
+This endpoint allows an authenticated and verified **Vendor** to partially update a hostel listing they own. It accepts a **JSON payload**. Fields not included in the request will remain unchanged.
+
+---
+
+### Request
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `PATCH` | `/hostels/:id` | Updates an existing hostel record. |
+
+#### URL Parameters
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `:id` | `string` | The unique ID of the hostel to be updated. |
+
+#### Body (`application/json`)
+
+*All fields are optional.*
+
+| Field Name | Type | Description |
+| --- | --- | --- |
+| `total_price` | `number` | The total annual price (must be > 0). |
+| `rent_per_year` | `number` | The cost of rent per year. |
+| `total_hostel_rooms` | `number` | Total number of rooms. |
+| `landlord_resides` | `string` | `yes` or `no`. |
+| `roommates_allowed` | `string` | `yes` or `no`. |
+| `description` | `string` | Min 10 characters if provided. |
+| `room_type` | `string` | Category of the room. |
+
+#### Headers
+
+| Header | Value | Description |
+| --- | --- | --- |
+| `Authorization` | `Bearer <access_token>` | **Required**. |
+| `Content-Type` | `application/json` | **Required**. |
+
+---
+
+### Workflow
+
+1.  **Ownership Check**: Retrieves the hostel and confirms the `VendorID` matches the logged-in user.
+2.  **JSON Binding**: Parses the request body into a pointer-based struct to distinguish between "missing fields" and "zero values."
+3.  **Partial Update Map**: Dynamically builds a map of only the fields provided by the client.
+4.  **Atomic Update**: Performs a `PATCH` operation on the database for the specific columns identified.
+
+---
+
+### Responses
+
+#### Success
+
+| Status Code | Description |
+| --- | --- |
+| `200 OK` | The hostel details were successfully updated. |
+
+#### Errors
+
+| Status Code | Description |
+| --- | --- |
+| `400 Bad Request` | Invalid JSON or failed validation (e.g., price is negative). |
+| `403 Forbidden` | User does not own this hostel listing. |
+| `404 Not Found` | Hostel ID does not exist. |
+
+---
 
 ### DELETE `/hostels/:id`
 

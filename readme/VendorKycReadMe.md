@@ -119,7 +119,7 @@ After the vendor launches the Dojah widget (using the URL from the first endpoin
 
 | Protocol | Endpoint | Description |
 | :--- | :--- | :--- |
-| `WS` | `ws://[BASE_URL]/ws?user_id=<VENDOR_ID>` | Connects the client to a real-time channel associated with the specific vendor. |
+| `ws` in `devt` and `wss` in `prod` | `wss://ufinda-v0-01.onrender.com/ws?user_id=<VENDOR_ID>` | Connects the client to a real-time channel associated with the specific vendor. |
 
 ### Connection Process
 
@@ -135,7 +135,7 @@ The client will receive a single JSON object (the `KYCStatusUpdate` payload) onc
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | `user_id` | `string` | The ID of the vendor whose status is being updated. |
-| `final_status` | `string` | The final status determined by your business logic. |
+| `final_status` | `string` | The final status determined by the business logic. |
 | `message` | `string` | A user-friendly message to display to the vendor. |
 
 #### Example Payloads

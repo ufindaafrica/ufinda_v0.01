@@ -76,6 +76,7 @@ func main() {
 	}
 
 	r := gin.Default()
+	r.SetTrustedProxies([]string{"10.0.0.0/8"})
 
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{"https://ufinda.org"}
@@ -91,7 +92,7 @@ func main() {
 	webhook.RegisterWebhooks(r, wsHub)
 	
 	// Pass the Cloudinary client and the Asynq client to the hostel registration
-	vendorhostel.RegisterHostel(r, asynqClient, cld)
+	vendorhostel.RegisterHostel(r, cld)
 	userhostel.RegisterApi(r)
 
 	// hub connection
