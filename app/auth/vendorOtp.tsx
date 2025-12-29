@@ -14,6 +14,7 @@ import Loader from "@/components/loader";
 import ErrorModal from "@/components/errorModal";
 import { kycWebSocket } from "@/services/kycWebSocket";
 import KycWebView from "@/components/webview";
+import { BARE_URL, getAccessToken } from "@/services/apiConstants";
 
 
 export default function VendorOtp() {
@@ -65,54 +66,68 @@ export default function VendorOtp() {
             console.log(vendorOtpUrl)
 
             const parsed = new URL(vendorOtpUrl)
-            const value = parsed.searchParams.get("metadata[user_id]")
+            const value = parsed.searchParams.get("metadata[user_id]") ?? ''
             console.log(value)
 
-            const wsSession = kycWebSocket(value ?? '')
-            const wsPromise = wsSession.promise
+            // const wsSession = kycWebSocket(value ?? '')
+            // const wsPromise = wsSession.promise
+
+            const socketUrl = `wss://${BARE_URL}/ws?user_id=${value}`
+            const vendorS = new WebSocket(socketUrl)
+
+            vendorS.onopen = () => {
+                console.log("vendor auth socket connected, awaiting results")
+            }
+
+            vendorS.onmessage = (event) => {
+                const msg = JSON.parse(event.data)
+                console.log(msg)
+                setShowWebView(false)
+            }
 
             setLoaderVisible(false)
 
             // show webview
             setShowWebView(true)
 
-            try {
-                const result = await wsPromise
-                console.log("i reached here at the end")
-                console.log("final kyc result:", result)
-                setShowWebView(false)
-                setLoaderVisible(false)
-                router.push("/auth/pic")
-            } catch (error) {
-                console.log("failed to get kyc results")
-            }
+            // try {
+            //     const result = await wsPromise
+            //     console.log("i reached here at the end")
+            //     console.log("final kyc result:", result)
+            //     setShowWebView(false)
+            //     setLoaderVisible(false)
+            //     router.push("/auth/pic")
+            // } catch (error) {
+            //     console.log("failed to get kyc results")
+            // }
 
-            setShowWebView(false)
+            // setShowWebView(false)
             setLoaderVisible(false)
+            console.log("i got here lasssst")
         }
 
     }
 
-    const getSocketResults = async () => {
-        const wsSession = kycWebSocket(vendorId)
-        const { promise: wsPromise, cancel } = wsSession
+    // const getSocketResults = async () => {
+    //     const wsSession = kycWebSocket(vendorId)
+    //     const { promise: wsPromise, cancel } = wsSession
 
-        try {
-            const result = await wsPromise
-            console.log("i reached here at the end")
-            console.log("final kyc result:", result)
-            setShowWebView(false)
-            setLoaderVisible(false)
-            router.push("/auth/pic")
-        } catch (error) {
-            console.log("failed to get kyc results")
-        }
+    //     try {
+    //         const result = await wsPromise
+    //         console.log("i reached here at the end")
+    //         console.log("final kyc result:", result)
+    //         setShowWebView(false)
+    //         setLoaderVisible(false)
+    //         router.push("/auth/pic")
+    //     } catch (error) {
+    //         console.log("failed to get kyc results")
+    //     }
 
-        setShowWebView(false)
-        setLoaderVisible(false)
+    //     setShowWebView(false)
+    //     setLoaderVisible(false)
 
-        console.log("all done")
-    }
+    //     console.log("all done")
+    // }
 
     const onSkip = () => {
         router.replace("/auth/pic")

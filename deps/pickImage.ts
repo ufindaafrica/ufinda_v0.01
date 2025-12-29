@@ -24,7 +24,7 @@ import * as ImagePicker from "expo-image-picker"
 //             quality: 0.4
 //         }) : await VideoCompressor.compress(uri, {
 //             compressionMethod: "manual",
-//             maxSize: 15 * 1024 * 1024
+//             maxSize: 50 * 1024 * 1024
 //         })
 
 //         return compressMedia(compressedUri, depth + 1, type)
@@ -38,33 +38,33 @@ export const pickMedia = async (type: "image" | "video") => {
     const selectedImage = await ImagePicker.launchCameraAsync({
         mediaTypes: [`${type}s`],
         allowsEditing: false,
-        quality: 0.5,
+        quality: 0.4,
         videoQuality: ImagePicker.UIImagePickerControllerQualityType.VGA640x480
     })
 
     if (!selectedImage.canceled) {
 
         const MAX_IMG = 9 * 1024 * 1024
-        const MAX_VID = 20 * 1024 * 1024
+        const MAX_VID = 100 * 1024 * 1024
 
         if (type == "image" && (selectedImage.assets[0].fileSize ?? 0) >= MAX_IMG) {
-            error = "error: image is more than 3MB"
+            error = "error: image is more than 9MB"
             return {
                 "error": error
             }
         }
 
         if (type == "video" && (selectedImage.assets[0].fileSize ?? 0) >= MAX_VID) {
-            error = "error: video is more than 15MB"
+            error = "error: video is more than 50MB"
             return {
                 "error": error
             }
         }
 
         return {
-            "media": selectedImage.assets[0].uri,
-            "mediaName": selectedImage.assets[0].fileName,
-            "mediaType": `${type}/` + selectedImage.assets[0].fileName?.split(".").pop()?.toLowerCase()
+            "uri": selectedImage.assets[0].uri,
+            "name": selectedImage.assets[0].fileName,
+            "type": `${type}/` + selectedImage.assets[0].fileName?.split(".").pop()?.toLowerCase()
         }
 
     } else {

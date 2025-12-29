@@ -101,7 +101,7 @@ export default function Login() {
                         <Text style={[signupStyles.pText, roboto.bodyMedium, signupStyles.grayText]}>Please enter your email and password to login to your account.</Text>
                     </View>
 
-                    <View style={signupStyles.formPadding}>
+                    <View style={[signupStyles.formPadding]}>
                         <Input
                             ref={emailRef}
                             label="Email"

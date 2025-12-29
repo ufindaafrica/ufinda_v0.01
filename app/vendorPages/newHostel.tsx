@@ -15,6 +15,13 @@ import * as WebBrowser from "expo-web-browser"
 import * as Location from "expo-location"
 import Drawer from "@/components/drawer";
 import { TextInput } from "react-native";
+import Uploader from "@/components/uploader";
+import { postHostel } from "@/services/addHostel";
+import ErrorModal from "@/components/errorModal";
+import { router } from "expo-router";
+import { getUploadSignature } from "@/services/uploadSignature";
+import Loader from "@/components/loader";
+import { uploadToCloudinary } from "@/services/uploadToCloudinary";
 
 
 export default function NewHostel() {
@@ -23,25 +30,24 @@ export default function NewHostel() {
     const categories = "Hostels"
     const [address, setAddress] = useState("")
     const [hostelType, setHostelType] = useState("")
-    const [numberOfRooms, setNumberOfRooms] = useState("")
-    const [totalRooms, setTotalRooms] = useState("")
+    const [numberOfRooms, setNumberOfRooms] = useState<number | null>()
     const [roomate, setRoomate] = useState("")
     const [power, setPower] = useState("")
     const [kitchen, setKitchen] = useState("")
     const [toilet, setToilet] = useState("")
     const [landlord, setLandlord] = useState("")
     const [desc, setDesc] = useState("")
-    const [yearlyrent, setYearlyRent] = useState("")
-    const [totalPrice, setTotalPrice] = useState("")
+    const [yearlyrent, setYearlyRent] = useState<number | null>()
+    const [totalPrice, setTotalPrice] = useState<number | null>()
     const [bulkPrice, setBulkPrice] = useState("")
 
     const [descLength, setDescLength] = useState("0")
     const [adPrice, setAdPrice] = useState("2,999")
 
     type Media = {
-        media: string;
-        mediaName: string | null | undefined;
-        mediaType: string;
+        uri: string;
+        name: string | null | undefined;
+        type: string;
     };
 
     type Error = {
@@ -49,7 +55,7 @@ export default function NewHostel() {
     }
 
     const [hostelImages, setHostelImages] = useState<(Media | Error | null)[]>([
-        null, null, null, null, null
+        null, null, null
     ]);
 
     const [hostelVideo, setHostelVideo] = useState<Media | Error | null>(null)
@@ -58,7 +64,7 @@ export default function NewHostel() {
 
         const media = await pickMedia(type)
 
-        if ("media" in media) {
+        if ("uri" in media) {
             if (type === "image") {
                 setHostelImages(prev => {
                     const newList = [...prev]
@@ -82,28 +88,128 @@ export default function NewHostel() {
             }
         }
 
+        return
+
     }
 
     const onContinue = async () => {
-        console.log("title", title)
-        console.log("categories", categories)
-        console.log("photos", hostelImages)
-        console.log("video", hostelVideo)
-        console.log("address", address)
-        console.log("hostel type", hostelType)
-        console.log("number of rooms", numberOfRooms)
-        console.log("total rooms", totalRooms)
-        console.log("roomate", roomate)
-        console.log("power supply", power)
-        console.log("kitchen access", kitchen)
-        console.log("toilet access", toilet)
-        console.log("landlord resides", landlord)
-        console.log("description", desc)
-        console.log("yearly rent", yearlyrent)
-        console.log("total price", totalPrice)
-        console.log('bulk price', bulkPrice)
-        console.log('ad price', adPrice)
+        console.log("onContinue STARTED")
+
+        try {
+            setLoaderVisible(true)
+
+            const uploadSignature = await getUploadSignature()
+            console.log("uploadSignature:", uploadSignature)
+
+            if (uploadSignature[0] !== "200") {
+                setLoaderVisible(false)
+                seterrorModal(true)
+                setErrorText(uploadSignature[1])
+                return
+            }
+
+            setLoaderVisible(false)
+            setUploaderVisible(true)
+
+            const uploadCloudinary = await uploadToCloudinary({
+                files: [
+                    ...hostelImages.filter(item => item && "uri" in item),
+                    ...(hostelVideo && "uri" in hostelVideo ? [hostelVideo] : [])
+                ],
+                api_key: uploadSignature[1].api_key,
+                timestamp: uploadSignature[1].timestamp,
+                signature: uploadSignature[1].signature,
+                folder: uploadSignature[1].folder,
+                cloud_name: uploadSignature[1].cloud_name,
+                setUploadProgress
+            })
+
+            console.log("uploadCloudinary:", uploadCloudinary)
+
+            setUploaderVisible(false)
+            setLoaderVisible(true)
+
+            if (uploadCloudinary[0] !== "200") {
+                setLoaderVisible(false)
+                seterrorModal(true)
+                setErrorText(uploadCloudinary[1])
+                return
+            }
+
+            const imgs: any[] = []
+            const vid: any[] = []
+
+            uploadCloudinary.forEach((item, index) => {
+                if (index === 0) return
+                if (item.resource_type === "image") imgs.push({ url: item.url, public_id: item.public_id })
+                if (item.resource_type === "video") vid.push({ url: item.url, public_id: item.public_id })
+            })
+
+            const hostelData = {
+                title: title ?? "",
+                total_price: totalPrice ?? 0,
+                total_hostel_rooms: numberOfRooms ?? 0,
+                rent_per_year: yearlyrent ?? 0,
+                location: address ?? "",
+                ...(kitchen && { kitchen_access: kitchen }),
+                ...(toilet && { toilet_access: toilet }),
+                ...(landlord && { landlord_resides: landlord }),
+                ...(hostelType && { room_type: hostelType }),
+                ...(roomate && { roommates_allowed: roomate }),
+                ...(desc && { description: desc }),
+                images: imgs,
+                ...(vid.length > 0 && { videos: vid })
+            }
+
+            console.log("hostelData:", hostelData)
+
+            const addNewHostel = await postHostel(hostelData)
+            console.log("addNewHostel:", addNewHostel)
+
+            if (addNewHostel[0] !== "201") {
+                setLoaderVisible(false)
+                seterrorModal(true)
+                setErrorText(addNewHostel[1])
+                return
+            }
+
+            setLoaderVisible(false)
+            setCorrectModal(true)
+            setCorrectText("Hostel added successfully!")
+
+        } catch (err) {
+            console.error("onContinue FAILED:", err)
+            seterrorModal(true)
+            setErrorText(
+                err instanceof Error ? err.message : "Unexpected error"
+            )
+        } finally {
+            setLoaderVisible(false)
+            return
+        }
     }
+
+    const [errorModal, seterrorModal] = useState(true)
+    const [errorText, setErrorText] = useState("")
+    const [correctModal, setCorrectModal] = useState(false)
+    const [correctText, setCorrectText] = useState("")
+    const [loaderVisible, setLoaderVisible] = useState(false)
+
+    useEffect(() => {
+        if (errorText != "") {
+            seterrorModal(true)
+        } else {
+            seterrorModal(false)
+        }
+    }, [errorText])
+
+    useEffect(() => {
+        if (correctText != "") {
+            setCorrectModal(true)
+        } else {
+            setCorrectModal(false)
+        }
+    }, [correctText])
 
     // useEffect(() => {
     //     const getLocation = async () => {
@@ -136,51 +242,50 @@ export default function NewHostel() {
     const [toiletDrawer, setToiletDrawer] = useState(false)
     const [landlordDrawer, setLandlordDrawer] = useState(false)
 
-    const [topAdView, setTopAdView] = useState(false)
-    const [top7View, setTop7View] = useState(false)
-    const [top30View, setTop30View] = useState(false)
+    // const [topAdView, setTopAdView] = useState(false)
+    // const [top7View, setTop7View] = useState(false)
+    // const [top30View, setTop30View] = useState(false)
 
-    const [bottomAdView, setBottomAdView] = useState(false)
+    // const [bottomAdView, setBottomAdView] = useState(false)
 
-    const clickAdView = (view: "top" | "7" | "30" | "bottom") => {
+    // const clickAdView = (view: "top" | "7" | "30" | "bottom") => {
 
-        if (view === "top") {
-            setTopAdView(true)
-            if (!top7View && !top30View) {
-                setTop7View(true)
-                setAdPrice("2,999")
-            }
-            setBottomAdView(false)
-        }
+    //     if (view === "top") {
+    //         setTopAdView(true)
+    //         if (!top7View && !top30View) {
+    //             setTop7View(true)
+    //             setAdPrice("2,999")
+    //         }
+    //         setBottomAdView(false)
+    //     }
 
-        if (view === "30") {
-            setTop30View(true)
-            setTopAdView(true)
-            setTop7View(false)
-            setBottomAdView(false)
-            setAdPrice("9,999")
-        }
+    //     if (view === "30") {
+    //         setTop30View(true)
+    //         setTopAdView(true)
+    //         setTop7View(false)
+    //         setBottomAdView(false)
+    //         setAdPrice("9,999")
+    //     }
 
-        if (view === "7") {
-            setTop7View(true)
-            setTopAdView(true)
-            setTop30View(false)
-            setBottomAdView(false)
-            setAdPrice("2,999")
-        }
+    //     if (view === "7") {
+    //         setTop7View(true)
+    //         setTopAdView(true)
+    //         setTop30View(false)
+    //         setBottomAdView(false)
+    //         setAdPrice("2,999")
+    //     }
 
-        if (view === "bottom") {
-            setBottomAdView(true)
-            setTopAdView(false)
-            setTop7View(false)
-            setTop30View(false)
-        }
+    //     if (view === "bottom") {
+    //         setBottomAdView(true)
+    //         setTopAdView(false)
+    //         setTop7View(false)
+    //         setTop30View(false)
+    //     }
+    // }
 
-    }
-
-    useEffect(() => {
-        clickAdView("top")
-    }, [])
+    // useEffect(() => {
+    //     clickAdView("top")
+    // }, [])
 
     const availableRoomsRef = useRef<TextInput | null>(null)
     const totalRoomsRef = useRef<TextInput | null>(null)
@@ -197,6 +302,24 @@ export default function NewHostel() {
         scrollRef.current?.scrollToFocusedInput(nextInput, verticalScale(150))
     }
 
+    const [uploaderVisible, setUploaderVisible] = useState(false)
+    const [uploadProgress, setUploadProgress] = useState(0)
+
+    useEffect(() => {
+        if (uploadProgress >= 100) {
+            setUploaderVisible(false)
+            setLoaderVisible(true)
+        }
+    }, [uploadProgress])
+
+    const [canContinue, setCanContinue] = useState(true)
+
+    useEffect(() => {
+        if (title && title.length > 5 && address && ((totalPrice ?? 0) > 0) && ((numberOfRooms ?? 0) > 0) && ((yearlyrent ?? 0) > 0) && (hostelImages.filter(item => item != null)).length > 0) {
+            setCanContinue(false)
+        } else setCanContinue(true)
+    }, [title, totalPrice, numberOfRooms, yearlyrent, address, hostelImages])
+
     return (
         <SafeAreaView style={globals.vendorContainer}>
             <View style={newHostelStyles.headerV}>
@@ -205,19 +328,20 @@ export default function NewHostel() {
                     <Image source={images.more} style={newHostelStyles.moreImg} />
                 </TouchableOpacity>
             </View>
-            <KeyboardAwareScrollView 
-            contentContainerStyle={newHostelStyles.scrollV} 
-            ref={scrollRef} 
-            enableOnAndroid={true}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}>
+            <KeyboardAwareScrollView
+                contentContainerStyle={newHostelStyles.scrollV}
+                ref={scrollRef}
+                enableOnAndroid={true}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}>
                 <LineBreak />
                 <View style={newHostelStyles.inputV}>
-                    <HostelLabel label="Title" />
+                    <HostelLabel label="Hostel Name" />
                     <Input
                         hint="ex: Example Hostel"
                         value={title}
                         onChangeText={(e) => setTitle(e)}
+                        returnKeyType="next"
                         onSubmitEditing={() => Keyboard.dismiss()}
                     />
                 </View>
@@ -229,6 +353,7 @@ export default function NewHostel() {
                         value="Hostels"
                         icon={images.arrowDown}
                         editable={false}
+                        style={{ verticalAlign: 'middle' }}
                     />
                 </View>
                 <View style={newHostelStyles.inputV}>
@@ -238,13 +363,13 @@ export default function NewHostel() {
                             Array.from(hostelImages).map((item, idx) => <TouchableOpacity key={idx} style={newHostelStyles.addHostelV} onPress={() => {
                                 getMedia("image", idx)
                             }}>
-                                {item === null ? <Image source={images.plus} style={newHostelStyles.plusImg} /> : <Image source={{ uri: "media" in item ? item.media : images.plus }} style={newHostelStyles.hostelImg} />}
+                                {item === null ? <Image source={images.plus} style={newHostelStyles.plusImg} /> : <Image source={{ uri: "uri" in item ? item.uri : images.plus }} style={newHostelStyles.hostelImg} />}
                             </TouchableOpacity>)
                         }
                     </View>
                     <View style={newHostelStyles.imgCaptionV}>
                         <Image source={images.alertCircle} style={newHostelStyles.alertCircle} />
-                        <Text style={roboto.caption}>You can add up to 5 photos each not exceeding 3Mb</Text>
+                        <Text style={roboto.caption}>You can add up to 3 photos not exceeding 9Mb each</Text>
                     </View>
                 </View>
                 <View style={newHostelStyles.inputV}>
@@ -252,7 +377,7 @@ export default function NewHostel() {
                     <TouchableOpacity style={newHostelStyles.addHostelV} onPress={() => {
                         getMedia("video")
                     }}>
-                        {hostelVideo === null ? <Image source={images.plus} style={newHostelStyles.plusImg} /> : <Image source={{ uri: "media" in hostelVideo ? hostelVideo.media : images.plus }} style={newHostelStyles.hostelImg} />}
+                        {hostelVideo === null ? <Image source={images.plus} style={newHostelStyles.plusImg} /> : <Image source={{ uri: "uri" in hostelVideo ? hostelVideo.uri : images.plus }} style={newHostelStyles.hostelImg} />}
                     </TouchableOpacity>
                 </View>
                 <View style={newHostelStyles.inputV}>
@@ -261,12 +386,13 @@ export default function NewHostel() {
                         hint="ex: 12, Gwani Street"
                         value={address}
                         onChangeText={(e) => setAddress(e)}
+                        returnKeyType="next"
                         onSubmitEditing={() => Keyboard.dismiss()}
                     />
                 </View>
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Hostel type" />
-                    <TouchableOpacity onPress={() => {Keyboard.dismiss() ; setDrawer(true)}}>
+                    <TouchableOpacity onPress={() => { Keyboard.dismiss(); setDrawer(true) }}>
                         <Input
                             hint="ex: Self con"
                             icon={images.arrowDown}
@@ -281,15 +407,15 @@ export default function NewHostel() {
                     <Input
                         hint="4"
                         keyboardType="numeric"
-                        value={numberOfRooms}
-                        onChangeText={(text) => setNumberOfRooms(text)}
+                        value={numberOfRooms?.toString() ?? ""}
+                        onChangeText={(text) => setNumberOfRooms(Number(text) ?? 0)}
                         ref={availableRoomsRef}
                         onFocus={() => focusNext(availableRoomsRef)}
                         returnKeyType="next"
-                        onSubmitEditing={() => focusNext(totalRoomsRef)}
+                        onSubmitEditing={() => Keyboard.dismiss()}
                     />
                 </View>
-                <View style={newHostelStyles.inputV}>
+                {/* <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Total hostel rooms" />
                     <Input
                         hint="10"
@@ -301,10 +427,10 @@ export default function NewHostel() {
                         returnKeyType="done"
                         onSubmitEditing={() => Keyboard.dismiss()}
                     />
-                </View>
+                </View> */}
                 <View style={newHostelStyles.inputV}>
-                    <HostelLabel label="Roomate" />
-                    <TouchableOpacity onPress={() => {Keyboard.dismiss() ; setRoomateDrawer(true)}}>
+                    <HostelLabel label="Roomates Allowed" />
+                    <TouchableOpacity onPress={() => { Keyboard.dismiss(); setRoomateDrawer(true) }}>
                         <Input
                             hint="yes/no"
                             icon={images.arrowDown}
@@ -316,7 +442,7 @@ export default function NewHostel() {
                 </View>
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Power supply" />
-                    <TouchableOpacity onPress={() => {Keyboard.dismiss() ; setPowerDrawer(true)}}>
+                    <TouchableOpacity onPress={() => { Keyboard.dismiss(); setPowerDrawer(true) }}>
                         <Input
                             hint="yes/no"
                             icon={images.arrowDown}
@@ -328,9 +454,9 @@ export default function NewHostel() {
                 </View>
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Kitchen Access" />
-                    <TouchableOpacity onPress={() => {Keyboard.dismiss() ; setKitchenDrawer(true)}}>
+                    <TouchableOpacity onPress={() => { Keyboard.dismiss(); setKitchenDrawer(true) }}>
                         <Input
-                            hint="yes/no"
+                            hint="personal / public"
                             icon={images.arrowDown}
                             editable={false}
                             value={kitchen}
@@ -340,9 +466,9 @@ export default function NewHostel() {
                 </View>
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Toilet Access" />
-                    <TouchableOpacity onPress={() => {Keyboard.dismiss() ; setToiletDrawer(true)}}>
+                    <TouchableOpacity onPress={() => { Keyboard.dismiss(); setToiletDrawer(true) }}>
                         <Input
-                            hint="yes/no"
+                            hint="personal / public"
                             icon={images.arrowDown}
                             editable={false}
                             value={toilet}
@@ -352,7 +478,7 @@ export default function NewHostel() {
                 </View>
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Landlord Resides" />
-                    <TouchableOpacity onPress={() => {Keyboard.dismiss() ; setLandlordDrawer(true)}}>
+                    <TouchableOpacity onPress={() => { Keyboard.dismiss(); setLandlordDrawer(true) }}>
                         <Input
                             hint="yes/no"
                             icon={images.arrowDown}
@@ -376,7 +502,7 @@ export default function NewHostel() {
                         onFocus={() => focusNext(descriptionRef)}
                         returnKeyType="next"
                         onSubmitEditing={() => focusNext(yearlyRentRef)}
-                        
+
                     />
                 </View>
                 <LineBreak />
@@ -385,28 +511,28 @@ export default function NewHostel() {
                     <Input
                         hint="eg. 150000"
                         keyboardType="numeric"
-                        value={yearlyrent}
-                        onChangeText={(text) => setYearlyRent(text)}
+                        value={yearlyrent?.toString() ?? ""}
+                        onChangeText={(text) => setYearlyRent(Number(text) ?? 0)}
                         ref={yearlyRentRef}
                         onFocus={() => focusNext(yearlyRentRef)}
                         returnKeyType="next"
                         onSubmitEditing={() => focusNext(totalPriceRef)}
                     />
                 </View>
-                <View style={newHostelStyles.inputV}>
+                <View style={[newHostelStyles.inputV, newHostelStyles.paddingBottom]}>
                     <HostelLabel label="Total Price" />
                     <Input
                         hint="eg. 150000"
                         keyboardType="numeric"
-                        value={totalPrice}
-                        onChangeText={(text) => setTotalPrice(text)}
+                        value={totalPrice?.toString() ?? ""}
+                        onChangeText={(text) => setTotalPrice(Number(text) ?? 0)}
                         ref={totalPriceRef}
                         onFocus={() => focusNext(totalPriceRef)}
-                        returnKeyType="next"
-                        onSubmitEditing={() => focusNext(bulkPriceRef)}
+                        returnKeyType="done"
+                        onSubmitEditing={() => Keyboard.dismiss()}
                     />
                 </View>
-                <View style={[newHostelStyles.inputV, newHostelStyles.paddingBottom]}>
+                {/* <View style={[newHostelStyles.inputV, newHostelStyles.paddingBottom]}>
                     <Text style={roboto.bodyMediumBold}>Bulk price</Text>
                     <Input
                         hint="Add wholesale price?"
@@ -418,8 +544,8 @@ export default function NewHostel() {
                         returnKeyType="done"
                         onSubmitEditing={() => Keyboard.dismiss()}
                     />
-                </View>
-                <LineBreak />
+                </View> */}
+                {/* <LineBreak />
                 <View style={newHostelStyles.padding}>
                     <Text style={[roboto.bodyLargeBold, newHostelStyles.paddingBottomSmall]}>You cannot post a Hostel Ad for free</Text>
                     <TouchableOpacity onPress={() => clickAdView("top")} style={[newHostelStyles.adView, newHostelStyles.topAdView, topAdView && newHostelStyles.selectedAdView]}>
@@ -446,12 +572,12 @@ export default function NewHostel() {
                             <Text style={roboto.bodyLargeBold}>₦19,999</Text>
                         </View>
                     </TouchableOpacity>
-                </View>
+                </View> */}
 
                 <LineBreak />
 
                 <View style={{ padding: moderateScale(16), rowGap: verticalScale(8) }}>
-                    <Select text="Post Ad" selected selectFun={() => onContinue()} />
+                    <Select clickable={canContinue} text="Post Ad" selected selectFun={() => onContinue()} />
                     <Select text="Add to drafts" selected={false} />
                     <Text style={[roboto.caption, colors.grays]}>By clicking on the post Ad, you accept the <Text style={[colors.foundationWarningDark, { textDecorationLine: "underline" }]} onPress={() => { WebBrowser.openBrowserAsync("https://google.com") }}>terms of use</Text>, confirm that you will abide by the safety tips, and declare that this Ad does not violate our <Text style={[colors.foundationWarningDark, { textDecorationLine: "underline" }]} onPress={() => { WebBrowser.openBrowserAsync("https://google.com") }}>safety policy.</Text></Text>
                 </View>
@@ -459,7 +585,7 @@ export default function NewHostel() {
             </KeyboardAwareScrollView>
 
             {
-                drawer ? <Drawer title="Hostel Type" options={["Self Con", "Single Room", "One Room and Parlour", "Two Bedroom flat", "Room in a Flat", "3 Bedroom Flat"]} onCloseDrawer={setDrawer} onSelectOption={setHostelType} selectedOption={hostelType} /> : null
+                drawer ? <Drawer title="Hostel Type" options={["self-contain", "single room", "one room and parlour", "two bedroom flat", "room in a flat", "3 bedroom flat"]} onCloseDrawer={setDrawer} onSelectOption={setHostelType} selectedOption={hostelType} /> : null
             }
 
             {
@@ -471,15 +597,31 @@ export default function NewHostel() {
             }
 
             {
-                kitchenDrawer ? <Drawer title="Kitchen Access" options={["yes", "no"]} onCloseDrawer={setKitchenDrawer} onSelectOption={setKitchen} selectedOption={kitchen} /> : null
+                kitchenDrawer ? <Drawer title="Kitchen Access" options={["personal", "public"]} onCloseDrawer={setKitchenDrawer} onSelectOption={setKitchen} selectedOption={kitchen} /> : null
             }
 
             {
-                toiletDrawer ? <Drawer title="Toilet Access" options={["yes", "no"]} onCloseDrawer={setToiletDrawer} onSelectOption={setToilet} selectedOption={toilet} /> : null
+                toiletDrawer ? <Drawer title="Toilet Access" options={["personal", "public"]} onCloseDrawer={setToiletDrawer} onSelectOption={setToilet} selectedOption={toilet} /> : null
             }
 
             {
                 landlordDrawer ? <Drawer title="Landlord Resides" options={["yes", "no"]} onCloseDrawer={setLandlordDrawer} onSelectOption={setLandlord} selectedOption={landlord} /> : null
+            }
+
+            {
+                uploaderVisible && <Uploader uploadProgress={uploadProgress} />
+            }
+
+            {
+                errorModal ? <ErrorModal text={errorText} errorFun={() => setErrorText("")} /> : null
+            }
+
+            {
+                correctModal ? <ErrorModal correct text={correctText} errorFun={() => { setCorrectText(""); router.replace("/dashboard") }} /> : null
+            }
+
+            {
+                loaderVisible ? <Loader /> : null
             }
         </SafeAreaView>
     )
