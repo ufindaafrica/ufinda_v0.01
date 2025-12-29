@@ -9,32 +9,23 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// --- 1. WebSocket Client & Hub Structures ---
-
-// Client is a middleman between the websocket connection and the Hub.
 type Client struct {
 	UserID string
 	Conn   *websocket.Conn
 }
 
-// Hub maintains the set of active clients and pushes messages to them.
 type Hub struct {
-	// Registered clients: map[userID]*websocket.Conn
 	clients map[string]*websocket.Conn
-	
-	// Channels for managing client lifecycle
 	register   chan *Client
 	unregister chan *Client
 }
 
-// KYCStatusUpdate is the payload sent over the WebSocket to the client.
 type KYCStatusUpdate struct {
 	UserID      string `json:"user_id"`
-	FinalStatus string `json:"final_status"` // "SUCCESS" or "FAILED"
+	FinalStatus string `json:"final_status"`
 	Message     string `json:"message"`
 }
 
-// NewHub creates a new Hub with initialized maps and channels.
 func NewHub() *Hub {
 	return &Hub{
 		clients:    make(map[string]*websocket.Conn),
@@ -43,7 +34,6 @@ func NewHub() *Hub {
 	}
 }
 
-// Run starts the Hub, listening for register/unregister events.
 func (h *Hub) Run() {
 	for {
 		select {
@@ -94,7 +84,17 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	// Allow cross-origin requests for development
-	CheckOrigin: func(r *http.Request) bool { return true }, 
+	CheckOrigin: func(r *http.Request) bool { 
+		origin := r.Header.Get("Origin")
+		if origin == "" {
+			return true
+		}
+
+		if origin == "http://ufinda-v0-01.onrender.com" {
+			return true
+		}
+		return false
+	}, 
 }
 
 // WSHandler upgrades the HTTP connection to a WebSocket connection.

@@ -4,25 +4,17 @@ import (
 	"github.com/oladev/ufinda_v0.01/internal/db"
 	"github.com/oladev/ufinda_v0.01/internal/sockets/kyc"
 	"github.com/oladev/ufinda_v0.01/internal/db/auth"
-	// "github.com/oladev/ufinda_v0.01/internal/logs/auth"
 	"github.com/oladev/ufinda_v0.01/internal/db/kyc/vendor"
 	"log"
 	"errors"
-	// "strings"
-	// "net/http"
 )
 
 
-
-
-
-
-// top level
-
+const MsgServerError = "An unexpected error occurred. Please try again."
 
 type VerificationResult struct {
 	UserID             string    `json:"user_id"`
-	NIN         string    `json:"nin_from_db"`   // The NIN from the government record (from entity)
+	NIN         string    `json:"nin_from_db"`  
 	Status             string    `json:"verification_status"`
 	VerificationMode   string    `json:"verification_mode"`
 	VerificationLink   string    `json:"verification_url"`
@@ -91,9 +83,11 @@ func HandleVerificationPayload(payload db.DojahWebhookPayload, h *hub.Hub) {
 
     // --- 2. Custom Business Checks (Only if webhook completed and user retrieved) ---
     if !userLookupErr && result.Status == "Completed" {
-        isNameValid := getUser.FirstName == result.FirstName && getUser.LastName == result.LastName
+        isNameValid := (getUser.FirstName == result.FirstName && getUser.LastName == result.LastName) || 
+               (getUser.FirstName == result.LastName && getUser.LastName == result.FirstName)
         // Note: Use StateOfResidence for consistent checking unless you specifically need StateOfCall
-        // IsVerifiedResidence := strings.ToLower(result.ResidenceState) == "osun" || strings.ToLower(result.CountryOfCall) == "nigeria" || strings.ToLower(result.StateOfCall) == "osun"
+        // IsVerifiedResidence := strings.ToLower(result.ResidenceState) == "osun" && strings.ToLower(result.CountryOfCall) == "nigeria" ||
+        //  strings.ToLower(result.StateOfCall) == "osun" && strings.ToLower(result.CountryOfCall) == "nigeria"
         
         if isNameValid {
             finalStatus = "SUCCESS"
@@ -133,7 +127,7 @@ func HandleVerificationPayload(payload db.DojahWebhookPayload, h *hub.Hub) {
             log.Printf("FATAL_DB_ERROR: Failed to CREATE new KYC record for User %s: %v", result.UserID, createErr)
             // Override status for push: System failure during DB write
             finalStatus = "SYSTEM_ERROR" 
-            message = "KYC result determined but failed to save to database. Contact support."
+            message = "Unexpected error occured during verification process. Please contact support."
         }
     } else if findErr == nil {
         // Record EXISTS -> UPDATE existing one
@@ -142,19 +136,19 @@ func HandleVerificationPayload(payload db.DojahWebhookPayload, h *hub.Hub) {
             log.Printf("FATAL_DB_ERROR: Failed to UPDATE existing KYC record for User %s: %v", result.UserID, updateErr)
             // Override status for push: System failure during DB write
             finalStatus = "SYSTEM_ERROR"
-            message = "KYC result determined but failed to update database record. Contact support."
+            message = "Unexpected error occured during verification process. Please contact support."
         }
     } else {
         // Critical DB error on lookup (not just 'Not Found')
         log.Printf("FATAL_DB_ERROR: Failed critical KYC lookup for User %s: %v", result.UserID, findErr)
         finalStatus = "SYSTEM_ERROR"
-        message = "KYC result determined but failed due to critical database error. Contact support."
+        message = "Unexpected error occured during verification process. Please contact support."
     }
 
     // 4. PUSH FINAL STATUS VIA WEBSOCKET (Guaranteed delivery to un-stick the client)
     update := hub.KYCStatusUpdate{
         UserID:      result.UserID,
-        FinalStatus: finalStatus, // Will contain SUCCESS, PENDING_MANUAL_REVIEW, or SYSTEM_ERROR
+        FinalStatus: finalStatus,
         Message:     message,
     }
     

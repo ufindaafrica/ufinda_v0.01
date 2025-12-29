@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"log"
 	"github.com/cloudinary/cloudinary-go/v2"
-	// "encoding/json"
     "github.com/oladev/ufinda_v0.01/internal/db/kyc/vendor"
 	"errors"
 	"github.com/gin-gonic/gin"
@@ -21,25 +20,27 @@ func GetWidgetUrl(c *gin.Context) {
 	// get the id
 	user, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "user not found in context"})
-        return
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
 	}
 
 	getUser, ok := user.(*db.User)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user type"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user type"})
 		return
 	}
 
 	baseUrl := os.Getenv("DOJAH_WIDGET_URL")
 	if baseUrl == "" {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "DOJAH_WIDGET_URL environment variable not set"})
+		log.Printf("[CRITICAL] DOJAH_WIDGET_URL not set in env")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
 
 	widgetID := os.Getenv("DOJAH_WIDGET_ID")
 	if widgetID == "" {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "DOJAH_WIDGET_ID environment variable not set"})
+		log.Printf("[CRITICAL] DOJAH_WIDGET_ID not set in env")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
 
@@ -47,7 +48,7 @@ func GetWidgetUrl(c *gin.Context) {
 	
 	u, err := url.Parse(trimmedBaseUrl)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid base URL configuration"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
 

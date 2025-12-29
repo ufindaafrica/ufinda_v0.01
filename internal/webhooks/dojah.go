@@ -15,30 +15,6 @@ import (
 	"github.com/oladev/ufinda_v0.01/internal/sockets/kyc"
 )
 
-type DojahWebhookPayload struct {
-	ReferenceID        string          `json:"reference_id"`
-	VerificationStatus string          `json:"verification_status"` // e.g., "Completed", "Failed"
-	AppID              string          `json:"app_id"`
-	Datetime           string          `json:"datetime"`
-	Entity             json.RawMessage `json:"entity"`
-}
-
-/*--------------------------------------*/
-
-func handleVerificationUpdate(payload DojahWebhookPayload) error {
-	log.Printf("Processing verification result for ReferenceID: %s", payload.ReferenceID)
-	log.Printf("Final Verification Status: %s", payload.VerificationStatus)
-
-	if payload.VerificationStatus == "Completed" {
-		// Real action: Lookup vendor file by ReferenceID and mark as verified.
-		log.Printf("SUCCESS: Vendor file corresponding to ReferenceID %s marked as VERIFIED.", payload.ReferenceID)
-		return nil
-	}
-	
-	log.Printf("INFO: ReferenceID %s has status %s. Requires further action.", payload.ReferenceID, payload.VerificationStatus)
-	return nil
-}
-
 func VerifyDojahSignature(receivedSignature string) bool {
 	secretKey := os.Getenv("DOJAH_SECRET_KEY")
 
