@@ -2,20 +2,20 @@ import AppHeader from "@/components/appHeader";
 import Filter from "@/components/filter";
 import HostelCard from "@/components/hostelCard";
 import Search from "@/components/search";
-import { dummyHostels, DummyHostelsType } from "@/constants/dummy_data";
+import { getAllHostels } from "@/services/getAllHostels";
 import { globals, roboto } from "@/styles/globals";
 import { homeStyles } from "@/styles/home";
-import { useFocusEffect } from "expo-router";
-import { getItem, getItemAsync, setItemAsync } from "expo-secure-store";
-import { useCallback, useEffect, useState } from "react";
+import { EnrichedHostel } from "@/types";
+import { getItemAsync, setItemAsync } from "expo-secure-store";
+import { useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 
 export default function Home() {
 
-    const [hostels, setHostels] = useState<DummyHostelsType[] | null>()
+    const [hostels, setHostels] = useState<Array<EnrichedHostel> | null>()
 
     const [currentFilter, setCurrentFilter] = useState("Near You")
 
@@ -62,18 +62,41 @@ export default function Home() {
     const [savedIds, setSavedIds] = useState<Array<string>>([])
     const [ reloadHome, setReloadHome ] = useState(false)
 
-    useFocusEffect(useCallback(() => {
+    // useFocusEffect(useCallback(() => {
+    //     const savedHostels = async () => {
+    //         const favHostels = JSON.parse(await getItemAsync('SAVED') || "[]")
+    //         setSavedIds(favHostels)
+    //     }
+    //     savedHostels()
+        
+    // }, [reloadHome]))
+
+    useEffect(() => {
+        const savedHostelData = async () => {
+            setHostels(JSON.parse(await AsyncStorage.getItem('HOSTELS') ?? "[]"))
+        }
         const savedHostels = async () => {
             const favHostels = JSON.parse(await getItemAsync('SAVED') || "[]")
             setSavedIds(favHostels)
         }
+        savedHostelData()
         savedHostels()
-        
-    }, [reloadHome]))
+    }, [])
 
     useEffect(() => {
-        setHostels(dummyHostels)
+        allHostels()
     }, [savedIds])
+
+    const allHostels = async () => {
+        const apiHostels = await getAllHostels()
+
+        if (apiHostels[0] == '200') {
+            setHostels(apiHostels[1])
+            await AsyncStorage.setItem('HOSTELS', JSON.stringify(apiHostels[1]))
+        }
+
+        return
+    }
 
     return (
         <SafeAreaView style={[globals.homeContainer]}>

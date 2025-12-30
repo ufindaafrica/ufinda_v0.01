@@ -24,6 +24,8 @@ type AgentInfoType = {
     id: string
 }
 
+
+
 export const dummyHostels: DummyHostelsType[] = [
     {
         "id": "1234AB",

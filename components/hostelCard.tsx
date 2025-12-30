@@ -8,9 +8,10 @@ import { useEffect, useState } from "react";
 import { getItemAsync, setItemAsync } from "expo-secure-store";
 import { roboto } from "@/styles/globals";
 import { createNewChat } from "@/services/newChat";
+import { EnrichedHostel } from "@/types";
 
 type HostelCardProps = {
-    hostel: DummyHostelsType,
+    hostel: EnrichedHostel,
     isSaved: boolean,
     reload?: () => void
 }
@@ -45,9 +46,9 @@ export default function HostelCard({ hostel, isSaved, reload }: HostelCardProps)
         setSaved(isSaved)
     }, [isSaved])
 
-    const amenities = hostel.amenities || []
-    const stars = hostel.agent?.rating || 0
-    const unstars = 5 - stars
+    const amenities: Array<string> = []
+    const stars = hostel.vendor_info?.vendor_metrics?.total_rating || 0
+    const unstars = stars > 5 ? 5 : 5 - stars
 
     const [archiveImg, setArchiveImg] = useState(saved ? images.savedIcon : images.archiveAdd)
 
@@ -80,16 +81,16 @@ export default function HostelCard({ hostel, isSaved, reload }: HostelCardProps)
         <View style={hostelCardStyles.card}>
 
             <TouchableOpacity style={hostelCardStyles.thumbnailV} onPress={() => hostel?.id && router.push({ pathname: "/hostel/[id]", params: { id: String(hostel.id) } })}>
-                <Thumbnail bg={hostel.images[0]} available={hostel.available} distance={hostel.distance} />
+                <Thumbnail bg={{uri: hostel.hostel_images?.[0]?.url}} available={hostel.total_hostel_rooms > 0 ? true : false} distance={3} />
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => hostel?.id && router.push({ pathname: "/hostel/[id]", params: { id: String(hostel.id) } })} style={hostelCardStyles.mainPlusAmenities}>
 
                 <View style={hostelCardStyles.main}>
                     <View>
-                        <Text style={[hostelCardStyles.hostelName, roboto.titleSmallBold]}>{hostel.name}</Text>
-                        <Text style={[hostelCardStyles.address, hostelCardStyles.textMargin, roboto.bodySmall]}>{hostel.address}</Text>
-                        <Text style={[hostelCardStyles.hostelName, roboto.titleMediumBold]}>₦ {hostel.price} / year</Text>
+                        <Text style={[hostelCardStyles.hostelName, roboto.titleSmallBold]}>{hostel.title}</Text>
+                        <Text style={[hostelCardStyles.address, hostelCardStyles.textMargin, roboto.bodySmall]}>{hostel.location}</Text>
+                        <Text style={[hostelCardStyles.hostelName, roboto.titleMediumBold]}>₦ {hostel.rent_per_year} / year</Text>
                         <Text style={[hostelCardStyles.address, roboto.bodySmallBold]}>PID: {hostel.id}</Text>
                     </View>
                     <TouchableOpacity onPress={() => { onSave(hostel.id, saved) }}>
@@ -118,9 +119,9 @@ export default function HostelCard({ hostel, isSaved, reload }: HostelCardProps)
 
             <View style={hostelCardStyles.agentInfo}>
                 <TouchableOpacity onPress={() => router.push("/pages/profileDetails")} style={hostelCardStyles.agentCard}>
-                    <Image source={hostel.agent?.pic} style={hostelCardStyles.agentPic} />
+                    <Image source={hostel.vendor_info?.vendor_kyc?.profile_img?.url ? {uri: hostel.vendor_info?.vendor_kyc?.profile_img?.url} : images.user0} style={hostelCardStyles.agentPic} />
                     <View>
-                        <Text style={[roboto.bodyMediumBold, hostelCardStyles.agentMargin]}>{hostel.agent?.name}</Text>
+                        <Text style={[roboto.bodyMediumBold, hostelCardStyles.agentMargin]}>{`${hostel.vendor_info?.first_name} ${hostel.vendor_info?.last_name}`}</Text>
                         <View style={[hostelCardStyles.stars, hostelCardStyles.agentMargin]}>
                             {
                                 [...Array(stars).fill("star"), ...Array(unstars).fill("unstar")].map((type, idx) => (
@@ -130,13 +131,13 @@ export default function HostelCard({ hostel, isSaved, reload }: HostelCardProps)
                                 ))
                             }
                         </View>
-                        {hostel.agent?.verified ? <View style={hostelCardStyles.verifiedAgent}>
+                        <View style={hostelCardStyles.verifiedAgent}>
                             <Image source={images.profileTick} style={hostelCardStyles.verifiedAgentImg} />
                             <Text style={[hostelCardStyles.verifiedAgentT, roboto.caption]}>Verified Agent</Text>
-                        </View> : null}
+                        </View>
                     </View>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleNewChat(hostel.agent?.id)} style={hostelCardStyles.phoneView}>
+                <TouchableOpacity onPress={() => handleNewChat(hostel.vendor_id)} style={hostelCardStyles.phoneView}>
                     <Image source={images.chat1} style={hostelCardStyles.phoneImg} />
                 </TouchableOpacity>
             </View>
