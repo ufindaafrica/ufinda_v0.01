@@ -46,7 +46,6 @@ type ChatRoom struct {
 	ID        string    `json:"id"`
 	BuyerID   string    `json:"buyer_id"`
 	VendorID  string    `json:"vendor_id"`
-	ProductID *string   `json:"product_id,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -472,8 +471,8 @@ func (cs *SupabaseChatService) SetHub(hub *Hub) {
 	cs.hub = hub
 }
 
-func (cs *SupabaseChatService) CreateChatRoom(buyerID, vendorID string, productID *string) (*ChatRoom, error) {
-	existingRoom, err := cs.findExistingRoom(buyerID, vendorID, productID)
+func (cs *SupabaseChatService) CreateChatRoom(buyerID, vendorID string) (*ChatRoom, error) {
+	existingRoom, err := cs.findExistingRoom(buyerID, vendorID)
 	if err != nil {
 		log.Printf("Error checking for existing chat room: %v", err)
 		return nil, fmt.Errorf("failed to check for existing room: %v", err)
@@ -486,9 +485,6 @@ func (cs *SupabaseChatService) CreateChatRoom(buyerID, vendorID string, productI
 	roomData := map[string]interface{}{
 		"buyer_id":  buyerID,
 		"vendor_id": vendorID,
-	}
-	if productID != nil {
-		roomData["product_id"] = *productID
 	}
 
 	headers := map[string]string{
@@ -528,13 +524,8 @@ func (cs *SupabaseChatService) CreateChatRoom(buyerID, vendorID string, productI
 	return &rooms[0], nil
 }
 
-func (cs *SupabaseChatService) findExistingRoom(buyerID, vendorID string, productID *string) (*ChatRoom, error) {
+func (cs *SupabaseChatService) findExistingRoom(buyerID, vendorID string) (*ChatRoom, error) {
 	query := fmt.Sprintf("buyer_id=eq.%s&vendor_id=eq.%s", buyerID, vendorID)
-	if productID != nil {
-		query += fmt.Sprintf("&product_id=eq.%s", *productID)
-	} else {
-		query += "&product_id=is.null"
-	}
 
 	endpoint := fmt.Sprintf("/rest/v1/chat_rooms?%s", query)
 	resp, err := db.MakeDBRequest("GET", endpoint, nil, nil)
@@ -868,7 +859,6 @@ func (cs *SupabaseChatService) GetUserChatRoomsWithLastMessage(userID string) ([
 			"id":         room.ID,
 			"buyer_id":   room.BuyerID,
 			"vendor_id":  room.VendorID,
-			"product_id": room.ProductID,
 			"created_at": room.CreatedAt,
 			"updated_at": room.UpdatedAt,
 		}
@@ -925,7 +915,7 @@ func (cs *SupabaseChatService) GetUserChatRoomsWithLastMessage(userID string) ([
 func (cs *SupabaseChatService) HandleWebSocket(c *gin.Context) {
 	userIDVal, exists := c.Get("id")
 	if !exists {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Authentication context missing."})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
 		c.Abort()
 		return
 	}
@@ -933,7 +923,7 @@ func (cs *SupabaseChatService) HandleWebSocket(c *gin.Context) {
 	validatedUserID, ok := userIDVal.(string)
 	if !ok {
 		log.Printf("ERROR: validatedUserID in context is not a string. Type: %T", userIDVal)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal authentication error."})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		c.Abort()
 		return
 	}
@@ -995,7 +985,6 @@ func (cs *SupabaseChatService) CreateChatRoomHandler(c *gin.Context) {
 	var req struct {
 		BuyerID   string  `json:"buyer_id"`
 		VendorID  string  `json:"vendor_id"`
-		ProductID *string `json:"product_id,omitempty"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -1003,9 +992,9 @@ func (cs *SupabaseChatService) CreateChatRoomHandler(c *gin.Context) {
 		return
 	}
 
-	room, err := cs.CreateChatRoom(req.BuyerID, req.VendorID, req.ProductID)
+	room, err := cs.CreateChatRoom(req.BuyerID, req.VendorID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
 
@@ -1016,7 +1005,7 @@ func (cs *SupabaseChatService) GetUserChatRoomsHandler(c *gin.Context) {
 	userID := c.GetString("id")
 	rooms, err := cs.GetUserChatRooms(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
 
@@ -1028,7 +1017,7 @@ func (cs *SupabaseChatService) GetUserChatRoomsWithLastMessageHandler(c *gin.Con
 
 	rooms, err := cs.GetUserChatRoomsWithLastMessage(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
 
@@ -1047,7 +1036,7 @@ func (cs *SupabaseChatService) SendMessageHandler(c *gin.Context) {
 
 	message, err := cs.SendMessage(req.ChatRoomID, senderID, req.Content, req.MessageType, req.PublicID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
 
@@ -1070,7 +1059,7 @@ func (cs *SupabaseChatService) GetChatHistoryHandler(c *gin.Context) {
 
 	messages, err := cs.GetChatHistory(roomID, limit, offset)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
 
@@ -1090,7 +1079,7 @@ func (cs *SupabaseChatService) MarkMessagesAsReadHandler(c *gin.Context) {
 	userID := c.GetString("id")
 
 	if err := cs.MarkMessagesAsRead(req.ChatRoomID, userID); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
 
@@ -1102,7 +1091,7 @@ func (cs *SupabaseChatService) GetUnreadCountHandler(c *gin.Context) {
 
 	count, err := cs.GetUnreadMessageCount(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
 

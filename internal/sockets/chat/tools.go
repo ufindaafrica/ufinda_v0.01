@@ -8,6 +8,8 @@ import (
 	"context"
 )
 
+const MsgServerError = "An unexpected error occurred. Please try again."
+
 func UploadChatImages(cld *cloudinary.Cloudinary, reader io.Reader, filename string) (string, string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute) // Increased timeout for videos
 	defer cancel()

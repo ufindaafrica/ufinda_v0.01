@@ -57,7 +57,7 @@ func CreateHostelHandler() gin.HandlerFunc {
 		hostelID, err := token.GenerateRandomID("hostel", checkUniquenessFunc)
 		if err != nil {
 			hostellog.LogHostel(getUser.ID, fmt.Errorf("failed to generate hostel id: %w", err))
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 			return
 		}
 
