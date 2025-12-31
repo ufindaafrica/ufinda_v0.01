@@ -17,7 +17,7 @@ export default function Home() {
 
     const [hostels, setHostels] = useState<Array<EnrichedHostel> | null>()
 
-    const [currentFilter, setCurrentFilter] = useState("Near You")
+    const [currentFilter, setCurrentFilter] = useState("New Listings")
 
     const setFilter = (text: string, type: "options" | "input" | "search") => {
         if (type === "options" || type === "search") {
@@ -110,10 +110,10 @@ export default function Home() {
 
             <View style={[{ marginBottom: 8 }, homeStyles.filterV]}>
                 <View style={[homeStyles.eachFilterV, { zIndex: 2, paddingRight: 8 }]}>
-                    <Filter filterType="options" options={["Near You", "Recommended", "Others"]} visible={filter1Vis} setVisible={setVisiblility1} setCurrentFilter={setFilter} active />
+                    <Filter filterType="options" options={["New", "Near You", "Your State", "Recommended"]} visible={filter1Vis} setVisible={setVisiblility1} setCurrentFilter={setFilter} active />
                 </View>
                 <View style={[homeStyles.eachFilterV, { zIndex: 2 }]}>
-                    <Filter filterType="options" options={["Type", "SelfCon", "Flat", "Face Me"]} visible={filter2Vis} setVisible={setVisiblility2} setCurrentFilter={setFilter} />
+                    <Filter filterType="options" options={["Type", "Self Contained", "Single Room", "1 Bedroom Flat", "2 Bedroom Flat", "3 Bedroom Flat", "Room in a Flat"]} visible={filter2Vis} setVisible={setVisiblility2} setCurrentFilter={setFilter} />
                 </View>
                 <View style={[homeStyles.eachFilterV, { paddingRight: 8 }]}>
                     <Filter filterType="input" text="Min. Price" onInputFocus={inputFocus} setCurrentFilter={setFilter} />

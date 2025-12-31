@@ -2,7 +2,6 @@ import { Image, Text, TouchableOpacity, View } from "react-native";
 import Thumbnail from "./thumbnail";
 import { images } from "@/constants/images";
 import { hostelCardStyles } from "@/styles/hostelCard"
-import { DummyHostelsType } from "@/constants/dummy_data";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { getItemAsync, setItemAsync } from "expo-secure-store";

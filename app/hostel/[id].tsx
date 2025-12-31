@@ -12,19 +12,44 @@ import { roboto } from "@/styles/globals";
 import { hostelCardStyles } from "@/styles/hostelCard";
 import { thumbnailStyles } from "@/styles/componentStyles/thumbnail";
 import HostelCard from "@/components/hostelCard";
-// import { ScrollView } from "react-native-gesture-handler";
+import { EnrichedHostel } from "@/types";
+import { getHostelDetails } from "@/services/hostelDetails";
 
 
 export default function HostelDetails() {
 
     const { id } = useLocalSearchParams()
+    const idString = Array.isArray(id) ? id[0] : id
 
-    const hostelDetails: DummyHostelsType | undefined = dummyHostels.find(hostel => hostel.id === id)
+    // const hostelDetails: EnrichedHostel | undefined = dummyHostels.find(hostel => hostel.id === id)
 
-    const relatedHostels: DummyHostelsType[] = dummyHostels.slice(-3)
+    const [hostelDetails, setHostelDetails] = useState<EnrichedHostel | null>()
 
-    const hostelImages = hostelDetails?.images
-    const imgLen = hostelDetails?.images.length
+    useEffect(() => {
+        const getDetails = async () => {
+            const details = await getHostelDetails(idString)
+            if (details[0] != '200') return
+            else setHostelDetails(details[1])
+        }
+        getDetails()
+    }, [])
+
+    const relatedHostels: EnrichedHostel[] = [].slice(-3)
+
+    const [hostelImages, setHostelImages] = useState<Array<any>>([])
+    const [imgLen, setImgLen] = useState<number>(hostelImages.length)
+
+    useEffect(() => {
+        const imgs = hostelDetails?.hostel_images?.map(item => item.url) ?? []
+
+        hostelDetails?.hostel_videos && imgs.push(hostelDetails?.hostel_videos?.[0]?.url)
+
+        setHostelImages(imgs)
+    }, [])
+
+    useEffect(() => {
+        setImgLen(hostelImages.length)
+    }, [hostelImages])
 
     const [currentImage, setCurrentImg] = useState(hostelImages?.[0])
     const [idx, setIdx] = useState(0)
@@ -34,21 +59,17 @@ export default function HostelDetails() {
         "bathroom": images.bath,
         "24 hrs power": images.light,
         "bedroom": images.bed,
-        // "duplex1": images.duplex,
-        // "bathroom1": images.bath,
-        // "24 hrs power1": images.light,
-        // "bedroom1": images.bed,
     }
 
     const importantDetails = {
-        "Property Address": hostelDetails?.address,
-        "Number of Rooms": 10,
+        "Property Address": hostelDetails?.location ?? "",
+        "Number of Available Rooms": hostelDetails?.total_hostel_rooms ?? "",
         "Electricity": "24 hours",
-        "Property ID": hostelDetails?.id,
-        "Kitchen": "1 Kitchen",
-        "Toilet": "1 Toilet",
-        "Landlord resides": "Yes",
-        "Roomates": "Not allowed"
+        "Property ID": hostelDetails?.id ?? "",
+        "Kitchen": hostelDetails?.kitchen_access ?? "",
+        "Toilet": hostelDetails?.toilet_access ?? "",
+        "Landlord resides": hostelDetails?.landlord_resides.toUpperCase() ?? "",
+        "Roomates allowed": hostelDetails?.roommates_allowed?.toUpperCase() ?? ""
     }
 
     const onSwipeLeft = () => {
@@ -73,8 +94,8 @@ export default function HostelDetails() {
         setCurrentImg(hostelImages?.[idx])
     }, [idx])
 
-    const stars = hostelDetails?.agent?.rating || 0
-    const unstars = 5 - stars
+    const stars = hostelDetails?.vendor_info?.vendor_metrics?.total_rating ?? 0
+    const unstars = stars > 5 ? 0 : 5 - stars
 
     const facilities = ["Balcony", "Chandelier", "Pop Ceiling", "Tiled floor", "Wardrobe", "Running Water"]
 
@@ -86,16 +107,16 @@ export default function HostelDetails() {
                     <View style={idStyles.headerV}>
                         <View style={idStyles.firstHeaderV}>
                             <BackArrow backFun={() => router.back()} large />
-                            <Text style={roboto.titleLargeBold}>{hostelDetails?.name}</Text>
+                            <Text style={roboto.titleLargeBold}>{hostelDetails?.title ?? ""}</Text>
                         </View>
                         <Image source={images.more} style={idStyles.moreImg} />
                     </View>
 
                     <View style={idStyles.swipeV}>
                         <View style={idStyles.picV}>
-                            <Image source={currentImage} style={idStyles.hostelImg} />
+                            <Image source={{uri: currentImage}} style={idStyles.hostelImg} />
                             <View style={idStyles.galleryV}>
-                                <Text style={[idStyles.galleryTxt, roboto.caption]}>{idx + 1}/{hostelDetails?.images.length}</Text>
+                                <Text style={[idStyles.galleryTxt, roboto.caption]}>{idx + 1}/{hostelDetails?.hostel_images.length}</Text>
                                 <Image source={images.gallery} style={idStyles.galleryImg} />
                             </View>
                             <TouchableOpacity onPress={() => onSwipeLeft()} disabled={idx <= 0} style={[idStyles.navArrow, idStyles.arrowLeftMargin, idx <= 0 && idStyles.disabledArrow]}>
@@ -116,7 +137,7 @@ export default function HostelDetails() {
                                 </TouchableOpacity>
                             </View>
                             <View style={idStyles.firstTopPrelimV}>
-                                <Text style={[idStyles.regTxt, roboto.titleMediumBold]}>₦ {hostelDetails?.price} / year</Text>
+                                <Text style={[idStyles.regTxt, roboto.titleMediumBold]}>₦ {hostelDetails?.rent_per_year} / year</Text>
                                 <Text style={[roboto.bodyLarge, idStyles.redTxt]}>4 rooms left</Text>
                             </View>
                             <View style={[idStyles.firstTopPrelimV]}>
@@ -157,9 +178,9 @@ export default function HostelDetails() {
                     <View style={idStyles.outerAgentV}>
                         <View style={[hostelCardStyles.agentInfo, idStyles.innerAgentV]}>
                             <TouchableOpacity onPress={() => router.push("/pages/profileDetails")} style={hostelCardStyles.agentCard}>
-                                <Image source={hostelDetails?.agent?.pic} style={hostelCardStyles.agentPic} />
+                                <Image source={hostelDetails?.vendor_info?.vendor_kyc?.profile_img?.url ? { uri: hostelDetails.vendor_info?.vendor_kyc?.profile_img?.url } : images.user0} style={hostelCardStyles.agentPic} />
                                 <View>
-                                    <Text style={[roboto.bodyMediumBold, hostelCardStyles.agentMargin]}>{hostelDetails?.agent?.name}</Text>
+                                    <Text style={[roboto.bodyMediumBold, hostelCardStyles.agentMargin]}>{`${hostelDetails?.vendor_info?.first_name} ${hostelDetails?.vendor_info?.last_name}`}</Text>
                                     <View style={[hostelCardStyles.stars, hostelCardStyles.agentMargin]}>
                                         {
                                             [...Array(stars).fill("star"), ...Array(unstars).fill("unstar")].map((type, idx) => (
@@ -169,7 +190,7 @@ export default function HostelDetails() {
                                             ))
                                         }
                                     </View>
-                                    {hostelDetails?.agent?.verified ? <View style={hostelCardStyles.verifiedAgent}>
+                                    {true ? <View style={hostelCardStyles.verifiedAgent}>
                                         <Image source={images.profileTick} style={hostelCardStyles.verifiedAgentImg} />
                                         <Text style={[hostelCardStyles.verifiedAgentT, roboto.caption]}>Verified Agent</Text>
                                     </View> : null}
