@@ -57,7 +57,9 @@ export default function Filter({ options, filterType, text, visible, setVisible,
                             style={[filterStyles.input, filterStyles.text, roboto.mediumEmphasized, changed && filterStyles.activeFilterText]}
                             keyboardType="numeric"
                             value={input}
-                            onChangeText={(text) => setInput(text)}
+                            onChangeText={(text) => {
+                                setInput(text.replace(/\D+$/, ""))
+                            }}
                             onBlur={() => {
                                 if (input == "") {
                                     setEnterInput(false)

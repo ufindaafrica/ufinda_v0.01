@@ -11,20 +11,51 @@ import { useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { searchHostels, searchParams } from "@/services/searchHostels";
+import { toast } from "@/deps/toast";
 
 
 export default function Home() {
 
     const [hostels, setHostels] = useState<Array<EnrichedHostel> | null>()
 
-    const [currentFilter, setCurrentFilter] = useState("New Listings")
+    const [currentFilter, setCurrentFilter] = useState("New")
+
+    const [searchFilters, setSearchFilters] = useState<searchParams | null>({})
 
     const setFilter = (text: string, type: "options" | "input" | "search") => {
-        if (type === "options" || type === "search") {
+        // for the first two filters for New and for Hostel Type
+        // sets search filter and also current filter text
+        if (type === "options") {
+            if (text != "New" && text != "Near You" && text != "Your State" && text != "Recommended" && text != "Type") {
+                setSearchFilters(prev => ({
+                    ...prev,
+                    type: text
+                }))
+            }
+            if (text === "Type") {
+                setSearchFilters(prev => {
+                    if (!prev) return prev
+
+                    const { type, ...rest } = prev
+                    return rest
+                })
+            }
+
             setCurrentFilter(text)
-            return
         }
 
+        // for texts coming from the search bar
+        if (type === "search") {
+            setSearchFilters(prev => ({
+                ...prev,
+                q: text
+            }))
+            setCurrentFilter(text)
+        }
+
+        // for texts in Min and Max filters
+        // only sets current filter text
         if (type === "input" && (currentFilter.startsWith("Min") || currentFilter.startsWith("Max")) && (currentFilter.slice(0, 3) != (text.slice(0, 3)))) {
             if (currentFilter.slice(0, 3) == "Max") {
                 setCurrentFilter(prev => text + " - " + prev)
@@ -34,11 +65,78 @@ export default function Home() {
             }
 
         } else {
+            setSearchFilters(prev => {
+                if (!prev) return prev
+
+                const { price_max, ...rest } = prev
+                return rest
+            })
             setCurrentFilter(text)
         }
 
+        // for texts in Min and Max fields
+        // sets for the searchFilters
+        if (type === "input") {
+            if (text.startsWith("Min")) {
+                const min = Number(text.slice(12))
+                const rawMax = Number(searchFilters?.price_max) ?? 0
+                const max = Number.isNaN(rawMax) ? 0 : rawMax
+
+                if (min >= max && max > 0) {
+                    toast("Min Price must be less than Max")
+                    setCurrentFilter("New")
+                }
+
+                else {
+                    setSearchFilters(prev => ({
+                        ...prev,
+                        price_min: min.toString()
+                    }))
+                }
+
+            } else {
+                const max = Number(text.slice(12))
+                const rawMin = Number(searchFilters?.price_min) ?? 0
+                const min = Number.isNaN(rawMin) ? 0 : rawMin
+
+                if (max <= min && min > 0) {
+                    toast("Max Price must be greater than Min")
+                    setCurrentFilter("New")
+                }
+
+                else {
+                    setSearchFilters(prev => ({
+                        ...prev,
+                        price_max: max.toString()
+                    }))
+                }
+
+            }
+        }
         return
     }
+
+    useEffect(() => {
+
+        const search = async () => {
+
+            if (searchFilters && Object.keys(searchFilters).length > 0) {
+                const filteredHostels = await searchHostels(searchFilters ?? {})
+
+                if (filteredHostels[0] == "200") {
+                    setCurrentFilter(prev => {
+                        return Object.entries(searchFilters).map(([key, value]) => `${key}: ${value}`).join(" ; ")
+                    })
+                    setHostels(filteredHostels[1])
+                } else {
+                    toast("error. try searching again.")
+                }
+            }
+        }
+
+        search()
+
+    }, [searchFilters])
 
     const [filter1Vis, setFilter1Vis] = useState(false)
     const [filter2Vis, setFilter2Vis] = useState(false)
@@ -58,9 +156,9 @@ export default function Home() {
         setFilter2Vis(false)
     }
 
-    
+
     const [savedIds, setSavedIds] = useState<Array<string>>([])
-    const [ reloadHome, setReloadHome ] = useState(false)
+    const [reloadHome, setReloadHome] = useState(false)
 
     // useFocusEffect(useCallback(() => {
     //     const savedHostels = async () => {
@@ -68,7 +166,7 @@ export default function Home() {
     //         setSavedIds(favHostels)
     //     }
     //     savedHostels()
-        
+
     // }, [reloadHome]))
 
     useEffect(() => {
@@ -113,7 +211,7 @@ export default function Home() {
                     <Filter filterType="options" options={["New", "Near You", "Your State", "Recommended"]} visible={filter1Vis} setVisible={setVisiblility1} setCurrentFilter={setFilter} active />
                 </View>
                 <View style={[homeStyles.eachFilterV, { zIndex: 2 }]}>
-                    <Filter filterType="options" options={["Type", "Self Contained", "Single Room", "1 Bedroom Flat", "2 Bedroom Flat", "3 Bedroom Flat", "Room in a Flat"]} visible={filter2Vis} setVisible={setVisiblility2} setCurrentFilter={setFilter} />
+                    <Filter filterType="options" options={["Type", "self-contain", "single room", "room and parlor", "2 bedroom flat", "3 bedroom flat", "room in a flat"]} visible={filter2Vis} setVisible={setVisiblility2} setCurrentFilter={setFilter} />
                 </View>
                 <View style={[homeStyles.eachFilterV, { paddingRight: 8 }]}>
                     <Filter filterType="input" text="Min. Price" onInputFocus={inputFocus} setCurrentFilter={setFilter} />
