@@ -124,9 +124,9 @@ export default function Home() {
                 const filteredHostels = await searchHostels(searchFilters ?? {})
 
                 if (filteredHostels[0] == "200") {
-                    setCurrentFilter(prev => {
-                        return Object.entries(searchFilters).map(([key, value]) => `${key}: ${value}`).join(" ; ")
-                    })
+                    // setCurrentFilter(prev => {
+                    //     return Object.entries(searchFilters).map(([key, value]) => `${key}: ${value}`).join(" ; ")
+                    // })
                     setHostels(filteredHostels[1])
                 } else {
                     toast("error. try searching again.")
@@ -137,6 +137,12 @@ export default function Home() {
         search()
 
     }, [searchFilters])
+
+    useEffect(() => {
+        if (currentFilter === "New") {
+            allHostels()
+        }
+    }, [currentFilter])
 
     const [filter1Vis, setFilter1Vis] = useState(false)
     const [filter2Vis, setFilter2Vis] = useState(false)
@@ -190,9 +196,8 @@ export default function Home() {
 
         if (apiHostels[0] == '200') {
             setHostels(apiHostels[1])
-            await AsyncStorage.setItem('HOSTELS', JSON.stringify(apiHostels[1]))
+            // await AsyncStorage.setItem('HOSTELS', JSON.stringify(apiHostels[1]))
         }
-
         return
     }
 
@@ -203,7 +208,7 @@ export default function Home() {
             </View>
 
             <View style={homeStyles.layoutMargin}>
-                <Search />
+                <Search searchHostels={setFilter} />
             </View>
 
             <View style={[{ marginBottom: 8 }, homeStyles.filterV]}>
