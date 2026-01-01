@@ -121,6 +121,8 @@ This endpoint allows verified vendors to create a new hostel listing. It uses a 
 | `description` | `string` | Full details about the hostel. | No |
 | `images` | `array` | Objects containing `url` and `public_id`. | Yes (Min=1, max=3) |
 | `videos` | `array` | Objects containing `url` and `public_id`. | No (Max=1)|
+|  `available_rooms` | `integer` | number of available roos |
+| `geolocation` | `string`  | string co-ordinate of the hostel  |
 
 **Example Body**
 

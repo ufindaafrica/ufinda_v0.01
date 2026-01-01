@@ -7,21 +7,15 @@ import (
 	"fmt"
 	"net/url"
 	"errors"
-	// "strings"
 	"context"
 	"time"
-	// "mime/multipart"
 	"log"
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/cloudinary/cloudinary-go/v2/api"
-	// "encoding/json"
-	// "github.com/hibiken/asynq"
 	"github.com/oladev/ufinda_v0.01/internal/db"
 	"github.com/oladev/ufinda_v0.01/internal/db/hostel"
 	"github.com/oladev/ufinda_v0.01/internal/logs/auth"
 	"github.com/oladev/ufinda_v0.01/internal/token"
-	// "github.com/oladev/ufinda_v0.01/internal/tasks/hostel"
-	// "github.com/oladev/ufinda_v0.01/internal/tasks"
 	"github.com/oladev/ufinda_v0.01/internal/logs/hostel"
 )
 
@@ -77,7 +71,8 @@ func CreateHostelHandler() gin.HandlerFunc {
 			KitchenAccess:    req.KitchenAccess,
 			ToiletAccess:     req.ToiletAccess,
 			HostelImages:     req.Images, 
-			HostelVideos:     req.Videos, 
+			HostelVideos:     req.Videos,
+			GeoLocation:	  req.GeoLocation, 		
 		}
 
 		// 5. Save to Database
@@ -108,7 +103,7 @@ func UpdateHostelHandler() gin.HandlerFunc {
 
 		getUser := user.(*db.User)
 		if !getUser.IsVerified {
-			hostellog.LogHostel(getUser.ID, fmt.Errorf("unverified vendor access"))
+			hostellog.LogHostel(getUser.ID, fmt.Errorf("vendor not verified"))
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not verified"})
 			return
 		}
@@ -187,7 +182,7 @@ func DeleteHostelHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
         }
 
 		if !getUser.IsVerified {
-			hostellog.LogHostel(getUser.ID, fmt.Errorf("unverified vendor access"))
+			hostellog.LogHostel(getUser.ID, fmt.Errorf("vendor not verified"))
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not verified"})
 			return
 		}
@@ -259,7 +254,7 @@ func DeleteHostelHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 func GetAllAgentsHostelHandler(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not authenticated"})
 		return
 	}
 

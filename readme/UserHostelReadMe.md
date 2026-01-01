@@ -72,8 +72,8 @@ Performs a filtered search across the hostel database.
 | Parameter | Type | Description |
 | --- | --- | --- |
 | `q` | `string` | Full-text search term (location, description, etc). |
-| `price_min` | `string` | Minimum annual rent. |
-| `price_max` | `string` | Maximum annual rent. |
+| `price_min` | `string` | Minimum total psckage. |
+| `price_max` | `string` | Maximum total package. |
 | `type` | `string` | Room type (e.g., "single room"). |
 | `limit` | `string` | Results per page. |
 | `page` | `string` | Current page. |

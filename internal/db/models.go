@@ -72,12 +72,14 @@ type Hostel struct {
 	RentPerYear      int64    `json:"rent_per_year" binding:"required"`
 	LandlordResides  string      `json:"landlord_resides" binding:"required"`
 	TotalHostelRooms int       `json:"total_hostel_rooms"`
+	AvailableRooms int `json:"available_rooms" binding:"required,gte=1"`
 	RoommatesAllowed string      `json:"roommates_allowed" binding:"required"`
 	KitchenAccess    string    `json:"kitchen_access" binding:"required"`
 	ToiletAccess     string      `json:"toilet_access" binding:"required"`
     HostelImages     []UploadedFile  `json:"hostel_images"`
     HostelVideos     []UploadedFile  `json:"hostel_videos"`
 	Description      string    `json:"description"`
+	GeoLocation string `json:"geolocation,omitempty"`
 	CreatedAt        *time.Time `json:"created_at,omitempty"`
 	UpdatedAt        *time.Time `json:"updated_at,omitempty"`
 }
@@ -232,21 +234,15 @@ type UserAgentInfo struct {
     FirstName    string          `json:"first_name"`
     LastName     string          `json:"last_name"`
     Phone        string          `json:"phone"`
-    
-    // Nested structure to capture the rating from the vendor_metrics table
     VendorMetrics VendorMetrics `json:"vendor_metrics"`
     
-    // Nested structure to capture the profile image from the vendor_kyc table
     VendorKyc     VendorKycInfo `json:"vendor_kyc"`
 }
 
 // db/models.go (or similar)
 
 type EnrichedHostel struct {
-    // Embed the base Hostel struct to inherit all its fields (id, total_price, etc.)
     Hostel 
-    
-    // This field MUST match the relationship name in the SQL query (i.e., 'users')
     Users UserAgentInfo `json:"vendor_info"`
 }
 

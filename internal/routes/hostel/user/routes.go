@@ -9,15 +9,12 @@ import (
     "net/url"
     "strconv"
 	"fmt"
-    // "errors"
     "encoding/json"
 	"github.com/oladev/ufinda_v0.01/internal/db"
     "github.com/oladev/ufinda_v0.01/internal/db/hostel"
 )
 
 func GetAvailableHostelHandler(c *gin.Context) {
-    // 1. Extract Limit and Page from Query String
-    // Default to 10 items per page if not specified
     limitStr := c.DefaultQuery("limit", "10")
     pageStr := c.DefaultQuery("page", "1")
 
@@ -34,8 +31,6 @@ func GetAvailableHostelHandler(c *gin.Context) {
     // Calculate offset for PostgREST (page 1 starts at 0, page 2 at limit, etc.)
     offset := (page - 1) * limit
 
-    // 2. Build the Enriched Query
-    // Note: I'm using url.Values to safely encode the parameters
     selectQuery := "*,vendor_info:fk_hostel_agent(first_name,last_name,phone,vendor_metrics(current_rating,total_ratings),fk_kyc_user(profile_img))"
     
     params := url.Values{}
@@ -43,29 +38,29 @@ func GetAvailableHostelHandler(c *gin.Context) {
     params.Set("is_available", "eq.true")
     params.Set("limit", strconv.Itoa(limit))
     params.Set("offset", strconv.Itoa(offset))
-    params.Set("order", "created_at.desc") // Usually best to show newest first
+    params.Set("order", "created_at.desc")
 
     finalURL := fmt.Sprintf("/rest/v1/hostels?%s", params.Encode())
 
     // 3. Make the Request
     resp, err := db.MakeDBRequest("GET", finalURL, nil, nil)
     if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to connect to database API"})
+        c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
         return
     }
     defer resp.Body.Close()
 
     if resp.StatusCode != http.StatusOK {
         bodyBytes, _ := io.ReadAll(resp.Body)
-        log.Printf("DB API Error: Status %d for URL %s. Response: %s", resp.StatusCode, finalURL, string(bodyBytes))
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "database retrieval failed"})
+        log.Printf("[CRITICAL] DB API Error: Status %d for URL %s. Response: %s", resp.StatusCode, finalURL, string(bodyBytes))
+        c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
         return
     }
 
     var hostels []db.EnrichedHostel 
     if err := json.NewDecoder(resp.Body).Decode(&hostels); err != nil {
-        log.Printf("ERROR decoding DB response: %v", err)
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "error processing enriched hostel data"})
+        log.Printf("[CRITICAL] ERROR decoding DB response: %v", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
         return
     }
 
@@ -100,9 +95,9 @@ func GetHostelBySearchQueryHandler(c *gin.Context) {
 
 	// A. Full-Text Search (FTS) - Handles the primary text search
 	if searchTerm != "" {
-		// Replaces spaces with '&' for a valid tsquery (AND condition)
-		safeSearchTerm := strings.ReplaceAll(searchTerm, " ", "&")
-		params.Add("search_document", fmt.Sprintf("fts.%s", safeSearchTerm))
+		words := strings.Fields(searchTerm)
+    	cleanSearchTerm := strings.Join(words, " ")
+		params.Add("search_document", fmt.Sprintf("plfts.%s", cleanSearchTerm))
 	}
 	
 	// B. Min/Max Price Filter (RentPerYear) - Numerical search remains exact
@@ -110,7 +105,7 @@ func GetHostelBySearchQueryHandler(c *gin.Context) {
 	// 1. Minimum Price (Greater Than or Equal to: gte)
 	if minPriceStr != "" {
 		if _, err := strconv.Atoi(minPriceStr); err == nil {
-			params.Add("rent_per_year", fmt.Sprintf("gte.%s", minPriceStr))
+			params.Add("total_price", fmt.Sprintf("gte.%s", minPriceStr))
 		}
 	}
 	
@@ -118,7 +113,7 @@ func GetHostelBySearchQueryHandler(c *gin.Context) {
 	if maxPriceStr != "" {
 		if _, err := strconv.Atoi(maxPriceStr); err == nil {
 			// Standardizing key to 'rentperyear' for consistency
-			params.Add("rent_per_year", fmt.Sprintf("lte.%s", maxPriceStr))
+			params.Add("total_price", fmt.Sprintf("lte.%s", maxPriceStr))
 		}
 	}
 	
@@ -144,8 +139,8 @@ func GetHostelBySearchQueryHandler(c *gin.Context) {
     )
     
     if err != nil {
-        log.Printf("ERROR during enriched search request: %v", err)
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve enriched hostel data"})
+        log.Printf("[CRITICAL] ERROR during enriched search request: %v", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
         return
     }
 
@@ -168,7 +163,7 @@ func GetHostelByIdHandler(c *gin.Context) {
     )
     
     if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "error fetching enriched hostel"})
+        c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
         return
     }
 
@@ -186,30 +181,24 @@ func GetSimilarHostelsHandler() gin.HandlerFunc {
         // --- 1. Get Hostel ID from Path Parameter ---
 		hostelID := c.Param("id")
 		if hostelID == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Hostel ID is required in the path"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Hostel ID is required"})
 			return
 		}
 
-		limit := 10 // Default limit
-		limitStr := c.Query("limit")
-		if limitStr != "" {
-			var err error
-			limit, err = strconv.Atoi(limitStr)
-			if err != nil || limit <= 0 {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit parameter"})
-				return
-			}
+		limitStr := c.DefaultQuery("limit", "10")
+		limit, err := strconv.Atoi(limitStr)
+		if err != nil || limit <= 0 {
+			limit = 10
 		}
 
 		pageStr := c.DefaultQuery("page", "1")
 		
 		page, err := strconv.Atoi(pageStr)
-        if err != nil || page < 1 {
-             c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page parameter. Must be an integer >= 1."})
-             return
-        }
+		if err != nil || page < 1 {
+			page = 1
+		}
+
 		offset := (page - 1) * limit
-        // fetch the base hostel
 		baseHostel, err := hosteldb.FindHostelByID(hostelID)
 		if err != nil {
 			if err == hosteldb.ErrorHostelNotFound {
@@ -217,16 +206,16 @@ func GetSimilarHostelsHandler() gin.HandlerFunc {
 				return
 			}
             
-			log.Printf("Error retrieving base hostel details: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve base hostel details"})
+			log.Printf("[CRITICAL] Error retrieving base hostel details: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 			return
 		}
         
 
 		similarHostels, err := hosteldb.FindSimilarHostels(baseHostel, limit, offset)
 		if err != nil {
-			log.Printf("Error fetching similar hostels: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch similar hostels"})
+			log.Printf("[CRITICAL] Error fetching similar hostels: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 			return
 		}
 
@@ -260,7 +249,7 @@ func AddToFavoritesHandler(c *gin.Context) {
 	}
 
 	if err := hosteldb.AddToFavorites(favorite); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to add to favorites"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
 

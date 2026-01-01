@@ -20,6 +20,7 @@ type CreateHostelRequest struct {
 	TotalPrice       int64              `json:"total_price" binding:"required,gt=0"`
 	RentPerYear      int64              `json:"rent_per_year" binding:"required,gt=0"`
 	TotalHostelRooms int                `json:"total_hostel_rooms" binding:"required,gt=0"`
+	AvailableRooms int 				`json:"available_rooms"`
 	Location         string             `json:"location" binding:"required"`
 	Description      string             `json:"description"`
 	LandlordResides  string             `json:"landlord_resides"`
@@ -29,4 +30,5 @@ type CreateHostelRequest struct {
 	ToiletAccess     string             `json:"toilet_access"`
 	Images           []db.UploadedFile `json:"images" binding:"required,min=1,max=3"`
 	Videos           []db.UploadedFile `json:"videos" binding:"max=1"`
+	GeoLocation string 					`json:"geolocation,omitempty"`
 }
