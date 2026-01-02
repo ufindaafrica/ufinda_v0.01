@@ -27,7 +27,7 @@ func CreateUserKYC(kyc db.UserKYC) error {
 	resp, err := db.MakeDBRequest("POST", endpoint, kyc, nil)
 	if err != nil {
 		// Handles network errors, connection issues, etc.
-		return fmt.Errorf("database request failed during KYC creation: %w", err)
+		return fmt.Errorf("failed to create kyc: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -70,7 +70,7 @@ func UpdateUserKYC(id string, data interface{}) error {
 
 	resp, err := db.MakeDBRequest("PATCH", endpoint, data, headers)
 	if err != nil {
-		return fmt.Errorf("database request failed for KYC update: %w", err)
+		return fmt.Errorf("failed to update KYC: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -109,7 +109,7 @@ func FindUserKYC(id string) (*db.UserKYC, error) {
 	resp, err := db.MakeDBRequest("GET", endpoint, nil, nil)
 	if err != nil {
 		// Return a nil pointer and a detailed error for the request failure
-		return nil, fmt.Errorf("error executing DB request for KYC: %w", err)
+		return nil, fmt.Errorf("failed to get KYC: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -119,7 +119,7 @@ func FindUserKYC(id string) (*db.UserKYC, error) {
 
 		// Check if there was an error reading the body
 		if readErr != nil {
-			return nil, fmt.Errorf("failed to retrieve KYC: received status code %d. Also, failed to read response body: %w",
+			return nil, fmt.Errorf("failed to get KYC: received status code %d. Also, failed to read response body: %w",
 				resp.StatusCode, readErr)
 		}
 
@@ -151,7 +151,7 @@ func CheckUserKycLog(user_id string) (string, error) {
 
 	resp, err := db.MakeDBRequest("GET", url, nil, nil)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("fail to get kyc fail reason: %w", err)
 	}
 
 	defer resp.Body.Close()
@@ -173,7 +173,7 @@ func CreateUserKycLog(user_id string, reason db.KycLog) error {
 
 	resp, err := db.MakeDBRequest("POST", url, reason, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("fail to create kyc fail reason: %w", err)
 	}
 
 	defer resp.Body.Close()

@@ -11,32 +11,23 @@ import (
 	"fmt"
     "encoding/json"
 	"github.com/oladev/ufinda_v0.01/internal/db"
+	"github.com/oladev/ufinda_v0.01/internal/logs/hostel"
     "github.com/oladev/ufinda_v0.01/internal/db/hostel"
 )
 
 func GetAvailableHostelHandler(c *gin.Context) {
-    limitStr := c.DefaultQuery("limit", "10")
-    pageStr := c.DefaultQuery("page", "1")
-
-    limit, err := strconv.Atoi(limitStr)
-    if err != nil || limit <= 0 {
-        limit = 10
-    }
-
-    page, err := strconv.Atoi(pageStr)
-    if err != nil || page < 1 {
-        page = 1
-    }
-
-    // Calculate offset for PostgREST (page 1 starts at 0, page 2 at limit, etc.)
-    offset := (page - 1) * limit
+	// Pagination
+	pageStr := c.DefaultQuery("page", "1")
+	page, _ := strconv.Atoi(pageStr)
+	if page < 1 { page = 1 }
+	offset := (page - 1) * DefaultPageSize
 
     selectQuery := "*,vendor_info:fk_hostel_agent(first_name,last_name,phone,vendor_metrics(current_rating,total_ratings),fk_kyc_user(profile_img))"
     
     params := url.Values{}
     params.Set("select", selectQuery)
     params.Set("is_available", "eq.true")
-    params.Set("limit", strconv.Itoa(limit))
+    params.Set("limit", strconv.Itoa(DefaultPageSize))
     params.Set("offset", strconv.Itoa(offset))
     params.Set("order", "created_at.desc")
 
@@ -185,20 +176,12 @@ func GetSimilarHostelsHandler() gin.HandlerFunc {
 			return
 		}
 
-		limitStr := c.DefaultQuery("limit", "10")
-		limit, err := strconv.Atoi(limitStr)
-		if err != nil || limit <= 0 {
-			limit = 10
-		}
-
+		// Pagination
 		pageStr := c.DefaultQuery("page", "1")
-		
-		page, err := strconv.Atoi(pageStr)
-		if err != nil || page < 1 {
-			page = 1
-		}
+		page, _ := strconv.Atoi(pageStr)
+		if page < 1 { page = 1 }
+		offset := (page - 1) * DefaultPageSize
 
-		offset := (page - 1) * limit
 		baseHostel, err := hosteldb.FindHostelByID(hostelID)
 		if err != nil {
 			if err == hosteldb.ErrorHostelNotFound {
@@ -212,7 +195,7 @@ func GetSimilarHostelsHandler() gin.HandlerFunc {
 		}
         
 
-		similarHostels, err := hosteldb.FindSimilarHostels(baseHostel, limit, offset)
+		similarHostels, err := hosteldb.FindSimilarHostels(baseHostel, DefaultPageSize, offset)
 		if err != nil {
 			log.Printf("[CRITICAL] Error fetching similar hostels: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
@@ -249,9 +232,80 @@ func AddToFavoritesHandler(c *gin.Context) {
 	}
 
 	if err := hosteldb.AddToFavorites(favorite); err != nil {
+		hostellog.LogHostel(user.ID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "successfully added to favorites"})
+}
+
+func GetFavoritesHostelHandler(c *gin.Context) {
+	getUser, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+
+	user, ok := getUser.(*db.User)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user type"})
+		return
+	}
+
+	favHostels, err := hosteldb.GetFavoritesHostel(user.ID)
+	if err != nil {
+		hostellog.LogHostel(user.ID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		return
+	}
+
+	c.JSON(http.StatusOK, favHostels)
+}
+
+func DeleteFromFavoritesHandler(c *gin.Context) {
+	getUser, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+
+	user, ok := getUser.(*db.User)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user type"})
+		return
+	}
+
+	hostelID := c.Param("id")
+	if err := hosteldb.DeleteFromFavorites(user.ID, hostelID); err != nil {
+		hostellog.LogHostel(user.ID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "hostel successfully removed from favorites"})
+}
+
+func GetAllAgentHostelsHandler(c *gin.Context) {
+	getUser, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+
+	_, ok := getUser.(*db.User)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user type"})
+		return
+	}
+
+	vendorID := c.Param("vendor_id")
+	allAgentHostels, err := hosteldb.GetAllAgentHostels(vendorID)
+	if err != nil {
+		log.Print("[CRITICAL] %w", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		return
+	}
+
+	c.JSON(http.StatusOK, allAgentHostels)
 }

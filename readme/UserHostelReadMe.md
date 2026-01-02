@@ -116,7 +116,7 @@ Retrieves hostels similar to the one specified (usually based on room type and p
 
 ---
 
-### POST `/hostels/:id`
+### POST `/hostels/fav/:id`
 
 Adds a specific hostel to the authenticated user's favorites list.
 
@@ -137,5 +137,66 @@ Adds a specific hostel to the authenticated user's favorites list.
 
 * **401 Unauthorized**: User is not logged in.
 * **500 Internal Server Error**: Database failure while saving favorite.
+
+---
+
+### GET `[BASE_URL]/hostels/fav`
+
+Retrieves a list of all hostels favorited by the currently authenticated user.
+
+#### Authentication
+
+* **Required**: A valid user session/token must be provided (handled via middleware).
+
+#### Responses
+
+* **200 OK**: Returns an array of `EnrichedHostel` objects.
+* **401 Unauthorized**: User is not authenticated.
+* **500 Internal Server Error**: Failed to retrieve data from the database.
+
+---
+
+### DELETE `[BASE_URL]/hostels/fav/:id`
+
+Removes a specific hostel from the authenticated user's favorites list.
+
+#### URL Parameters
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `:id` | `string` | The unique ID of the hostel to be removed. |
+
+#### Authentication
+
+* **Required**: Users can only delete items from their own favorites list.
+
+#### Responses
+
+* **200 OK**: Returns a success message: `{"message": "hostel successfully removed from favorites"}`.
+* **401 Unauthorized**: User not authenticated.
+* **500 Internal Server Error**: Database operation failed.
+
+---
+
+### GET `[BASE_URL]/hostels/vendor/:vendor_id`
+
+Retrieves all hostels managed or listed by a specific agent/vendor.
+
+#### URL Parameters
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `:vendor_id` | `string` | The unique identifier of the agent/vendor. |
+
+#### Authentication
+
+* **Required**: Requires an authenticated user session to view agent listings.
+
+#### Responses
+
+* **200 OK**: Returns an array of `EnrichedHostel` objects belonging to the specified agent.
+* **400 Bad Request**: Invalid user context or type.
+* **401 Unauthorized**: User not authenticated.
+* **500 Internal Server Error**: Server encountered an error fetching the agent's hostels.
 
 ---

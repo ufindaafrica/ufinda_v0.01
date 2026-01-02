@@ -75,7 +75,7 @@ func CreateHostel(data db.Hostel) error {
 
 	resp, err := db.MakeDBRequest("POST", url, data, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to add hostel: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -86,7 +86,7 @@ func CreateHostel(data db.Hostel) error {
 		}
 
 		bodyString := string(bodyBytes)
-		return fmt.Errorf("failed to create hostel: server responded with status %d and body: %s", resp.StatusCode, bodyString)
+		return fmt.Errorf("failed to add hostel: server responded with status %d and body: %s", resp.StatusCode, bodyString)
 	}
 	
 	return nil
@@ -121,18 +121,16 @@ func FindHostelByID(id string) (*db.EnrichedHostel, error) {
 
     resp, err := db.MakeDBRequest("GET", urlPath, nil, nil)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to get hostel: %w", err)
     }
 
     defer resp.Body.Close()
 
     if resp.StatusCode != http.StatusOK {
-        bodyBytes, readErr := io.ReadAll(resp.Body)
-        if readErr != nil {
-            log.Printf("DB API Error: Failed to read error response body (Status: %d)", resp.StatusCode)
-        } else {
-            log.Printf("DB API Error: Status %d for URL %s. Response: %s", resp.StatusCode, urlPath, string(bodyBytes))
-        }
+        bodyBytes, _ := io.ReadAll(resp.Body)
+
+        log.Printf("failed to get hostel: Status %d for URL %s. Response: %s", resp.StatusCode, urlPath, string(bodyBytes))
+
         return nil, fmt.Errorf("failed to get hostel")
     }
 
@@ -156,7 +154,7 @@ func GetHostelImagesPublicIDAndUrl(id string) ([]db.UploadedFile, error) {
 	resp, err := db.MakeDBRequest("GET", url, nil, nil)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get hostel images id: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -189,7 +187,7 @@ func GetHostelVideosPublicIDAndUrl(id string) ([]db.UploadedFile, error) {
 	resp, err := db.MakeDBRequest("GET", url, nil, nil)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get hostel videos id: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -221,7 +219,7 @@ func DeleteHostel(id string) error {
 	resp, err := db.MakeDBRequest("DELETE", url, nil, nil)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to delete hostel: %w", err)
 	}
 
 	defer resp.Body.Close()
@@ -239,7 +237,7 @@ func FindVendorHostels(vendorID string) ([]db.Hostel, error) {
     resp, err := db.MakeDBRequest("GET", url, nil, nil)
 
     if err != nil {
-        return nil, fmt.Errorf("failed to connect to database")
+        return nil, fmt.Errorf("failed to get hostels: %w", err)
     }
 
     defer resp.Body.Close() 
@@ -251,12 +249,12 @@ func FindVendorHostels(vendorID string) ([]db.Hostel, error) {
         } else {
             log.Printf("DB API Error: Status %d for URL %s. Response: %s", resp.StatusCode, url, string(bodyBytes))
         }
-        return nil, fmt.Errorf("failed to get hostel")
+        return nil, fmt.Errorf("failed to get hostels")
     }
 
 	var hostel []db.Hostel
 	if err := json.NewDecoder(resp.Body).Decode(&hostel); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get hostels: %w", err)
 	}
 
 	if len(hostel) == 0 {
@@ -298,18 +296,18 @@ func FindSimilarHostels(baseHostel *db.EnrichedHostel, limit int, offset int) ([
 
     resp, err := db.MakeDBRequest("GET", urlPath, nil, nil) 
     if err != nil {
-        return nil, fmt.Errorf("failed to make database request for similar hostels: %w", err)
+        return nil, fmt.Errorf("failed to get similar hostels: %w", err)
     }
     defer resp.Body.Close()
 
     if resp.StatusCode != http.StatusOK {
         bodyBytes, _ := io.ReadAll(resp.Body)
-        return nil, fmt.Errorf("failed to retrieve similar hostels from API (Status: %d). Response: %s", resp.StatusCode, string(bodyBytes))
+        return nil, fmt.Errorf("failed to get similar hostels from API (Status: %d). Response: %s", resp.StatusCode, string(bodyBytes))
     }
 
     var similarHostels []db.EnrichedHostel
     if err := json.NewDecoder(resp.Body).Decode(&similarHostels); err != nil {
-        return nil, fmt.Errorf("failed to decode similar hostels response: %w", err)
+        return nil, fmt.Errorf("failed to get similar hostels: %w", err)
     }
     return similarHostels, nil
 }
@@ -320,7 +318,7 @@ func AddToFavorites(fav db.Favorites) error {
 	resp, err := db.MakeDBRequest("POST", url, fav, nil)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to add to favorites: %w", err)
 	}
 
 	defer resp.Body.Close()
@@ -332,8 +330,96 @@ func AddToFavorites(fav db.Favorites) error {
 		}
 
 		bodyString := string(bodyBytes)
-		return fmt.Errorf(" %s", bodyString)
+		return fmt.Errorf("fsiled to add to favorites: %s", bodyString)
 	}
 
 	return nil
+}
+
+func GetFavoritesHostel(userId string) ([]db.EnrichedHostel, error) {
+    selectQuery := fmt.Sprintf("hostels(%s)", GetEnrichedSelectQuery())
+
+    params := url.Values{}
+    params.Set("user_id", "eq."+userId)
+    params.Set("select", selectQuery)
+
+    baseURL := "/rest/v1/favorites"
+    finalURL := fmt.Sprintf("%s?%s", baseURL, params.Encode())
+
+    resp, err := db.MakeDBRequest("GET", finalURL, nil, nil)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get favorites: %w", err)
+    }
+    defer resp.Body.Close()
+
+    if resp.StatusCode != http.StatusOK {
+        bodyBytes, _ := io.ReadAll(resp.Body)
+        return nil, fmt.Errorf("failed to get favorites (Status: %d). Response: %s", 
+            resp.StatusCode, string(bodyBytes))
+    }
+
+    type nestedFavorite struct {
+        Hostel db.EnrichedHostel `json:"hostels"`
+    }
+
+    var rawData []nestedFavorite
+    if err := json.NewDecoder(resp.Body).Decode(&rawData); err != nil {
+        return nil, fmt.Errorf("failed to decode favorites response: %w", err)
+    }
+
+    // 3. Flatten the results into a simple slice of EnrichedHostel
+    enrichedHostels := make([]db.EnrichedHostel, 0, len(rawData))
+    for _, item := range rawData {
+        enrichedHostels = append(enrichedHostels, item.Hostel)
+    }
+
+    return enrichedHostels, nil
+}
+
+func DeleteFromFavorites(userId string, roomId string) error {
+	url := fmt.Sprintf("/rest/v1/favorites?user_id=eq.%s&hostel_id=eq.%s", url.QueryEscape(userId), url.QueryEscape(roomId))
+
+	resp, err := db.MakeDBRequest("DELETE", url, nil, nil)
+	if err != nil {
+		return fmt.Errorf("failed to delete from favorites: %w", err)
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+        return fmt.Errorf("failed to delete from favorites hostels (Status: %d). "+
+    	"Response: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	return nil
+}
+
+func GetAllAgentHostels(vendorID string) ([]db.EnrichedHostel, error) {
+	selectQuery := GetEnrichedSelectQuery()
+	url := fmt.Sprintf("/rest/v1/hostels?vendor_id=eq.%s&select=%s", url.QueryEscape(vendorID), selectQuery)
+    
+    resp, err := db.MakeDBRequest("GET", url, nil, nil)
+
+    if err != nil {
+        return nil, fmt.Errorf("failed to get all agent's hostels: %w", err)
+    }
+
+    defer resp.Body.Close() 
+
+    if resp.StatusCode != http.StatusOK {
+        bodyBytes, _ := io.ReadAll(resp.Body)
+
+        log.Printf("failed to get all agent's hostels: Status %d for URL %s. Response: %s", resp.StatusCode, url, string(bodyBytes))
+
+        return nil, fmt.Errorf("failed to get all agent's hostels")
+    }
+
+	var allHostels []db.EnrichedHostel
+
+	if err := json.NewDecoder(resp.Body).Decode(&allHostels); err != nil {
+		return nil, fmt.Errorf("failed to get all agent's hostels: %w", err)
+	}
+
+	return allHostels, nil
 }

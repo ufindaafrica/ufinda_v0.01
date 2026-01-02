@@ -10,7 +10,7 @@ import (
     "github.com/oladev/ufinda_v0.01/internal/db/hostel"
 )
 
-const DefaultPageSize = 10
+const DefaultPageSize = 25
 const MsgServerError = "An unexpected error occurred. Please try again."
 // db/models.go (or similar)
 
