@@ -2,14 +2,13 @@ import axios from "axios"
 import { BASE_URL, getAccessToken, timeout } from "./apiConstants"
 
 
-export const saveHostel = async (id: string) => {
+export const getRelatedHostels = async (id: string) => {
     const result: Array<any> = []
     const token = await getAccessToken()
 
     try {
-        const res = await axios.post(
-            `/hostels/${id}`,
-            {},
+        const res = await axios.get(
+            `/hostels/${id}/similar`,
             {
                 timeout: timeout,
                 baseURL: BASE_URL,
@@ -18,7 +17,7 @@ export const saveHostel = async (id: string) => {
                 }
             }
         )
-
+        
         result[0] = "200"
         result[1] = res.data
     } catch (err) {

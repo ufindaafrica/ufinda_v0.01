@@ -18,6 +18,7 @@ import Media from "@/components/media";
 import { saveHostel } from "@/services/saveHostel";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { handleNewChat } from "@/deps/handleNewChat";
+import { getRelatedHostels } from "@/services/relatedHostels";
 
 
 export default function HostelDetails() {
@@ -33,10 +34,19 @@ export default function HostelDetails() {
             if (details[0] != '200') return
             else setHostelDetails(details[1])
         }
+
+        const getRHostels = async () => {
+            const related = await getRelatedHostels(idString)
+            if (related[0] === "200") {
+                setRelatedHostels(related[1])
+            }
+        }
+
         getDetails()
+        getRHostels()
     }, [])
 
-    const relatedHostels: EnrichedHostel[] = [].slice(-3)
+    const [relatedHostels, setRelatedHostels] = useState<Array<EnrichedHostel>>([])
 
     const [hostelImages, setHostelImages] = useState<Array<any>>([])
     const [imgLen, setImgLen] = useState<number>(hostelImages.length)
@@ -56,7 +66,7 @@ export default function HostelDetails() {
     const [idx, setIdx] = useState(0)
 
     const amenities = {
-        [hostelDetails?.room_type ?? ""] : images.duplex,
+        [hostelDetails?.room_type ?? ""]: images.duplex,
         [hostelDetails?.toilet_access ?? ""]: images.bath,
         "24 hrs power": images.light,
         "bedroom": images.bed,
@@ -116,6 +126,7 @@ export default function HostelDetails() {
             let newIds: Array<string> = (savedIds.includes(id)) ? [...savedIds.filter(item => item != id)] : [...savedIds, id]
 
             await AsyncStorage.setItem('SAVED', JSON.stringify(newIds))
+            setSaved(newIds.includes(id))
         }
         catch (err) {
             console.error(err)
@@ -123,15 +134,16 @@ export default function HostelDetails() {
     }
 
     const handleSaveHostel = async () => {
-        const save = await saveHostel(idString)
-
-        if (save[0] == "200") {
+        if (!saved) {
+            const save = await saveHostel(idString)
+            if (save[0] == "200") {
+                await saveLocal(idString)
+                console.log(save)
+                setSaved(true)
+            }
+        } else {
             await saveLocal(idString)
-            console.log(save)
-            setSaved(true)
         }
-
-        console.log(save)
 
     }
 
@@ -143,9 +155,9 @@ export default function HostelDetails() {
         }
 
         isSaved(idString)
-        
+
     }, [])
-    
+
     const [call, setCall] = useState("Call")
     const placeCall = () => {
         if (call === "Call") setCall(hostelDetails?.vendor_info?.phone ?? "")
@@ -203,7 +215,7 @@ export default function HostelDetails() {
                                 </TouchableOpacity>
                                 <TouchableOpacity style={idStyles.thirdTopPrelimVTwo}>
                                     <Select text="Book on uFinda" selected={false} selectFun={() => {
-                                        if (hostelDetails?.vendor_id) {handleNewChat(hostelDetails?.vendor_id, hostelDetails?.title)}
+                                        if (hostelDetails?.vendor_id) { handleNewChat(hostelDetails?.vendor_id, hostelDetails?.title) }
                                     }} />
                                 </TouchableOpacity>
                             </View>
