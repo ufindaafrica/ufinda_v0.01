@@ -8,6 +8,7 @@ import { getItemAsync, setItemAsync } from "expo-secure-store";
 import { roboto } from "@/styles/globals";
 import { createNewChat } from "@/services/newChat";
 import { EnrichedHostel } from "@/types";
+import { handleNewChat } from "@/deps/handleNewChat";
 
 type HostelCardProps = {
     hostel: EnrichedHostel,
@@ -50,31 +51,6 @@ export default function HostelCard({ hostel, isSaved, reload }: HostelCardProps)
     const unstars = stars > 5 ? 5 : 5 - stars
 
     const [archiveImg, setArchiveImg] = useState(saved ? images.savedIcon : images.archiveAdd)
-
-    const handleNewChat = async (id: string) => {
-        const userId = await getItemAsync('ID') ?? ""
-
-        const data = {
-            buyer_id: userId,
-            vendor_id: id
-        }
-
-        const newchat = await createNewChat(data)
-
-        if (newchat[0] == "200") {
-            console.log("newchat =>", newchat)
-            console.log(newchat[1])
-            router.push({
-                pathname: '/pages/singleChat',
-                params: {
-                    id: newchat[1],
-                    vendor_id: id
-                }
-            })
-            console.log("buyer id => ", userId)
-            console.log("vendor_id => ", id)
-        }
-    }
 
     return (
         <View style={hostelCardStyles.card}>
@@ -136,7 +112,7 @@ export default function HostelCard({ hostel, isSaved, reload }: HostelCardProps)
                         </View>
                     </View>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleNewChat(hostel.vendor_id)} style={hostelCardStyles.phoneView}>
+                <TouchableOpacity onPress={() => handleNewChat(hostel?.vendor_id)} style={hostelCardStyles.phoneView}>
                     <Image source={images.chat1} style={hostelCardStyles.phoneImg} />
                 </TouchableOpacity>
             </View>

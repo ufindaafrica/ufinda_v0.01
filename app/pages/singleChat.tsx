@@ -30,9 +30,17 @@ export type Message = {
 
 export default function SingleChat() {
 
-    const { id } = useLocalSearchParams()
-    const { vendor_id } = useLocalSearchParams()
-    const vendorIdString = Array.isArray(vendor_id) ? vendor_id[0] : vendor_id
+    const params = useLocalSearchParams()
+    const id = params.id
+    const vendorIdString = Array.isArray(params.vendor_id) ? params.vendor_id[0] : params.vendor_id
+    const bookString = Array.isArray(params.book) ? params.book[0] : params.book 
+
+    const messageRef = useRef<TextInput>(null)
+
+    useEffect(() => {
+        setMessage(bookString)
+        messageRef.current?.focus()
+    }, [params.book])
 
     const [message, setMessage] = useState("")
     const [allMessages, setAllMessages] = useState<Array<Message>>([])
@@ -212,6 +220,7 @@ export default function SingleChat() {
                         <View style={[singleChatStyles.row, singleChatStyles.gap]}>
                             <Image source={images.emoji} style={singleChatStyles.smallImg} />
                             <TextInput
+                                ref={messageRef}
                                 style={[singleChatStyles.messageBoxHeight, roboto.bodySmall, singleChatStyles.input]}
                                 multiline
                                 value={message}

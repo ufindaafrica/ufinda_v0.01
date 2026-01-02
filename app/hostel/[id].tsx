@@ -3,7 +3,7 @@ import Select from "@/components/select";
 import { images } from "@/constants/images";
 import { idStyles } from "@/styles/id";
 import { router, useLocalSearchParams } from "expo-router";
-import { Image, Text, TouchableOpacity, View, ScrollView } from "react-native";
+import { Image, Text, TouchableOpacity, View, ScrollView, Linking } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import { roboto } from "@/styles/globals";
@@ -15,6 +15,9 @@ import { getHostelDetails } from "@/services/hostelDetails";
 import { scale } from "@/deps/scale";
 import { Image as ExpoImage } from "expo-image"
 import Media from "@/components/media";
+import { saveHostel } from "@/services/saveHostel";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { handleNewChat } from "@/deps/handleNewChat";
 
 
 export default function HostelDetails() {
@@ -80,8 +83,6 @@ export default function HostelDetails() {
     }
 
     const onSwipeRight = () => {
-        console.log("idx", idx)
-        console.log("imgLen", imgLen)
         if (imgLen ? idx >= (imgLen - 1) : null) {
             return
         } else {
@@ -90,15 +91,8 @@ export default function HostelDetails() {
         }
     }
 
-    // useEffect(() => {
-    //     console.log("imgLen  =>  ", imgLen)
-    //     setCurrentImg(hostelImages?.[idx])
-    // }, [imgLen])
-
     useEffect(() => {
         setCurrentImg(hostelImages?.[0])
-        console.log("imgLen  =>  ", imgLen)
-        console.log(hostelImages)
     }, [imgLen])
 
     useEffect(() => {
@@ -113,14 +107,49 @@ export default function HostelDetails() {
     const [mediaOpen, setMediaOpen] = useState(false)
     const [mediaLoading, setMediaLoading] = useState(false)
 
-    const handleLoadStart = () => {
-        if (!mediaLoading) setMediaLoading(true)
-        console.log("loading just started")
+    const [saved, setSaved] = useState<boolean>(false)
+
+    const saveLocal = async (id: string) => {
+        try {
+            const savedIds: Array<string> = JSON.parse(await AsyncStorage.getItem("SAVED") ?? "[]")
+
+            let newIds: Array<string> = (savedIds.includes(id)) ? [...savedIds.filter(item => item != id)] : [...savedIds, id]
+
+            await AsyncStorage.setItem('SAVED', JSON.stringify(newIds))
+        }
+        catch (err) {
+            console.error(err)
+        }
     }
 
-    const handleLoadEnd = () => {
-        if (mediaLoading) setMediaLoading(false)
-        console.log("loading has ended")
+    const handleSaveHostel = async () => {
+        const save = await saveHostel(idString)
+
+        if (save[0] == "200") {
+            await saveLocal(idString)
+            console.log(save)
+            setSaved(true)
+        }
+
+        console.log(save)
+
+    }
+
+    useEffect(() => {
+        const isSaved = async (id: string) => {
+            const savedIds: Array<string> = JSON.parse(await AsyncStorage.getItem('SAVED') ?? "[]")
+            if (savedIds.includes(id)) setSaved(true)
+            else setSaved(false)
+        }
+
+        isSaved(idString)
+        
+    }, [])
+    
+    const [call, setCall] = useState("Call")
+    const placeCall = () => {
+        if (call === "Call") setCall(hostelDetails?.vendor_info?.phone ?? "")
+        else Linking.openURL(`tel:${call}`)
     }
 
     return (
@@ -139,7 +168,7 @@ export default function HostelDetails() {
                     <View style={idStyles.swipeV}>
                         <View style={idStyles.picV}>
                             <TouchableOpacity onPress={() => setMediaOpen(true)}>
-                                <ExpoImage key={currentImage} source={currentImage} style={idStyles.hostelImg} contentFit="cover" transition={0} onLoadStart={handleLoadStart} onLoadEnd={handleLoadEnd} />
+                                <ExpoImage key={currentImage} source={currentImage} style={idStyles.hostelImg} contentFit="cover" transition={0} />
                             </TouchableOpacity>
                             <View style={idStyles.galleryV}>
                                 <Text style={[idStyles.galleryTxt, roboto.caption]}>{idx + 1}/{imgLen}</Text>
@@ -159,21 +188,23 @@ export default function HostelDetails() {
                     <View style={idStyles.prelimV}>
                         <View style={idStyles.topPrelimV}>
                             <View style={idStyles.firstTopPrelimV}>
-                                <Text style={[idStyles.regTxt, roboto.bodyLarge]}>Room Self Contained</Text>
-                                <TouchableOpacity>
-                                    <Image source={images.archiveAdd} style={idStyles.archiveImg} />
+                                <Text style={[idStyles.regTxt, roboto.bodyLarge]}>{hostelDetails?.room_type}</Text>
+                                <TouchableOpacity onPress={() => handleSaveHostel()}>
+                                    <Image source={saved ? images.savedIcon : images.archiveAdd} style={idStyles.archiveImg} />
                                 </TouchableOpacity>
                             </View>
                             <View style={idStyles.firstTopPrelimV}>
                                 <Text style={[idStyles.regTxt, roboto.titleMediumBold]}>₦ {hostelDetails?.rent_per_year} / year</Text>
-                                <Text style={[roboto.bodyLarge, idStyles.redTxt]}>4 rooms left</Text>
+                                <Text style={[roboto.bodyLarge, idStyles.redTxt]}>{`${hostelDetails?.total_hostel_rooms} rooms left`}</Text>
                             </View>
                             <View style={[idStyles.firstTopPrelimV]}>
                                 <TouchableOpacity style={idStyles.thirdTopPrelimVOne}>
-                                    <Select text="Call" icon={images.call} selected />
+                                    <Select text={call} icon={images.call} selected selectFun={placeCall} />
                                 </TouchableOpacity>
                                 <TouchableOpacity style={idStyles.thirdTopPrelimVTwo}>
-                                    <Select text="Book on uFinda" selected={false} />
+                                    <Select text="Book on uFinda" selected={false} selectFun={() => {
+                                        if (hostelDetails?.vendor_id) {handleNewChat(hostelDetails?.vendor_id, hostelDetails?.title)}
+                                    }} />
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -259,7 +290,7 @@ export default function HostelDetails() {
 
                 </ScrollView>
                 {
-                    mediaOpen && <Media media={currentImage} left={onSwipeLeft} right={onSwipeRight} idx={idx} imgLen={imgLen} video={currentImage.toString().endsWith("mp4")} close={() => {setMediaOpen(false)}} />
+                    mediaOpen && <Media media={currentImage} left={onSwipeLeft} right={onSwipeRight} idx={idx} imgLen={imgLen} video={currentImage.toString().endsWith("mp4")} close={() => { setMediaOpen(false) }} />
                 }
             </SafeAreaView>
         </SafeAreaProvider>
