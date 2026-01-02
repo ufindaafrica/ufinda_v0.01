@@ -56,8 +56,8 @@ export default function HostelDetails() {
     const [idx, setIdx] = useState(0)
 
     const amenities = {
-        "duplex": images.duplex,
-        "bathroom": images.bath,
+        [hostelDetails?.room_type ?? ""] : images.duplex,
+        [hostelDetails?.toilet_access ?? ""]: images.bath,
         "24 hrs power": images.light,
         "bedroom": images.bed,
     }
@@ -69,8 +69,8 @@ export default function HostelDetails() {
         "Property ID": hostelDetails?.id ?? "",
         "Kitchen": hostelDetails?.kitchen_access ?? "",
         "Toilet": hostelDetails?.toilet_access ?? "",
-        "Landlord resides": hostelDetails?.landlord_resides.toUpperCase() ?? "",
-        "Roomates allowed": hostelDetails?.roommates_allowed?.toUpperCase() ?? ""
+        "Landlord resides": hostelDetails?.landlord_resides ?? "",
+        "Roomates allowed": hostelDetails?.roommates_allowed ?? ""
     }
 
     const onSwipeLeft = () => {
@@ -255,7 +255,7 @@ export default function HostelDetails() {
                                     </View> : null}
                                 </View>
                             </TouchableOpacity>
-                            <TouchableOpacity style={hostelCardStyles.phoneView}>
+                            <TouchableOpacity onPress={() => Linking.openURL(`tel:${hostelDetails?.vendor_info.phone}`)} style={hostelCardStyles.phoneView}>
                                 <Image source={images.call} style={hostelCardStyles.phoneImg} />
                             </TouchableOpacity>
                         </View>
