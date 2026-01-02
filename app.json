@@ -48,7 +48,8 @@
           "experimentalLauncherActivity": true
         }
       ],
-      "react-native-compressor"
+      "react-native-compressor",
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true,

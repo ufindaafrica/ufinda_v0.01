@@ -1,12 +1,10 @@
 import BackArrow from "@/components/back";
 import Select from "@/components/select";
-import { dummyHostels, DummyHostelsType } from "@/constants/dummy_data";
 import { images } from "@/constants/images";
 import { idStyles } from "@/styles/id";
 import { router, useLocalSearchParams } from "expo-router";
 import { Image, Text, TouchableOpacity, View, ScrollView } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import { useEffect, useState } from "react";
 import { roboto } from "@/styles/globals";
 import { hostelCardStyles } from "@/styles/hostelCard";
@@ -14,14 +12,15 @@ import { thumbnailStyles } from "@/styles/componentStyles/thumbnail";
 import HostelCard from "@/components/hostelCard";
 import { EnrichedHostel } from "@/types";
 import { getHostelDetails } from "@/services/hostelDetails";
+import { scale } from "@/deps/scale";
+import { Image as ExpoImage } from "expo-image"
+import Media from "@/components/media";
 
 
 export default function HostelDetails() {
 
     const { id } = useLocalSearchParams()
     const idString = Array.isArray(id) ? id[0] : id
-
-    // const hostelDetails: EnrichedHostel | undefined = dummyHostels.find(hostel => hostel.id === id)
 
     const [hostelDetails, setHostelDetails] = useState<EnrichedHostel | null>()
 
@@ -40,16 +39,15 @@ export default function HostelDetails() {
     const [imgLen, setImgLen] = useState<number>(hostelImages.length)
 
     useEffect(() => {
-        const imgs = hostelDetails?.hostel_images?.map(item => item.url) ?? []
+        if (hostelDetails && Object.keys(hostelDetails).length > 0) {
+            const imgs = hostelDetails?.hostel_images?.map(item => item.url) ?? []
 
-        hostelDetails?.hostel_videos && imgs.push(hostelDetails?.hostel_videos?.[0]?.url)
+            hostelDetails?.hostel_videos && imgs.push(hostelDetails?.hostel_videos?.[0]?.url)
 
-        setHostelImages(imgs)
-    }, [])
-
-    useEffect(() => {
-        setImgLen(hostelImages.length)
-    }, [hostelImages])
+            setHostelImages(imgs)
+            setImgLen(imgs?.length)
+        }
+    }, [hostelDetails])
 
     const [currentImage, setCurrentImg] = useState(hostelImages?.[0])
     const [idx, setIdx] = useState(0)
@@ -82,6 +80,8 @@ export default function HostelDetails() {
     }
 
     const onSwipeRight = () => {
+        console.log("idx", idx)
+        console.log("imgLen", imgLen)
         if (imgLen ? idx >= (imgLen - 1) : null) {
             return
         } else {
@@ -89,6 +89,17 @@ export default function HostelDetails() {
             return
         }
     }
+
+    // useEffect(() => {
+    //     console.log("imgLen  =>  ", imgLen)
+    //     setCurrentImg(hostelImages?.[idx])
+    // }, [imgLen])
+
+    useEffect(() => {
+        setCurrentImg(hostelImages?.[0])
+        console.log("imgLen  =>  ", imgLen)
+        console.log(hostelImages)
+    }, [imgLen])
 
     useEffect(() => {
         setCurrentImg(hostelImages?.[idx])
@@ -98,6 +109,19 @@ export default function HostelDetails() {
     const unstars = stars > 5 ? 0 : 5 - stars
 
     const facilities = ["Balcony", "Chandelier", "Pop Ceiling", "Tiled floor", "Wardrobe", "Running Water"]
+
+    const [mediaOpen, setMediaOpen] = useState(false)
+    const [mediaLoading, setMediaLoading] = useState(false)
+
+    const handleLoadStart = () => {
+        if (!mediaLoading) setMediaLoading(true)
+        console.log("loading just started")
+    }
+
+    const handleLoadEnd = () => {
+        if (mediaLoading) setMediaLoading(false)
+        console.log("loading has ended")
+    }
 
     return (
         <SafeAreaProvider>
@@ -114,9 +138,11 @@ export default function HostelDetails() {
 
                     <View style={idStyles.swipeV}>
                         <View style={idStyles.picV}>
-                            <Image source={{uri: currentImage}} style={idStyles.hostelImg} />
+                            <TouchableOpacity onPress={() => setMediaOpen(true)}>
+                                <ExpoImage key={currentImage} source={currentImage} style={idStyles.hostelImg} contentFit="cover" transition={0} onLoadStart={handleLoadStart} onLoadEnd={handleLoadEnd} />
+                            </TouchableOpacity>
                             <View style={idStyles.galleryV}>
-                                <Text style={[idStyles.galleryTxt, roboto.caption]}>{idx + 1}/{hostelDetails?.hostel_images.length}</Text>
+                                <Text style={[idStyles.galleryTxt, roboto.caption]}>{idx + 1}/{imgLen}</Text>
                                 <Image source={images.gallery} style={idStyles.galleryImg} />
                             </View>
                             <TouchableOpacity onPress={() => onSwipeLeft()} disabled={idx <= 0} style={[idStyles.navArrow, idStyles.arrowLeftMargin, idx <= 0 && idStyles.disabledArrow]}>
@@ -125,6 +151,8 @@ export default function HostelDetails() {
                             <TouchableOpacity onPress={() => onSwipeRight()} disabled={imgLen ? idx >= (imgLen - 1) : false} style={[idStyles.navArrow, idStyles.arrowRightMargin, (imgLen ? idx >= (imgLen - 1) : false) && idStyles.disabledArrow]}>
                                 <Image source={images.galleryRight} style={[idStyles.navImg]} />
                             </TouchableOpacity>
+                            {currentImage?.toString().endsWith("mp4") && <TouchableOpacity onPress={() => { setMediaOpen(true) }} style={{ position: 'absolute', alignSelf: 'center' }}>
+                                <Image source={images.play} style={{ width: scale(56), height: scale(56), alignSelf: 'center' }} /></TouchableOpacity>}
                         </View>
                     </View>
 
@@ -227,7 +255,12 @@ export default function HostelDetails() {
                                 </View>)
                         }
                     </View>
+
+
                 </ScrollView>
+                {
+                    mediaOpen && <Media media={currentImage} left={onSwipeLeft} right={onSwipeRight} idx={idx} imgLen={imgLen} video={currentImage.toString().endsWith("mp4")} close={() => {setMediaOpen(false)}} />
+                }
             </SafeAreaView>
         </SafeAreaProvider>
     )
