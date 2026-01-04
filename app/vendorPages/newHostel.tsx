@@ -369,7 +369,7 @@ export default function NewHostel() {
                     </View>
                     <View style={newHostelStyles.imgCaptionV}>
                         <Image source={images.alertCircle} style={newHostelStyles.alertCircle} />
-                        <Text style={roboto.caption}>You can add up to 3 photos not exceeding 9Mb each</Text>
+                        <Text style={roboto.caption}>You can add up to 3 photos</Text>
                     </View>
                 </View>
                 <View style={newHostelStyles.inputV}>

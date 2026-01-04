@@ -42,6 +42,22 @@ export const uploadToCloudinary = async (data: uploadFilesType) => {
         form.append("signature", data.signature)
         form.append("folder", data.folder)
 
+        if (file.type?.startsWith("image")) {
+            form.append("quality", "auto:good")
+            form.append("fetch_format", "auto")
+            form.append("width", "1280")
+            form.append("height", "720")
+            form.append("crop", "limit")
+        }
+
+        if (file.type?.startsWith("video")) {
+            form.append("quality", "auto:eco")
+            form.append("video_codec", "auto")
+            form.append("width", "1280")
+            form.append("height", "720")
+            form.append("crop", "limit")
+        }
+
         const res = await axios.post(
             `https://api.cloudinary.com/v1_1/${data.cloud_name}/auto/upload`,
             form,

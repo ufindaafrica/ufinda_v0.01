@@ -44,18 +44,18 @@ export const pickMedia = async (type: "image" | "video") => {
 
     if (!selectedImage.canceled) {
 
-        const MAX_IMG = 9 * 1024 * 1024
-        const MAX_VID = 100 * 1024 * 1024
+        const MAX_IMG = 900 * 1024 * 1024
+        const MAX_VID = 10000 * 1024 * 1024
 
         if (type == "image" && (selectedImage.assets[0].fileSize ?? 0) >= MAX_IMG) {
-            error = "error: image is more than 9MB"
+            error = "error: image is more than 900MB"
             return {
                 "error": error
             }
         }
 
         if (type == "video" && (selectedImage.assets[0].fileSize ?? 0) >= MAX_VID) {
-            error = "error: video is more than 50MB"
+            error = "error: video is more than 10GB"
             return {
                 "error": error
             }

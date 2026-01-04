@@ -31,6 +31,7 @@ export const getHostelDetails = async (id: string) => {
             if (result[1] == undefined) result[1] = ("Server Down. Try Again Later.")
         }
     } finally {
+        console.log("hostel details => ", result)
         return result
     }
 }
