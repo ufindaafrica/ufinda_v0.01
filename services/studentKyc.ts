@@ -14,7 +14,45 @@ export const studentKyc = async (data : any) => {
                 baseURL: BASE_URL,
                 timeout: timeout,
                 headers: {
-                    "Content-Type": "multipart/form-data",
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+            }
+        )
+
+        result[0] = "200"
+        result[1] = res.data["message"]
+
+    } catch (err: unknown) {
+
+        if (axios.isAxiosError(err)) {
+
+            result[0] = err.status?.toString()
+            result[1] = err.response?.data["error"]
+
+            if (result[1] == undefined) result[1] = ("Server Down. Try Again Later.")
+        }
+
+    }
+
+    return result
+}
+
+
+export const vendorKyc = async (data : any) => {
+
+    const token = await getAccessToken()
+    const result: Array<any> = []
+
+    try {
+        const res = await axios.post(
+            "/kyc/vendor",
+            data,
+            {
+                baseURL: BASE_URL,
+                timeout: timeout,
+                headers: {
+                    "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`
                 }
             }

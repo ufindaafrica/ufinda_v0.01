@@ -3,13 +3,10 @@ import { BASE_URL, getAccessToken, timeout } from "./apiConstants"
 
 export const getUploadSignature = async () => {
 
-    console.log("first")
-
     const result: Array<any> = []
     const token = await getAccessToken()
 
     try {
-        console.log("first block")
         const res = await axios.get(
             "/hostels/signature",
             {
@@ -24,14 +21,9 @@ export const getUploadSignature = async () => {
         result[0] = "200"
         result[1] = res.data
 
-        console.log(res.data)
-
     } catch (err: unknown) {
 
-        console.log("i am here")
-
         if (axios.isAxiosError(err)) {
-            console.log(err)
 
             result[0] = err.status?.toString()
             result[1] = err.response?.data["error"]
@@ -39,9 +31,81 @@ export const getUploadSignature = async () => {
             if (result[1] == undefined) result[1] = ("Server Down. Try Again Later.")
         }
 
-        console.log(result)
-
     }
 
     return result
 }
+
+
+export const vendorUploadSignature = async () => {
+
+    const result: Array<any> = []
+    const token = await getAccessToken()
+
+    try {
+        const res = await axios.get(
+            "/kyc/vendor/signature",
+            {
+                baseURL: BASE_URL,
+                timeout: timeout,
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            }
+        )
+
+        result[0] = "200"
+        result[1] = res.data
+
+    } catch (err: unknown) {
+
+        if (axios.isAxiosError(err)) {
+
+            result[0] = err.status?.toString()
+            result[1] = err.response?.data["error"]
+
+            if (result[1] == undefined) result[1] = ("Server Down. Try Again Later.")
+        }
+
+    }
+    
+    console.log(result)
+    return result
+}
+
+export const userUploadSignature = async () => {
+
+    const result: Array<any> = []
+    const token = await getAccessToken()
+
+    try {
+        const res = await axios.get(
+            "/kyc/user/signature",
+            {
+                baseURL: BASE_URL,
+                timeout: timeout,
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            }
+        )
+
+        result[0] = "200"
+        result[1] = res.data
+
+    } catch (err: unknown) {
+
+        if (axios.isAxiosError(err)) {
+
+            result[0] = err.status?.toString()
+            result[1] = err.response?.data["error"]
+
+            if (result[1] == undefined) result[1] = ("Server Down. Try Again Later.")
+        }
+
+    }
+
+    console.log(result)
+    return result
+}
+

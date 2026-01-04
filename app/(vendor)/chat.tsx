@@ -100,7 +100,7 @@ export default function VendorChat({ student }: VendorChatProps) {
                 <LineBreak />
 
                 {
-                    currentChats().map((item, idx) =>
+                    currentChats()?.map((item, idx) =>
                         <TouchableOpacity onPress={() => {
                             const chatPersonId = myId === item.buyer_id ? item.vendor_id : item.buyer_id
                             router.push({

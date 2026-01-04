@@ -9,14 +9,13 @@ export type uploadFilesType = {
     signature: string,
     folder: string,
     cloud_name: string,
-    setUploadProgress: (value: any) => void
+    setUploadProgress?: (value: any) => void
 }
 
 export const uploadToCloudinary = async (data: uploadFilesType) => {
 
     const getfilesize = async (uri: string) => {
         const info = await FileSystem.getInfoAsync(uri)
-        console.log("info => ", info)
         return info.exists && info.size ? info.size : 0
     }
 
@@ -28,7 +27,6 @@ export const uploadToCloudinary = async (data: uploadFilesType) => {
     const validFiles = data.files.filter(f => f?.uri)
     const sizes = await Promise.all(validFiles.map(f => getfilesize(f.uri)))
     const totalBytes = sizes.reduce((sum, size) => sum + size, 0)
-    console.log("totalbytes", totalBytes)
 
     const uploadFiles = async (file: any) => {
         let lastLoaded = 0
@@ -59,7 +57,8 @@ export const uploadToCloudinary = async (data: uploadFilesType) => {
 
                     const percentCompleted = Math.round((uploadedBytes / totalBytes) * 100)
 
-                    data.setUploadProgress(percentCompleted)
+                    data.setUploadProgress?.(percentCompleted)
+
                 },
             }
         )
@@ -76,7 +75,6 @@ export const uploadToCloudinary = async (data: uploadFilesType) => {
     } catch (err: unknown) {
 
         if (axios.isAxiosError(err)) {
-            console.log(err)
 
             result[0] = err.status?.toString()
             result[1] = err.response?.data["error"]

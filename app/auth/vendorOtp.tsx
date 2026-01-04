@@ -6,7 +6,7 @@ import { globals, roboto } from "@/styles/globals";
 import { signupStyles } from "@/styles/signup";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Text, TextInput, View } from "react-native";
+import { Keyboard, Text, TextInput, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { getVendorOtpUrl } from "@/services/vendorOtpUrl";
@@ -15,6 +15,8 @@ import ErrorModal from "@/components/errorModal";
 import { kycWebSocket } from "@/services/kycWebSocket";
 import KycWebView from "@/components/webview";
 import { BARE_URL, getAccessToken } from "@/services/apiConstants";
+import { toast } from "@/deps/toast";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 
 export default function VendorOtp() {
@@ -39,19 +41,24 @@ export default function VendorOtp() {
     }
 
     const cancelVerification = () => {
+        kycSessionRef.current?.cancel()
+        kycSessionRef.current = null
         setShowWebView(false)
         setLoaderVisible(false)
     }
 
-    const vendorId = "sample"
     const [otpDone, setOtpDone] = useState(false)
 
     const [showWebView, setShowWebView] = useState(false)
     const [otpUrl, setOtpUrl] = useState("")
 
+    const kycSessionRef = useRef<ReturnType<typeof kycWebSocket> | null>(null)
+
     const onSubmitInfo = async () => {
 
         setLoaderVisible(true)
+
+        await AsyncStorage.setItem("ADDRESS", address)
 
         const result = await getVendorOtpUrl()
 
@@ -66,68 +73,49 @@ export default function VendorOtp() {
             console.log(vendorOtpUrl)
 
             const parsed = new URL(vendorOtpUrl)
-            const value = parsed.searchParams.get("metadata[user_id]") ?? ''
-            console.log(value)
+            const vendorId = parsed.searchParams.get("metadata[user_id]") ?? ''
+            console.log(vendorId)
 
-            // const wsSession = kycWebSocket(value ?? '')
-            // const wsPromise = wsSession.promise
-
-            const socketUrl = `wss://${BARE_URL}/ws?user_id=${value}`
-            const vendorS = new WebSocket(socketUrl)
-
-            vendorS.onopen = () => {
-                console.log("vendor auth socket connected, awaiting results")
+            if (!vendorId) {
+                setLoaderVisible(false)
+                toast("Error, try again.")
+                return
             }
 
-            vendorS.onmessage = (event) => {
-                const msg = JSON.parse(event.data)
-                console.log(msg)
-                setShowWebView(false)
-            }
+            const session = kycWebSocket(vendorId)
+            kycSessionRef.current = session
+
+            session.promise
+                .then((data) => {
+                    console.log("kyc complete", data)
+                    setShowWebView(false)
+                    router.replace("/auth/pic")
+                })
+                .catch((err) => {
+                    console.log("kyc failed:", err)
+                    setShowWebView(false)
+                    toast("Error, try again")
+                })
+                .finally(() => {
+                    kycSessionRef.current = null
+                })
 
             setLoaderVisible(false)
 
             // show webview
             setShowWebView(true)
 
-            // try {
-            //     const result = await wsPromise
-            //     console.log("i reached here at the end")
-            //     console.log("final kyc result:", result)
-            //     setShowWebView(false)
-            //     setLoaderVisible(false)
-            //     router.push("/auth/pic")
-            // } catch (error) {
-            //     console.log("failed to get kyc results")
-            // }
-
-            // setShowWebView(false)
-            setLoaderVisible(false)
+            // setLoaderVisible(false)
             console.log("i got here lasssst")
         }
 
     }
 
-    // const getSocketResults = async () => {
-    //     const wsSession = kycWebSocket(vendorId)
-    //     const { promise: wsPromise, cancel } = wsSession
-
-    //     try {
-    //         const result = await wsPromise
-    //         console.log("i reached here at the end")
-    //         console.log("final kyc result:", result)
-    //         setShowWebView(false)
-    //         setLoaderVisible(false)
-    //         router.push("/auth/pic")
-    //     } catch (error) {
-    //         console.log("failed to get kyc results")
-    //     }
-
-    //     setShowWebView(false)
-    //     setLoaderVisible(false)
-
-    //     console.log("all done")
-    // }
+    useEffect(() => {
+        return () => {
+            kycSessionRef.current?.cancel()
+        }
+    }, [])
 
     const onSkip = () => {
         router.replace("/auth/pic")
@@ -181,8 +169,8 @@ export default function VendorOtp() {
                             hint=""
                             value={address}
                             onChangeText={(text) => { setAddress(text) }}
-                            returnKeyType="next"
-                            onSubmitEditing={() => focusNext(NINRef, scrollRef)}
+                            returnKeyType="done"
+                            onSubmitEditing={() => Keyboard.dismiss()}
                             ref={addressRef}
                         />
                     </View>

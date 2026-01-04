@@ -7,10 +7,15 @@ import { useEffect, useState } from "react";
 import { Image, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker"
-import { studentKyc } from "@/services/studentKyc";
+import { studentKyc, vendorKyc } from "@/services/studentKyc";
 import Loader from "@/components/loader";
 import ErrorModal from "@/components/errorModal";
 import { getItemAsync } from "expo-secure-store";
+import { userUploadSignature, vendorUploadSignature } from "@/services/uploadSignature";
+import { uploadAsync } from "expo-file-system/legacy";
+import { uploadToCloudinary } from "@/services/uploadToCloudinary";
+import { toast } from "@/deps/toast";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 
 export default function Pic() {
@@ -44,32 +49,62 @@ export default function Pic() {
     }
 
     const onContinue = async () => {
-
-        const form = new FormData()
-
-        const picData = {
-            uri: image,
-            name: imageName,
-            type: imageType
-        }
-
-        form.append("profile_pic", picData as any)
-
-        if (desc != "") form.append("about_me", desc)
-
+        
         setLoaderVisible(true)
 
-        const result = await studentKyc(form)
+        let uploadSignature: any
+
+        // get upload pic signature if there is a pic
+        if (image) {
+            uploadSignature = mode === "user" ? await userUploadSignature() : await vendorUploadSignature()
+
+            if (uploadSignature[0] != "200") {
+                setLoaderVisible(false)
+                toast("error getting upload signature. try again.")
+            }
+        }
+
+        // upload to cloudinary
+        const cloudinaryUpload = await uploadToCloudinary({ 
+            files: [{
+                "uri": image,
+                "name": imageName,
+                "type": imageType
+            }], 
+            api_key: uploadSignature?.[1]?.api_key,
+            cloud_name: uploadSignature?.[1]?.cloud_name,
+            folder: uploadSignature?.[1].folder,
+            signature: uploadSignature?.[1].signature,
+            timestamp: uploadSignature?.[1].timestamp
+        })
+
+        if (cloudinaryUpload[0] != "200") {
+            setLoaderVisible(false)
+            toast("error uploading. try again.")
+            return
+        }
+
+        // create the json to be sent to the api
+        const kycData = {
+            profile_pic: {
+                url: cloudinaryUpload?.[1]?.url,
+                public_id: cloudinaryUpload?.[1]?.public_id
+            },
+            ...(desc && {about_me: desc}),
+            ...(mode === "vendor" && {address: await AsyncStorage.getItem("ADDRESS") ?? ""})
+        }
+
+        const kyc = mode === "user" ? await studentKyc(kycData) : await vendorKyc(kycData)
 
         setLoaderVisible(false)
 
-        if (result[0] != "200") {
+        if (kyc[0] != "200") {
             seterrorModal(true)
-            setErrorText(result[1])
+            setErrorText(kyc[1])
         }
         else {
             setCorrectModal(true)
-            setCorrectText(result[1])
+            setCorrectText(kyc[1])
         }
     }
 
@@ -107,7 +142,7 @@ export default function Pic() {
         <SafeAreaView style={[globals.container]}>
 
             <View style={picStyles.padding}>
-                <BackArrow backFun={() => router.replace("/(tabs)/home")} />
+                <BackArrow backFun={() => router.replace(mode === "user" ? "/(tabs)/home" : "/(vendor)/dashboard")} />
             </View>
 
             <View style={[picStyles.paddingHorizontal]}>

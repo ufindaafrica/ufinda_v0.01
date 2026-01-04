@@ -154,6 +154,8 @@ export default function SignUp() {
             role: role ? role : "user"
         }
 
+        console.log(newUser)
+
         await SecureStore.setItemAsync("EMAIL", newUser.email)
 
         const result = await signUp(newUser)
