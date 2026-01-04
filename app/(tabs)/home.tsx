@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { searchHostels, searchParams } from "@/services/searchHostels";
 import { toast } from "@/deps/toast";
+import { text } from "@/constants/texts";
 
 
 export default function Home() {
@@ -180,7 +181,7 @@ export default function Home() {
             setHostels(JSON.parse(await AsyncStorage.getItem('HOSTELS') ?? "[]"))
         }
         const savedHostels = async () => {
-            const favHostels = JSON.parse(await getItemAsync('SAVED') || "[]")
+            const favHostels = JSON.parse(await AsyncStorage.getItem('SAVED') || "[]")
             setSavedIds(favHostels)
         }
         savedHostelData()
@@ -216,7 +217,7 @@ export default function Home() {
                     <Filter filterType="options" options={["New", "Near You", "Your State", "Recommended"]} visible={filter1Vis} setVisible={setVisiblility1} setCurrentFilter={setFilter} active />
                 </View>
                 <View style={[homeStyles.eachFilterV, { zIndex: 2 }]}>
-                    <Filter filterType="options" options={["Type", "self-contain", "single room", "room and parlor", "2 bedroom flat", "3 bedroom flat", "room in a flat"]} visible={filter2Vis} setVisible={setVisiblility2} setCurrentFilter={setFilter} />
+                    <Filter filterType="options" options={["Type", ...text.hosteltypes]} visible={filter2Vis} setVisible={setVisiblility2} setCurrentFilter={setFilter} />
                 </View>
                 <View style={[homeStyles.eachFilterV, { paddingRight: 8 }]}>
                     <Filter filterType="input" text="Min. Price" onInputFocus={inputFocus} setCurrentFilter={setFilter} />

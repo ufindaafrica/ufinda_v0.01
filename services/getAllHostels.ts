@@ -32,7 +32,7 @@ export const getAllHostels = async () => {
             if (result[1] == undefined) result[1] = ("Server Down. Try Again Later.")
         }
     } finally {
-        console.log(result)
+        
         return result
     }
 }

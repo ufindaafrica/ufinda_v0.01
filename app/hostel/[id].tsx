@@ -15,10 +15,11 @@ import { getHostelDetails } from "@/services/hostelDetails";
 import { scale } from "@/deps/scale";
 import { Image as ExpoImage } from "expo-image"
 import Media from "@/components/media";
-import { saveHostel } from "@/services/saveHostel";
+import { removeSavedHostel, saveHostel } from "@/services/saveHostel";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { handleNewChat } from "@/deps/handleNewChat";
 import { getRelatedHostels } from "@/services/relatedHostels";
+import { toast } from "@/deps/toast";
 
 
 export default function HostelDetails() {
@@ -138,11 +139,22 @@ export default function HostelDetails() {
             const save = await saveHostel(idString)
             if (save[0] == "200") {
                 await saveLocal(idString)
-                console.log(save)
                 setSaved(true)
+                return
+            } else {
+                toast("error saving hostel. try again.")
+                return
             }
         } else {
-            await saveLocal(idString)
+            const unsave = await removeSavedHostel(idString)
+            if (unsave[0] == "200") {
+                await saveLocal(idString) 
+                setSaved(false)
+                return
+            } else {
+                toast("error unsaving hostel. try again.")
+                return
+            }
         }
 
     }
@@ -207,7 +219,7 @@ export default function HostelDetails() {
                             </View>
                             <View style={idStyles.firstTopPrelimV}>
                                 <Text style={[idStyles.regTxt, roboto.titleMediumBold]}>₦ {hostelDetails?.rent_per_year} / year</Text>
-                                <Text style={[roboto.bodyLarge, idStyles.redTxt]}>{`${hostelDetails?.total_hostel_rooms} rooms left`}</Text>
+                                <Text style={[roboto.bodyLarge, idStyles.redTxt]}>{`${hostelDetails?.total_hostel_rooms ?? ""} rooms left`}</Text>
                             </View>
                             <View style={[idStyles.firstTopPrelimV]}>
                                 <TouchableOpacity style={idStyles.thirdTopPrelimVOne}>
@@ -251,7 +263,7 @@ export default function HostelDetails() {
                             <TouchableOpacity onPress={() => router.push("/pages/profileDetails")} style={hostelCardStyles.agentCard}>
                                 <Image source={hostelDetails?.vendor_info?.vendor_kyc?.profile_img?.url ? { uri: hostelDetails.vendor_info?.vendor_kyc?.profile_img?.url } : images.user0} style={hostelCardStyles.agentPic} />
                                 <View>
-                                    <Text style={[roboto.bodyMediumBold, hostelCardStyles.agentMargin]}>{`${hostelDetails?.vendor_info?.first_name} ${hostelDetails?.vendor_info?.last_name}`}</Text>
+                                    <Text style={[roboto.bodyMediumBold, hostelCardStyles.agentMargin]}>{`${hostelDetails?.vendor_info?.first_name ?? ""} ${hostelDetails?.vendor_info?.last_name ?? ""}`}</Text>
                                     <View style={[hostelCardStyles.stars, hostelCardStyles.agentMargin]}>
                                         {
                                             [...Array(stars).fill("star"), ...Array(unstars).fill("unstar")].map((type, idx) => (

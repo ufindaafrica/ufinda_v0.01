@@ -9,6 +9,9 @@ import { roboto } from "@/styles/globals";
 import { createNewChat } from "@/services/newChat";
 import { EnrichedHostel } from "@/types";
 import { handleNewChat } from "@/deps/handleNewChat";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { removeSavedHostel, saveHostel } from "@/services/saveHostel";
+import { toast } from "@/deps/toast";
 
 type HostelCardProps = {
     hostel: EnrichedHostel,
@@ -20,17 +23,27 @@ export default function HostelCard({ hostel, isSaved, reload }: HostelCardProps)
 
     const onSave = async (id: string, saved: boolean) => {
 
-        let savedHostels: Array<string> = JSON.parse(await getItemAsync("SAVED") || "[]")
+        let savedHostels: Array<string> = JSON.parse(await AsyncStorage.getItem("SAVED") || "[]")
 
         if (!saved) {
+            const saveH = await saveHostel(id)
+            if (saveH[0] != "200") {
+                toast("error saving hostel. try again.")
+                return
+            }
             savedHostels.includes(id) ? null : savedHostels.push(id)
             setSaved(true)
         } else {
+            const deletH = await removeSavedHostel(id)
+            if (deletH[0] != "200") {
+                toast("error removing saved hostel. try again.")
+                return
+            }
             savedHostels = savedHostels.filter(item => item !== id)
             setSaved(false)
         }
 
-        await setItemAsync("SAVED", JSON.stringify(savedHostels))
+        await AsyncStorage.setItem("SAVED", JSON.stringify(savedHostels))
 
         reload?.()
     }

@@ -3,8 +3,14 @@ import Filter from "@/components/filter";
 import HostelCard from "@/components/hostelCard";
 import Search from "@/components/search";
 import { dummyHostels, DummyHostelsType } from "@/constants/dummy_data";
+import { text } from "@/constants/texts";
+import { toast } from "@/deps/toast";
+import { allSavedHostels } from "@/services/saveHostel";
+import { searchHostels } from "@/services/searchHostels";
 import { globals } from "@/styles/globals";
 import { homeStyles } from "@/styles/home";
+import { EnrichedHostel } from "@/types";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "expo-router";
 import { getItemAsync } from "expo-secure-store";
 import { useCallback, useEffect, useState } from "react";
@@ -31,17 +37,43 @@ export default function Saved() {
         setFilter1Vis(false)
     }
 
-    const [savedHostels, setSavedHostels] = useState<Array<DummyHostelsType>>([])
+    const handleSetCurrentFilter = async (filter: string) => {
+        setCurrentFilter(filter)
+
+        if (filter == "Categories") {
+            const all = await getSavedHostels() ?? []
+            setSavedHostels(all)
+            return
+        }
+
+        const searchFilter = await searchHostels({type: filter})
+        if (searchFilter[0] != "200") {
+            toast("error searching saved hostels. try again.")
+            setCurrentFilter("Categories")
+            return
+        } 
+
+        const savedHostels: Array<string> = JSON.parse(await AsyncStorage.getItem("SAVED") || "[]")
+
+        const savedOptions: Array<EnrichedHostel> = searchFilter[1].filter((hostel: EnrichedHostel) => savedHostels.includes(hostel.id))
+
+        setSavedHostels(savedOptions)
+    }
+
+    const [savedHostels, setSavedHostels] = useState<Array<EnrichedHostel>>([])
     const [reloadSave, setReloadSave] = useState(false)
 
     const getSavedHostels = async () => {
-        const savedHostels: Array<string> = JSON.parse(await getItemAsync("SAVED") || "[]")
-        let savedHostelData: Array<DummyHostelsType> = []
+        const savedHostels: Array<string> = JSON.parse(await AsyncStorage.getItem("SAVED") || "[]")
+        let savedHostelData: Array<EnrichedHostel> = []
 
         if (savedHostels.length > 0) {
-            savedHostelData = dummyHostels
-                                .filter(item => savedHostels.includes(item.id))
-                                .sort((a, b) => savedHostels.indexOf(b.id) - savedHostels.indexOf(a.id))
+            const savedHs = await allSavedHostels()
+            if (savedHs[0] != "200") {
+                toast("error getting saved hostels. try again.")
+                return
+            }
+            savedHostelData = savedHs[1]
         }
 
         return savedHostelData
@@ -49,7 +81,7 @@ export default function Saved() {
 
     useEffect(() => {
         const hostels = async () => {
-            const hostelData = await getSavedHostels()
+            const hostelData = await getSavedHostels() ?? []
             setSavedHostels(hostelData)
         }
 
@@ -58,7 +90,7 @@ export default function Saved() {
 
     useFocusEffect(useCallback(() => {
         const hostels = async () => {
-            const hostelData = await getSavedHostels()
+            const hostelData = await getSavedHostels() ?? []
             setSavedHostels(hostelData)
         }
 
@@ -75,19 +107,19 @@ export default function Saved() {
                 <Search />
             </View>
 
-            <View style={[homeStyles.layoutMargin, { flexDirection: "row", justifyContent: "space-between", width: "100%" }]}>
+            <View style={[homeStyles.layoutMargin, { flexDirection: "row", justifyContent: "space-between", width: "100%", zIndex: 1000 }]}>
                 <View style={homeStyles.eachSavedFilterV}>
-                    <Filter filterType="options" options={["Categories", "Hostel Type"]} setCurrentFilter={setCurrentFilter} visible={filter1Vis} setVisible={setFilter1Vis} />
+                    <Filter filterType="options" options={["Categories", ...text.hosteltypes]} setCurrentFilter={handleSetCurrentFilter} visible={filter1Vis} setVisible={setVisiblility1} />
                 </View>
                 <View style={homeStyles.eachSavedFilterV}>
-                    <Filter filterType="options" options={["Sort", "Price", "Name", "Near"]} setCurrentFilter={setCurrentSort} visible={filter2Vis} setVisible={setFilter2Vis} />
+                    <Filter filterType="options" options={["Sort", "Price", "Name", "Near"]} setCurrentFilter={setCurrentSort} visible={filter2Vis} setVisible={setVisiblility2} />
                 </View>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={homeStyles.scrollV}>
                 {
                     savedHostels?.length > 0 ?
-                        savedHostels.map((item, idx) =>
+                        [...savedHostels].reverse().map((item, idx) =>
                             <View key={item.id} style={homeStyles.layoutMargin}>
                                 <HostelCard
                                     hostel={item}
