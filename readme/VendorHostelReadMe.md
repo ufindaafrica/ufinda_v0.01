@@ -16,7 +16,7 @@ This endpoint provides the necessary security credentials for the client (fronte
 
 ---
 
-### Request
+#### Request
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
@@ -30,7 +30,7 @@ This endpoint provides the necessary security credentials for the client (fronte
 
 ---
 
-### Workflow
+#### Workflow
 
 1. **Timestamp Generation**: The server generates a Unix timestamp to ensure the signature is time-sensitive and cannot be reused indefinitely.
 2. **Parameter Mapping**: The system prepares the required upload parameters (e.g., `folder: "hostels"`).
@@ -40,7 +40,7 @@ This endpoint provides the necessary security credentials for the client (fronte
 
 ---
 
-### Responses
+#### Responses
 
 #### Success
 
@@ -70,7 +70,7 @@ This endpoint provides the necessary security credentials for the client (fronte
 
 ---
 
-### Client Implementation Note
+#### Client Implementation Note
 
 To perform the upload after receiving this signature, the client should send a `POST` request to:
 `https://api.cloudinary.com/v1_1/<cloud_name>/auto/upload`

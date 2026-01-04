@@ -3,10 +3,6 @@ package userkycdb
 import (
 	"fmt"
 	"io"
-	"context"
-	"time"
-	"github.com/cloudinary/cloudinary-go/v2"
-	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 	"errors"
 	"net/http"
 	"net/url"
@@ -117,27 +113,21 @@ func FindUserKYC(id string) (*db.UserKYC, error) {
 		bodyBytes, readErr := io.ReadAll(resp.Body)
 		bodyString := string(bodyBytes)
 
-		// Check if there was an error reading the body
 		if readErr != nil {
 			return nil, fmt.Errorf("failed to get KYC: received status code %d. Also, failed to read response body: %w",
 				resp.StatusCode, readErr)
 		}
 
-		// Return a detailed error including the status code and the response body
-		return nil, fmt.Errorf("failed to retrieve KYC: received unexpected status code %d. Response body: %s",
+		return nil, fmt.Errorf("failed to get KYC: received unexpected status code %d. Response body: %s",
 			resp.StatusCode, bodyString)
 	}
 
-	// Assuming a successful 200 OK response from the database API
 	var kyc []db.UserKYC // Note: DB APIs often return an array even for single resource queries
 	if err := json.NewDecoder(resp.Body).Decode(&kyc); err != nil {
-		// Return a nil pointer and a detailed error for JSON decoding failure
-		// The error will include context on why the decoding failed (e.g., unexpected format)
-		return nil, fmt.Errorf("failed to decode KYC response into expected structure: %w", err)
+		return nil, fmt.Errorf("failed to get KYC: %w", err)
 	}
 
 	if len(kyc) == 0 {
-		// This is the specific "not found" case, which should be returned as the custom error.
 		return nil, ErrorKYCNotFound
 	}
 
@@ -202,19 +192,3 @@ func DeleteKycLog(user_id string) error {
 	return nil
 }
 
-func UploadProfileImage(cld *cloudinary.Cloudinary, reader io.Reader, filename string) (string, string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	defer cancel()
-
-	uploadParams := uploader.UploadParams{
-		Folder:   "user/profile/images", // Correct folder for images
-		PublicID: filename,
-	}
-
-	resp, err := cld.Upload.Upload(ctx, reader, uploadParams)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to upload file to cloud service: %w", err)
-	}
-
-	return resp.SecureURL, resp.PublicID, nil
-}

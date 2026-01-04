@@ -1,3 +1,5 @@
+## KYC API: *VENDOR*
+
 ## Base URL
 The base URL for all API requests:
 
@@ -5,6 +7,91 @@ The base URL for all API requests:
 | :--- | :--- |
 | **Production** | `http://ufinda-v0-01.onrender.com` |
 | **Local Dev** | `http://localhost:8080` |
+
+-----
+
+## Base URL
+The base URL for all API requests:
+
+| Environment | URL |
+| :--- | :--- |
+| **Production** | `http://ufinda-v0-01.onrender.com` |
+| **Local Dev** | `http://localhost:8080` |
+
+-----
+
+### GET `/kyc/vendor/signature`
+
+This endpoint provides the necessary security credentials for the client (frontend) to upload media directly to **Cloudinary**. This prevents your backend from handling large file bytes, ensuring high performance and stability on limited-RAM hosting like Render.
+
+---
+
+#### Request
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `[BASE_URL]/kyc/vendor/signature` | Generates a signed upload ticket for Cloudinary. |
+
+#### Headers
+
+| Header | Example Value | Description |
+| --- | --- | --- |
+| `Authorization` | `Bearer <access_token>` | **Required**. Only authenticated vendors can request signatures. |
+
+---
+
+#### Workflow
+
+1. **Timestamp Generation**: The server generates a Unix timestamp to ensure the signature is time-sensitive and cannot be reused indefinitely.
+2. **Parameter Mapping**: The system prepares the required upload parameters (e.g., `folder: "kyc"`).
+3. **Cryptographic Signing**: The server uses your `CLOUDINARY_API_SECRET` to create a HMAC-SHA1 hash of the parameters.
+4. **Credential Delivery**: The server returns the signature, timestamp, and public API keys to the client.
+5. **Direct Upload**: The client sends the file and these credentials directly to Cloudinary's API.
+
+---
+
+#### Responses
+
+#### Success
+
+| Status Code | Description |
+| --- | --- |
+| `200 OK` | Signature generated successfully. |
+
+**Body**
+
+```json
+{
+  "api_key": "123456789012345",
+  "cloud_name": "ufinda-cloud",
+  "folder": "kyc",
+  "signature": "a5e8f230b8c7...8d2f",
+  "timestamp": 1735468200
+}
+
+```
+
+#### Errors
+
+| Status Code | Description |
+| --- | --- |
+| `401 Unauthorized` | User is not logged in. |
+| `500 Internal Error` | Failed to generate signature due to configuration issues. |
+
+---
+
+#### Client Implementation Note
+
+To perform the upload after receiving this signature, the client should send a `POST` request to:
+`https://api.cloudinary.com/v1_1/<cloud_name>/auto/upload`
+
+**Form Data Fields:**
+
+* `file`: The media file.
+* `api_key`: From the response above.
+* `timestamp`: From the response above.
+* `signature`: From the response above.
+* `folder`: From the response above.
 
 -----
 
@@ -59,55 +146,88 @@ None.
 
 ### 2\. Mini-KYC: Update Vendor Profile
 
-This endpoint allows an authenticated vendor to update their basic profile information, which is considered the "Mini-KYC" or onboarding profile setup. This uses a `multipart/form-data` request as it handles file uploads.
+### POST `/kyc/vendor`
 
-#### POST `[BASE_URL]/kyc/vendor`
+This endpoint allows vendors/agents to submit or update their onboarding details. Like the student KYC, this endpoint has been migrated from multipart forms to a **JSON-based workflow**. The vendor is responsible for uploading their profile image to Cloudinary on the client side and providing the metadata in the request.
+
+---
+
+#### Request
 
 | Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `[BASE_URL]/kyc/vendor` | Creates or updates the vendor's basic profile, including address, 'about me', and a profile image. |
+| --- | --- | --- |
+| `POST` | `[BASE_URL]/kyc/vendor` | Creates or updates an onboarding record for the authenticated vendor. |
 
 #### Headers
 
-| Key | Value | Description |
-| :--- | :--- | :--- |
-| `Authorization` | `Bearer <JWT_Token>` | Required for user authentication. |
-| `Content-Type` | `multipart/form-data` | Required for file upload. |
+| Header | Value | Description |
+| --- | --- | --- |
+| `Authorization` | `Bearer <access_token>` | **Required**. |
+| `Content-Type` | `application/json` | **Required**. |
 
-#### Form Fields
+#### Expected Payload (Body)
 
-| Key | Type | Description |
-| :--- | :--- | :--- |
-| `address` | `string` | The vendor's physical address. |
-| `about_me` | `string` | A brief description about the vendor. |
-| `profile_img` | `file` | The vendor's profile picture file (optional). |
+The request body uses pointers to allow for partial updates. If a field is omitted from the JSON, the existing database value remains unchanged.
 
-#### Workflow
+| Field | Type | Description |
+| --- | --- | --- |
+| `address` | `string` | The physical address of the vendor/agent. |
+| `about_me` | `string` | A professional bio or description of the agency. |
+| `profile_img` | `object` | Cloudinary metadata object (URL and Public ID). |
 
-1.  **Authentication**: The vendor is authenticated via JWT.
-2.  **Data Extraction**: Data (`address`, `about_me`, `profile_img`) is extracted from the `multipart/form-data` request.
-3.  **Image Upload**: If a `profile_img` is present, it is uploaded to Cloudinary (or similar) and the resulting `URL` and `PublicID` are stored. Image upload errors are logged but **do not prevent** the rest of the profile update from proceeding.
-4.  **Database Operation**:
-      * **Find**: The system checks if a KYC record already exists for the vendor.
-      * **Update**: If a record is found, only the provided fields (`address`, `about_me`, `profile_img`) are updated.
-      * **Create**: If no record is found, a new `VendorKYC` record is created with the provided profile data.
-
-#### Responses
-
-| Status Code | Description |
-| :--- | :--- |
-| `200 OK` | The profile information was successfully updated or created. |
-| `401 Unauthorized` | User token is missing or invalid. |
-| `500 Internal Server Error` | A database error occurred during the fetch, create, or update process. |
-
-**Success Body**
+**Example JSON Payload:**
 
 ```json
 {
-  "message": "kyc updated successfully" 
-  // or "kyc created successfully"
+  "address": "12, Admiralty Way, Lekki Phase 1, Lagos",
+  "about_me": "Specializing in luxury student apartments and off-campus housing.",
+  "profile_img": {
+    "url": "https://res.cloudinary.com/demo/image/upload/v5678/vendor_profile.jpg",
+    "public_id": "ufinda/vendors/vnd_987_pic"
+  }
 }
+
 ```
+
+---
+
+#### Workflow Logic
+
+The backend follows a **"Check then Act"** pattern to handle the transition between initial onboarding and profile maintenance.
+
+1. **Identity Verification**: Extracts the `UserID` from the secure JWT context.
+2. **Payload Parsing**: Uses `ShouldBindJSON` to map the request to a struct. Pointers ensure that only provided fields are processed.
+3. **State Detection**:
+* Queries the `vendor_kyc` table for an existing entry.
+* **If Found**: Triggers an **Update (PATCH)** operation.
+* **If Not Found**: Triggers a **Creation (POST)** operation.
+
+
+4. **Data Persistence**: Communicates with PostgREST to save the data. Any failures at this stage are logged to the `kyc_log` table for auditing.
+
+---
+
+#### Responses
+
+#### Success `200 OK`
+
+**Body:**
+
+```json
+{
+  "message": "kyc created successfully" 
+  // or "kyc updated successfully"
+}
+
+```
+
+#### Errors
+
+| Status Code | Description |
+| --- | --- |
+| `400 Bad Request` | **Binding Error**: The JSON structure is invalid or data types do not match. |
+| `401 Unauthorized` | **Auth Error**: No valid bearer token provided. |
+| `500 Internal Server Error` | **System Error**: Occurs if the database is unreachable or the `kyc_log` entry fails. |
 
 -----
 

@@ -12,6 +12,12 @@ import (
 
 const MsgServerError = "An unexpected error occurred. Please try again."
 
+type VendorKYCRequest struct {
+    Address    *string          `json:"address"`
+    AboutMe    *string          `json:"about_me"`
+    ProfileImg *db.UploadedFile `json:"profile_img"`
+}
+
 type VerificationResult struct {
 	UserID             string    `json:"user_id"`
 	NIN         string    `json:"nin_from_db"`  

@@ -290,7 +290,7 @@ func GetCloudinarySignatureHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 		// This matches the signature: func SignParameters(params url.Values, secret string)
 		signature, err := api.SignParameters(params, cld.Config.Cloud.APISecret)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate signature"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 			return
 		}
 

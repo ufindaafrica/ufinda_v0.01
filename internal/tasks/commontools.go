@@ -71,3 +71,4 @@ func isAllowedType(mimeType string) bool {
     }
     return allowed[mimeType]
 }
+

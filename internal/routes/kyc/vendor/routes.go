@@ -5,14 +5,15 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strings"
-	"fmt"
-	"log"
+	"time"
+	"strconv"
 	"github.com/cloudinary/cloudinary-go/v2"
+	"github.com/cloudinary/cloudinary-go/v2/api"
+	"strings"
+	"log"
     "github.com/oladev/ufinda_v0.01/internal/db/kyc/vendor"
 	"errors"
 	"github.com/gin-gonic/gin"
-	"github.com/oladev/ufinda_v0.01/internal/db/kyc/user"
 	"github.com/oladev/ufinda_v0.01/internal/logs/kyc"
 )
 
@@ -66,117 +67,113 @@ func GetWidgetUrl(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": finalWidgetURL})
 }
 
-func CreateOnboardVendorKycHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc{
-	return func(c *gin.Context) {
-		user, exists := c.Get("user")
-		if !exists {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
-			return
-		}
+func CreateOnboardVendorKycHandler() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        // 1. Authenticate user
+        user, exists := c.Get("user")
+        if !exists {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not authenticated"})
+            return
+        }
 
-		getUser, ok := user.(*db.User)
-		if !ok {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user type"})
-			return
-		}
+        getUser, ok := user.(*db.User)
+        if !ok {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user"})
+            return
+        }
 
-		address := c.PostForm("address")
-		aboutMe := c.PostForm("about_me")
-		profilePic, err := c.FormFile("profile_img")
+        // 2. Bind JSON payload
+        var req VendorKYCRequest
+        if err := c.ShouldBindJSON(&req); err != nil {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+            return
+        }
 
-		// Initialized to an empty struct (zero value), representing no uploaded file yet.
-		var uploadedFile db.UploadedFile 
-		
-		// Variable to track file upload status
-		var imageUploadError error 
-		
-		// --- File Upload Logic (Modified to track error instead of returning) ---
-		if err == nil {
-			// A file was present, attempt to open and upload it
-			file, openErr := profilePic.Open()
-			if openErr != nil {
-				imageUploadError = fmt.Errorf("failed to open profile image: %w", openErr)
-			} else {
-				defer file.Close() // Ensure the file is closed
+        // 3. Check for existing KYC
+        _, err := vendorkycdb.FindVendorKYC(getUser.ID)
+        isKYCFound := err == nil
 
-				url, publicID, uploadErr := userkycdb.UploadProfileImage(cld, file, profilePic.Filename)
-				if uploadErr != nil {
-					imageUploadError = fmt.Errorf("failed to save profile image to cloud: %w", uploadErr)
-				} else {
-					// Only populate the struct if the upload was successful
-					uploadedFile = db.UploadedFile{
-						URL: url,
-						PublicID: publicID,
-					}
-				}
-			}
-		} else if err != http.ErrMissingFile {
-			// This handles cases where file upload *failed* for reasons other than 
-			// the user just not providing a file (e.g., parsing errors).
-			imageUploadError = fmt.Errorf("error parsing profile image from form: %w", err)
-		}
-		
-		if imageUploadError != nil {
-			// Log the image upload error
-			kyclog.LogKYC(getUser.ID, imageUploadError)
-		}
+        if err != nil && !errors.Is(err, vendorkycdb.ErrorKYCNotFound) {
+            kyclog.LogKYC(getUser.ID, err)
+            c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+            return
+        }
 
-		_, err = vendorkycdb.FindVendorKYC(getUser.ID)
-		isKYCFound := err == nil
-		
-		var opErr error
-		var message string
+        var opErr error
+        var message string
 
-		if err != nil {
-			if !errors.Is(err, vendorkycdb.ErrorKYCNotFound) {
-				// Log database/fetching issue
-				log.Printf("error getting kyc: %w", err)
-				kyclog.LogKYC(getUser.ID, fmt.Errorf("database error fetching existing KYC: %w", err))
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "database error fetching kyc"})
-				return
-			}
-		}
+        if isKYCFound {
+            updateData := make(map[string]interface{})
+            
+            if req.Address != nil {
+                updateData["address"] = *req.Address
+            }
+            if req.AboutMe != nil {
+                updateData["about_me"] = *req.AboutMe
+            }
+            if req.ProfileImg != nil {
+                updateData["profile_img"] = req.ProfileImg
+            }
 
-		if isKYCFound {
-			updateData := make(map[string]interface{})
-			
-			if address != "" {
-				updateData["address"] = address
-			}
+            opErr = vendorkycdb.UpdateVendorKyc(getUser.ID, updateData)
+            message = "KYC updated successfully"
+        } else {
+            // --- CREATE (POST) ---
+            kycData := db.VendorKYC{
+                UserID: getUser.ID,
+            }
+            
+            // Dereference pointers if they exist
+            if req.Address != nil {
+                kycData.Address = *req.Address
+            }
+            if req.AboutMe != nil {
+                kycData.AboutMe = *req.AboutMe
+            }
+            if req.ProfileImg != nil {
+                kycData.ProfileImg = req.ProfileImg
+            }
 
-			if uploadedFile.URL != "" {
-				updateData["profile_img"] = uploadedFile
-			}
+            opErr = vendorkycdb.CreateVendorKyc(kycData)
+            message = "KYC created successfully"
+        }
 
-			// update the db
-			opErr = vendorkycdb.UpdateVendorKyc(getUser.ID, updateData)
-			message = "kyc updated sucessfully"
-		}else {
-			kycData := db.VendorKYC {
-				UserID: getUser.ID,
-			}
-			if address != "" {
-				kycData.Address = address
-			}
-			if aboutMe != "" {
-				kycData.AboutMe = aboutMe
-			}
-			if uploadedFile.URL != "" {
-				kycData.ProfileImg = &uploadedFile
-			}
+        // 4. Final Error Handling
+        if opErr != nil {
+            log.Printf("error saving kyc: %v", opErr)
+            kyclog.LogKYC(getUser.ID, opErr)
+            c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+            return
+        }
 
-			// create the kyc
-			opErr = vendorkycdb.CreateVendorKyc(kycData)
-			message = "kyc created sucessfully"
-		}
-		if opErr != nil {
-			log.Printf("error creating or updating kyc: %w", opErr)
-			kyclog.LogKYC(getUser.ID, opErr)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "database request failed"})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{"message": message})
-	}
+        c.JSON(http.StatusOK, gin.H{"message": message})
+    }
 }
 
+
+func GetCloudinarySignatureHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		timestamp := time.Now().Unix()
+
+		// 2. Use url.Values instead of a map
+		params := url.Values{}
+		params.Add("timestamp", strconv.FormatInt(timestamp, 10))
+		params.Add("folder", "kyc")
+
+		// 3. Pass the url.Values to SignParameters
+		// This matches the signature: func SignParameters(params url.Values, secret string)
+		signature, err := api.SignParameters(params, cld.Config.Cloud.APISecret)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"signature":  signature,
+			"timestamp":  timestamp,
+			"api_key":    cld.Config.Cloud.APIKey,
+			"cloud_name": cld.Config.Cloud.CloudName,
+			"folder":     "kyc",
+		})
+	}
+}

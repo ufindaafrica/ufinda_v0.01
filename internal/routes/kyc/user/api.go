@@ -8,9 +8,10 @@ import (
 )
 
 func RegisterKYC(r *gin.Engine, cld *cloudinary.Cloudinary) {
-	kycRoutes := r.Group("/kyc")
+	kycRoutes := r.Group("/kyc/user")
 	kycRoutes.Use(auth.UserAuthMiddleware())
 	{
-		kycRoutes.POST("/user", kyc.MaxBytesMiddleware(5<<20), UserKYCHandler(cld))
+		kycRoutes.POST("", kyc.MaxBytesMiddleware(5<<20), UserKYCHandler())
+		kycRoutes.GET("/signature", GetCloudinarySignatureHandler(cld))
 	}
 }
