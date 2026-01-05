@@ -1,14 +1,14 @@
 import axios from "axios"
 import { BASE_URL, getAccessToken, timeout } from "./apiConstants"
 
-export const getAllChats = async () => {
+export const getAgentInfo = async (vendorId: string) => {
 
     const token = await getAccessToken()
     const result: Array<any> = []
 
     try {
         const res = await axios.get(
-            "/chat/rooms/with-last-message",
+            `/hostels/vendor/${vendorId}`,
             {
                 baseURL: BASE_URL,
                 timeout: timeout,
@@ -32,6 +32,7 @@ export const getAllChats = async () => {
         }
 
     }
-    // console.log(result)
+    // console.log(result[1].vendor_info)
     return result
 }
+

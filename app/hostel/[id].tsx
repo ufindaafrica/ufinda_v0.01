@@ -176,6 +176,8 @@ export default function HostelDetails() {
         else Linking.openURL(`tel:${call}`)
     }
 
+    const isVideo = (img: string) => /\.(mp4|webm|mov|mkv)(\?|$)/i.test(img)
+
     return (
         <SafeAreaProvider>
             <SafeAreaView style={idStyles.safeV}>
@@ -314,7 +316,7 @@ export default function HostelDetails() {
 
                 </ScrollView>
                 {
-                    mediaOpen && <Media media={currentImage} left={onSwipeLeft} right={onSwipeRight} idx={idx} imgLen={imgLen} video={currentImage.toString().endsWith("mp4")} close={() => { setMediaOpen(false) }} />
+                    mediaOpen && <Media media={currentImage} left={onSwipeLeft} right={onSwipeRight} idx={idx} imgLen={imgLen} video={isVideo(currentImage ?? "")} close={() => { setMediaOpen(false) }} />
                 }
             </SafeAreaView>
         </SafeAreaProvider>
