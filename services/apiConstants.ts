@@ -8,4 +8,8 @@ export const getAccessToken = async () => {
     return await getItemAsync("ACCESS_TOKEN")
 }
 
+export const getRefreshToken = async () => {
+    return await getItemAsync("REFRESH_TOKEN")
+}
+
 export const timeout = 15000
