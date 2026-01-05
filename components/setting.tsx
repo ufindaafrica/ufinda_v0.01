@@ -16,7 +16,7 @@ export default function Setting({ setting, value, icon, settingFun, kyc }: Setti
     return (
         <View style={[singleChatStyles.row, singleChatStyles.jCenter, singleChatStyles.settings]}>
             <Text style={[roboto.bodyMedium, kyc ? colors.darkBurntOrange : colors.black]}>{setting}</Text>
-            <TouchableOpacity style={[singleChatStyles.row, singleChatStyles.gap]}>
+            <TouchableOpacity onPress={settingFun} style={[singleChatStyles.row, singleChatStyles.gap]}>
                 {
                     value && <Text style={[roboto.caption, colors.grays]}>{value}</Text>
                 }

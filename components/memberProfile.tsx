@@ -15,7 +15,7 @@ export default function MemberProfile() {
         <ScrollView style={{flex: 1}}>
             <View style={[singleChatStyles.row, singleChatStyles.jCenter, globals.authContainer]}>
                 <TouchableOpacity onPress={() => router.push("/pages/profileDetails")} style={[singleChatStyles.row, singleChatStyles.gap]}>
-                    <Avatar />
+                    <Avatar img="" />
                     <View>
                         <Text style={roboto.titleSmallBold}>Timothy Okoli</Text>
                         <Text style={[roboto.bodySmall, colors.darkBurntOrange]}>Premium member</Text>
@@ -28,7 +28,7 @@ export default function MemberProfile() {
             <LineBreak />
             <View style={globals.authContainer}>
                 <Text style={[roboto.bodySmall, colors.grays]}>My uFinda account</Text>
-                <Setting setting="Update Kyc" kyc icon />
+                <Setting setting="Update Kyc" kyc icon settingFun={() => router.push("/pages/updateKyc")} />
                 <Setting setting="Make money" icon />
                 <Setting setting="FAQ" icon />
             </View>
