@@ -127,7 +127,7 @@ func HandleVerificationPayload(payload db.DojahWebhookPayload, h *hub.Hub) {
     // Try to find the existing KYC record
     _, findErr := vendorkycdb.FindVendorKYC(result.UserID)
 
-    if findErr != nil && errors.Is(findErr, vendorkycdb.ErrorKYCNotFound) {
+    if findErr != nil && errors.Is(findErr, vendorkycdb.ErrKYCNotFound) {
         // Record does NOT exist -> CREATE new one
         if createErr := vendorkycdb.CreateVendorKyc(kycdata); createErr != nil {
             log.Printf("FATAL_DB_ERROR: Failed to CREATE new KYC record for User %s: %v", result.UserID, createErr)

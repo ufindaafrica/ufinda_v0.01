@@ -9,6 +9,7 @@ import (
     "github.com/cloudinary/cloudinary-go/v2"
 	"github.com/cloudinary/cloudinary-go/v2/api"
     "time"
+    "log"
     "strconv"
     "net/url"
     "github.com/oladev/ufinda_v0.01/internal/db/auth"
@@ -40,7 +41,7 @@ func UserKYCHandler() gin.HandlerFunc {
         _, err := userkycdb.FindUserKYC(getUser.ID)
         isKYCFound := err == nil
         
-        if err != nil && !errors.Is(err, userkycdb.ErrorKYCNotFound) {
+        if err != nil && !errors.Is(err, userkycdb.ErrKYCNotFound) {
             kyclog.LogKYC(getUser.ID, err)
             c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
             return
@@ -53,6 +54,7 @@ func UserKYCHandler() gin.HandlerFunc {
         if req.Faculty != nil { updateData["faculty"] = *req.Faculty }
         if req.Matric != nil  { updateData["matric"] = *req.Matric }
         if req.AboutMe != nil { updateData["about_me"] = *req.AboutMe }
+        if req.Address != nil { updateData["address"] = *req.Address }
         if req.ProfileImg != nil {
             updateData["profile_img"] = req.ProfileImg
         }
@@ -101,6 +103,17 @@ func UserKYCHandler() gin.HandlerFunc {
 
 func GetCloudinarySignatureHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 	return func(c *gin.Context) {
+        user, exists := c.Get("user")
+        if !exists {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+            return
+        }
+        getUser, ok := user.(*db.User)
+        if !ok {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user"})
+            return
+        }
+
 		timestamp := time.Now().Unix()
 
 		// 2. Use url.Values instead of a map
@@ -112,6 +125,7 @@ func GetCloudinarySignatureHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 		// This matches the signature: func SignParameters(params url.Values, secret string)
 		signature, err := api.SignParameters(params, cld.Config.Cloud.APISecret)
 		if err != nil {
+            log.Printf("[CRITICAL] user: %v failed to get cloudinary signature: %v", getUser.ID, err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 			return
 		}
@@ -124,4 +138,30 @@ func GetCloudinarySignatureHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 			"folder":     "kyc",
 		})
 	}
+}
+
+func GetUserProfileHandler(c *gin.Context) {
+    user, exists := c.Get("user")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+        return
+    }
+    getUser, ok := user.(*db.User)
+    if !ok {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user"})
+        return
+    }
+    
+    profile, err := userkycdb.GetUserProfile(getUser.ID)
+    if err != nil {
+        kyclog.LogKYC(getUser.ID, err)
+        if errors.Is(err, userkycdb.ErrUserNotFound) {
+            c.JSON(http.StatusNotFound, gin.H{"error": "We couldn't find a profile for this account."})
+        }else {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+        }
+        return
+    }
+
+    c.JSON(http.StatusOK, profile)
 }

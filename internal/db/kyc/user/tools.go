@@ -10,10 +10,10 @@ import (
 	"github.com/oladev/ufinda_v0.01/internal/db"
 )
 
-var ErrorKYCNotFound = errors.New("no KYC found")
-var ErrorUserNotFound = errors.New("no user found, please create an account")
-var ErrorGettingKYC = errors.New("Failed to get kyc")
-var ErrorGettingUser = errors.New("Failed to get user")
+var ErrKYCNotFound = errors.New("no KYC found")
+var ErrUserNotFound = errors.New("no user found, please create an account")
+var ErrGettingKYC = errors.New("Failed to get kyc")
+var ErrGettingUser = errors.New("Failed to get user")
 
 
 // create kyc
@@ -128,7 +128,7 @@ func FindUserKYC(id string) (*db.UserKYC, error) {
 	}
 
 	if len(kyc) == 0 {
-		return nil, ErrorKYCNotFound
+		return nil, ErrKYCNotFound
 	}
 
 	// Successfully found and decoded the KYC record
@@ -192,3 +192,40 @@ func DeleteKycLog(user_id string) error {
 	return nil
 }
 
+func GetUserProfile(userID string) (*db.UserProfileInfo, error) {
+	selectQuery := "first_name,last_name,phone,email,kyc_data:fk_user_kyc(profile_img,address,level,dept,faculty,matric,about_me)"
+
+	// 2. Construct the URL
+	params := url.Values{}
+	params.Set("id", "eq."+userID)
+	params.Set("select", selectQuery)
+	params.Set("limit", "1") 
+
+	finalURL := fmt.Sprintf("/rest/v1/users?%s", params.Encode())
+
+	// 3. Make the Request
+	resp, err := db.MakeDBRequest("GET", finalURL, nil, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user profile: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+
+        bodyString := string(bodyBytes)
+        
+        return nil, fmt.Errorf("failed to get user profile. Status: %d, Response Body: %s", resp.StatusCode, bodyString)
+	}
+
+	var users []db.UserProfileInfo
+	if err := json.NewDecoder(resp.Body).Decode(&users); err != nil {
+		return nil, fmt.Errorf("failed to get user profile: %w", err)
+	}
+
+	if len(users) == 0 {
+		return nil, ErrUserNotFound
+	}
+
+	return &users[0], nil
+}

@@ -283,7 +283,7 @@ The endpoint employs a Redis-based rate-limiting system to prevent brute-force l
 -----
 
 ## Logout API
-### POST `[BASE_URL]/auth/logout`
+### GET `[BASE_URL]/auth/logout`
 
 This endpoint allows a user to securely log out by invalidating their access and refresh tokens. Both tokens are added to a blacklist, making them unusable for future requests.
 
@@ -293,7 +293,7 @@ This endpoint allows a user to securely log out by invalidating their access and
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `POST` | `[BASE_URL]/auth/logout` | Revokes the current session's tokens and logs the user out. |
+| `GET` | `[BASE_URL]/auth/logout` | Revokes the current session's tokens and logs the user out. |
 
 #### Headers
 

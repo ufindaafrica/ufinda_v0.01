@@ -203,19 +203,16 @@ func FindCreatedUserByID(id string) (*db.User, error) {
 
     resp, err := db.MakeDBRequest("GET", url, nil, nil)
     if err != nil {
-        return nil, fmt.Errorf("error making DB request to find user: %w: %w", err, ErrGettingUser)
+        return nil, fmt.Errorf("error making DB request to find user: %w", err)
     }
     defer resp.Body.Close()
 
     if resp.StatusCode != http.StatusOK {
-        bodyBytes, readErr := io.ReadAll(resp.Body)
-        if readErr != nil {
-            return nil, fmt.Errorf("failed to find user by ID (Status: %d). Additionally, failed to read response body: %w: %w", resp.StatusCode, readErr, ErrGettingUser)
-        }
+        bodyBytes, _ := io.ReadAll(resp.Body)
 
         bodyString := string(bodyBytes)
         
-        return nil, fmt.Errorf("failed to find user. Status: %d, Response Body: %s: %w", resp.StatusCode, bodyString, ErrGettingUser)
+        return nil, fmt.Errorf("failed to find user. Status: %d, Response Body: %s", resp.StatusCode, bodyString)
     }
 
     if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
@@ -277,10 +274,7 @@ func CreateResetToken(resetData db.ResetPwdData) error {
 	defer resp.Body.Close()
     
     if resp.StatusCode != http.StatusCreated {
-        bodyBytes, readErr := io.ReadAll(resp.Body)
-        if readErr != nil {
-            return fmt.Errorf("failed to upload reset token (Status: %d). Additionally, failed to read response body: %w", resp.StatusCode, readErr)
-        }
+        bodyBytes, _ := io.ReadAll(resp.Body)
 
         bodyString := string(bodyBytes)
         

@@ -1,30 +1,39 @@
 package chat
 import (
 	"github.com/cloudinary/cloudinary-go/v2"
-	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
+	"github.com/cloudinary/cloudinary-go/v2/api"
+	"net/url"
 	"fmt"
-	"io"
 	"time"
-	"context"
+	"strconv"
 )
 
 const MsgServerError = "An unexpected error occurred. Please try again."
 
-func UploadChatImages(cld *cloudinary.Cloudinary, reader io.Reader, filename string) (string, string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute) // Increased timeout for videos
-	defer cancel()
+func GetCloudinarySignature(cld *cloudinary.Cloudinary) (map[string]interface{}, error) {
+    timestamp := time.Now().Unix()
 
-	uploadParams := uploader.UploadParams{
-		Folder:   "chat/images", // Correct folder for videos
-		PublicID: filename,
-		// Add resource type as 'video' for videos
-		ResourceType: "image", 
-	}
-	
-	resp, err := cld.Upload.Upload(ctx, reader, uploadParams)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to upload file to cloud service: %w", err)
-	}
+    // 1. Setup parameters to sign
+    params := url.Values{}
+    params.Add("timestamp", strconv.FormatInt(timestamp, 10))
+    params.Add("folder", "chat")
 
-	return resp.SecureURL, resp.PublicID, nil
+    // 2. Generate the signature using the Cloudinary API Secret
+    signature, err := api.SignParameters(params, cld.Config.Cloud.APISecret)
+    if err != nil {
+        // Return nil for the map and the error if signing fails
+        return nil, fmt.Errorf("failed to get signature: %w", err)
+    }
+
+    // 3. Construct the response map
+    // Note: The syntax for creating a map literal is map[keyType]valueType{...}
+    response := map[string]interface{}{
+        "signature":  signature,
+        "timestamp":  timestamp,
+        "api_key":    cld.Config.Cloud.APIKey,
+        "cloud_name": cld.Config.Cloud.CloudName,
+        "folder":     "chat",
+    }
+
+    return response, nil
 }

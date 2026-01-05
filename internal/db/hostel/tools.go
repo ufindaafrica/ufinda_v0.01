@@ -30,7 +30,7 @@ type hostelVideoResponse struct {
 
 // Function to generate the consistent SELECT query parameter
 func GetEnrichedSelectQuery() string {
-    return "*,vendor_info:fk_hostel_agent(id,first_name,last_name,phone,vendor_metrics(current_rating,total_ratings),fk_kyc_user(profile_img))"
+    return "*,vendor_info:fk_hostel_agent(id,first_name,last_name,phone,vendor_metrics(current_rating,total_ratings),fk_vendor_kyc(profile_img))"
 }
 
 

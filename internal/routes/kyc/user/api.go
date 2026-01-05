@@ -13,5 +13,6 @@ func RegisterKYC(r *gin.Engine, cld *cloudinary.Cloudinary) {
 	{
 		kycRoutes.POST("", kyc.MaxBytesMiddleware(5<<20), UserKYCHandler())
 		kycRoutes.GET("/signature", GetCloudinarySignatureHandler(cld))
+		kycRoutes.GET("/profile", GetUserProfileHandler)
 	}
 }

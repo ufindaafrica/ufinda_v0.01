@@ -7,10 +7,9 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
-
+	"github.com/oladev/ufinda_v0.01/internal/logs/chat"
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -493,21 +492,18 @@ func (cs *SupabaseChatService) CreateChatRoom(buyerID, vendorID string) (*ChatRo
 
 	resp, err := db.MakeDBRequest("POST", "/rest/v1/chat_rooms", roomData, headers)
 	if err != nil {
-		log.Printf("Error making DB request to create chat room: %v", err)
-		return nil, fmt.Errorf("failed to make DB request: %v", err)
+		return nil, fmt.Errorf("failed to make chat room: %v", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		log.Printf("Failed to create chat room, status: %d, response: %s", resp.StatusCode, string(bodyBytes))
 		return nil, fmt.Errorf("failed to create chat room: status %d, response: %s", resp.StatusCode, string(bodyBytes))
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("Error reading response body after creating chat room: %v", err)
-		return nil, fmt.Errorf("failed to read response: %v", err)
+		return nil, fmt.Errorf("failed to chat room: %v", err)
 	}
 
 	var rooms []ChatRoom
@@ -530,27 +526,23 @@ func (cs *SupabaseChatService) findExistingRoom(buyerID, vendorID string) (*Chat
 	endpoint := fmt.Sprintf("/rest/v1/chat_rooms?%s", query)
 	resp, err := db.MakeDBRequest("GET", endpoint, nil, nil)
 	if err != nil {
-		log.Printf("Error querying existing chat rooms: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to get chat rooms: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		log.Printf("Failed to query chat rooms, status: %d, response: %s", resp.StatusCode, string(bodyBytes))
-		return nil, fmt.Errorf("failed to query chat rooms: status %d, response: %s", resp.StatusCode, string(bodyBytes))
+		return nil, fmt.Errorf("failed to get chat rooms: status %d, response: %s", resp.StatusCode, string(bodyBytes))
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("Error reading response body for existing chat room query: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to get chat rooms: %w", err)
 	}
 
 	var rooms []ChatRoom
 	if err := json.Unmarshal(body, &rooms); err != nil {
-		log.Printf("Error parsing existing chat room response: %v, body: %s", err, string(body))
-		return nil, err
+		return nil, fmt.Errorf("failed to get chat rooms: %w", err)
 	}
 
 	if len(rooms) > 0 {
@@ -562,7 +554,7 @@ func (cs *SupabaseChatService) findExistingRoom(buyerID, vendorID string) (*Chat
 
 func (cs *SupabaseChatService) SendMessage(chatRoomID, senderID, content string, messageType string, publicID *string) (*Message, error) {
 	if _, err := uuid.Parse(chatRoomID); err != nil {
-		return nil, fmt.Errorf("chat_room_id is not a valid UUID: %v", err)
+		return nil, fmt.Errorf("chat_room_id is not a valid UUID: %w", err)
 	}
 
 	if len(content) == 0 || len(content) > 1000 {
@@ -587,27 +579,23 @@ func (cs *SupabaseChatService) SendMessage(chatRoomID, senderID, content string,
 	)
 
 	if err != nil {
-		log.Printf("Error making DB request to send message: %v", err)
-		return nil, fmt.Errorf("failed to make DB request: %v", err)
+		return nil, fmt.Errorf("failed to send message: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		log.Printf("Failed to send message to DB, status: %d, response: %s", resp.StatusCode, string(bodyBytes))
 		return nil, fmt.Errorf("failed to send message: status %d, response: %s", resp.StatusCode, string(bodyBytes))
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("Error reading response body after sending message: %v", err)
-		return nil, fmt.Errorf("failed to read response: %v", err)
+		return nil, fmt.Errorf("failed to send response: %w", err)
 	}
 
 	var messages []Message
 	if err := json.Unmarshal(body, &messages); err != nil {
-		log.Printf("Error parsing send message response: %v, body: %s", err, string(body))
-		return nil, fmt.Errorf("failed to parse response: %v", err)
+		return nil, fmt.Errorf("failed to send message: %w", err)
 	}
 
 	if len(messages) == 0 {
@@ -657,8 +645,7 @@ func (cs *SupabaseChatService) getSenderName(userID string) (string, error) {
 	endpoint := fmt.Sprintf("/rest/v1/users?id=eq.%s&select=first_name,last_name", userID)
 	resp, err := db.MakeDBRequest("GET", endpoint, nil, nil)
 	if err != nil {
-		log.Printf("Error making DB request to get user: %v", err)
-		return "", err
+		return "", fmt.Errorf("failed to get sender name: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -682,8 +669,7 @@ func (cs *SupabaseChatService) getSenderName(userID string) (string, error) {
 	vendorEndpoint := fmt.Sprintf("/rest/v1/vendors?id=eq.%s&select=first_name,email", userID)
 	vendorResp, err := db.MakeDBRequest("GET", vendorEndpoint, nil, nil)
 	if err != nil {
-		log.Printf("Error making DB request to get vendor: %v", err)
-		return "", err
+		return "", fmt.Errorf("failed to get sender name: %w", err)
 	}
 	defer vendorResp.Body.Close()
 
@@ -716,8 +702,7 @@ func (cs *SupabaseChatService) GetChatHistory(chatRoomID string, limit int, offs
 	endpoint := fmt.Sprintf("/rest/v1/messages?%s&order=created_at.desc&limit=%d&offset=%d", query, limit, offset)
 	resp, err := db.MakeDBRequest("GET", endpoint, nil, nil)
 	if err != nil {
-		log.Printf("Error making DB request to get chat history: %v", err)
-		return nil, fmt.Errorf("failed to get chat history: %v", err)
+		return nil, fmt.Errorf("failed to get chat history: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -729,14 +714,12 @@ func (cs *SupabaseChatService) GetChatHistory(chatRoomID string, limit int, offs
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("Error reading response body for chat history: %v", err)
-		return nil, fmt.Errorf("failed to read response: %v", err)
+		return nil, fmt.Errorf("failed to get chat history: %w", err)
 	}
 
 	var messages []Message
 	if err := json.Unmarshal(body, &messages); err != nil {
-		log.Printf("Error parsing chat history response: %v, body: %s", err, string(body))
-		return nil, fmt.Errorf("failed to parse response: %v", err)
+		return nil, fmt.Errorf("failed to get chat history: %w", err)
 	}
 
 	for i, j := 0, len(messages)-1; i < j; i, j = i+1, j-1 {
@@ -751,27 +734,23 @@ func (cs *SupabaseChatService) GetUserChatRooms(userID string) ([]ChatRoom, erro
 	endpoint := fmt.Sprintf("/rest/v1/chat_rooms?%s&order=updated_at.desc", query)
 	resp, err := db.MakeDBRequest("GET", endpoint, nil, nil)
 	if err != nil {
-		log.Printf("Error making DB request to get user chat rooms: %v", err)
-		return nil, fmt.Errorf("failed to get user chat rooms: %v", err)
+		return nil, fmt.Errorf("failed to get user chat rooms: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		log.Printf("Failed to get user chat rooms, status: %d, response: %s", resp.StatusCode, string(bodyBytes))
 		return nil, fmt.Errorf("failed to get user chat rooms: status %d, response: %s", resp.StatusCode, string(bodyBytes))
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("Error reading response body for user chat rooms: %v", err)
-		return nil, fmt.Errorf("failed to read response: %v", err)
+		return nil, fmt.Errorf("failed to get user chat rooms: %w", err)
 	}
 
 	var chatRooms []ChatRoom
 	if err := json.Unmarshal(body, &chatRooms); err != nil {
-		log.Printf("Error parsing user chat rooms response: %v, body: %s", err, string(body))
-		return nil, fmt.Errorf("failed to parse response: %v", err)
+		return nil, fmt.Errorf("failed to get user chat rooms: %w", err)
 	}
 
 	return chatRooms, nil
@@ -791,14 +770,12 @@ func (cs *SupabaseChatService) MarkMessagesAsRead(chatRoomID, userID string) err
 	endpoint := fmt.Sprintf("/rest/v1/messages?%s", query)
 	resp, err := db.MakeDBRequest("PATCH", endpoint, data, nil)
 	if err != nil {
-		log.Printf("Error making DB request to mark messages as read: %v", err)
-		return fmt.Errorf("failed to mark messages as read: %v", err)
+		return fmt.Errorf("failed to mark messages as read: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		log.Printf("Failed to mark messages as read, status: %d, response: %s", resp.StatusCode, string(bodyBytes))
 		return fmt.Errorf("failed to mark messages as read: status %d, response: %s", resp.StatusCode, string(bodyBytes))
 	}
 	log.Printf("Marked messages in room %s as read for user %s.", chatRoomID, userID)
@@ -808,8 +785,7 @@ func (cs *SupabaseChatService) MarkMessagesAsRead(chatRoomID, userID string) err
 func (cs *SupabaseChatService) GetUnreadMessageCount(userID string) (int, error) {
 	chatRooms, err := cs.GetUserChatRooms(userID)
 	if err != nil {
-		log.Printf("Error getting chat rooms for unread count: %v", err)
-		return 0, err
+		return 0, fmt.Errorf("failed to get unread message count: %w", err)
 	}
 
 	totalUnread := 0
@@ -818,27 +794,27 @@ func (cs *SupabaseChatService) GetUnreadMessageCount(userID string) (int, error)
 		endpoint := fmt.Sprintf("/rest/v1/messages?%s&select=id", query)
 		resp, err := db.MakeDBRequest("GET", endpoint, nil, nil)
 		if err != nil {
-			log.Printf("Error making DB request for unread messages in room %s: %v", room.ID, err)
+			log.Printf("[ERROR] Failed to get unread messages count for room %s: %v", room.ID, err)
 			continue
 		}
 
 		if resp.StatusCode == http.StatusOK {
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
-				log.Printf("Error reading response body for unread messages in room %s: %v", room.ID, err)
+				log.Printf("[ERROR] Failed to get unread messages count for room %s: %v", room.ID, err)
 				resp.Body.Close()
 				continue
 			}
 
 			var messages []map[string]interface{}
 			if err := json.Unmarshal(body, &messages); err != nil {
-				log.Printf("Error parsing unread messages response for room %s: %v, body: %s", room.ID, err, string(body))
+				log.Printf("[ERROR] Failed to get unread messages count for room %s: %v, body: %s", room.ID, err, string(body))
 				resp.Body.Close()
 				continue
 			}
 			totalUnread += len(messages)
 		} else {
-			log.Printf("Failed to get unread messages for room %s, status: %d", room.ID, resp.StatusCode)
+			log.Printf("[ERROR] Failed to get unread messages count for room %s, status: %d", room.ID, resp.StatusCode)
 		}
 		resp.Body.Close()
 	}
@@ -849,8 +825,7 @@ func (cs *SupabaseChatService) GetUnreadMessageCount(userID string) (int, error)
 func (cs *SupabaseChatService) GetUserChatRoomsWithLastMessage(userID string) ([]map[string]interface{}, error) {
 	chatRooms, err := cs.GetUserChatRooms(userID)
 	if err != nil {
-		log.Printf("Error getting chat rooms for last message aggregation: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to get user chat rooms with last message: %w", err)
 	}
 
 	var result []map[string]interface{}
@@ -876,7 +851,7 @@ func (cs *SupabaseChatService) GetUserChatRoomsWithLastMessage(userID string) ([
 				"public_id":    lastMessage.PublicID,
 			}
 		} else if err != nil {
-			log.Printf("Warning: Could not get last message for room %s: %v", room.ID, err)
+			log.Printf("[CRITICAL] Could not get last message for room %s: %v", room.ID, err)
 		}
 
 		query := fmt.Sprintf("chat_room_id=eq.%s&sender_id=neq.%s&is_read=eq.false", room.ID, userID)
@@ -889,16 +864,16 @@ func (cs *SupabaseChatService) GetUserChatRoomsWithLastMessage(userID string) ([
 				if json.Unmarshal(body, &unreadMessages) == nil {
 					roomData["unread_count"] = len(unreadMessages)
 				} else {
-					log.Printf("Warning: Could not parse unread count response for room %s: %v", room.ID, err)
+					log.Printf("[CRITICAL] Could not get unread message count for room %s: %v", room.ID, err)
 					roomData["unread_count"] = 0
 				}
 			} else {
-				log.Printf("Warning: Failed to get unread count for room %s, status: %d", room.ID, resp.StatusCode)
+				log.Printf("[CRITICAL] Could not get unread message count for room %s, status: %d", room.ID, resp.StatusCode)
 				roomData["unread_count"] = 0
 			}
 			resp.Body.Close()
 		} else {
-			log.Printf("Warning: Error requesting unread count for room %s: %v", room.ID, err)
+			log.Printf("[CRITICAL] Could not get unread message count for room %s: %v", room.ID, err)
 			roomData["unread_count"] = 0
 		}
 
@@ -922,7 +897,7 @@ func (cs *SupabaseChatService) HandleWebSocket(c *gin.Context) {
 
 	validatedUserID, ok := userIDVal.(string)
 	if !ok {
-		log.Printf("ERROR: validatedUserID in context is not a string. Type: %T", userIDVal)
+		log.Printf("[ERROR]: validatedUserID in context is not a string. Type: %T", userIDVal)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		c.Abort()
 		return
@@ -947,53 +922,34 @@ func (cs *SupabaseChatService) HandleWebSocket(c *gin.Context) {
 	go client.ReadPump()
 }
 
-func (cs *SupabaseChatService) HandleImageUpload(c *gin.Context) {
-	// Gin handles form parsing automatically with c.Request.FormFile
-	file, header, err := c.Request.FormFile("image")
+func (cs *SupabaseChatService) GetCloudinarySignatureHandler(c *gin.Context) {
+	userID := c.GetString("id")
+	signature, err := GetCloudinarySignature(cs.CloudinaryClient)
 	if err != nil {
-		if err == http.ErrMissingFile {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Missing file in form data with key 'image'"})
-		} else {
-			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Error retrieving file: %v", err)})
-		}
-		return
-	}
-	defer file.Close()
-
-	contentType := header.Header.Get("Content-Type")
-	if !strings.HasPrefix(contentType, "image/") {
-		c.JSON(http.StatusUnsupportedMediaType, gin.H{"error": "Only image files are allowed"})
+		chatlog.LogChat(userID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
 
-	// Logic to upload to cloudinary
-	imageURL, publicID, err := UploadChatImages(cs.CloudinaryClient, file, header.Filename)
-	if err != nil {
-		log.Printf("Cloudinary Upload Error: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload image to storage service"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"url":          imageURL,
-		"public_id":    publicID,
-		"message_type": "image",
-	})
+	c.JSON(http.StatusOK, signature)
 }
 
 func (cs *SupabaseChatService) CreateChatRoomHandler(c *gin.Context) {
+	userID := c.GetString("id")
+
 	var req struct {
 		BuyerID   string  `json:"buyer_id"`
 		VendorID  string  `json:"vendor_id"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 
 	room, err := cs.CreateChatRoom(req.BuyerID, req.VendorID)
 	if err != nil {
+		chatlog.LogChat(userID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
@@ -1003,8 +959,10 @@ func (cs *SupabaseChatService) CreateChatRoomHandler(c *gin.Context) {
 
 func (cs *SupabaseChatService) GetUserChatRoomsHandler(c *gin.Context) {
 	userID := c.GetString("id")
+
 	rooms, err := cs.GetUserChatRooms(userID)
 	if err != nil {
+		chatlog.LogChat(userID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
@@ -1017,6 +975,7 @@ func (cs *SupabaseChatService) GetUserChatRoomsWithLastMessageHandler(c *gin.Con
 
 	rooms, err := cs.GetUserChatRoomsWithLastMessage(userID)
 	if err != nil {
+		chatlog.LogChat(userID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
@@ -1036,6 +995,7 @@ func (cs *SupabaseChatService) SendMessageHandler(c *gin.Context) {
 
 	message, err := cs.SendMessage(req.ChatRoomID, senderID, req.Content, req.MessageType, req.PublicID)
 	if err != nil {
+		chatlog.LogChat(senderID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
@@ -1044,6 +1004,8 @@ func (cs *SupabaseChatService) SendMessageHandler(c *gin.Context) {
 }
 
 func (cs *SupabaseChatService) GetChatHistoryHandler(c *gin.Context) {
+	userID := c.GetString("id")
+
 	roomID := c.Query("room_id")
 	limitStr := c.DefaultQuery("limit", "50")
 	offsetStr := c.DefaultQuery("offset", "0")
@@ -1059,6 +1021,7 @@ func (cs *SupabaseChatService) GetChatHistoryHandler(c *gin.Context) {
 
 	messages, err := cs.GetChatHistory(roomID, limit, offset)
 	if err != nil {
+		chatlog.LogChat(userID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
@@ -1079,6 +1042,7 @@ func (cs *SupabaseChatService) MarkMessagesAsReadHandler(c *gin.Context) {
 	userID := c.GetString("id")
 
 	if err := cs.MarkMessagesAsRead(req.ChatRoomID, userID); err != nil {
+		chatlog.LogChat(userID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
@@ -1091,6 +1055,7 @@ func (cs *SupabaseChatService) GetUnreadCountHandler(c *gin.Context) {
 
 	count, err := cs.GetUnreadMessageCount(userID)
 	if err != nil {
+		chatlog.LogChat(userID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}

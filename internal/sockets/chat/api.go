@@ -21,6 +21,6 @@ func RegisterChat(r *gin.Engine, chatService *SupabaseChatService) {
         chatAPI.GET("/messages", chatService.GetChatHistoryHandler)
         chatAPI.POST("/messages/mark-read", chatService.MarkMessagesAsReadHandler)
         chatAPI.GET("/unread-count", chatService.GetUnreadCountHandler)
-        chatAPI.POST("/upload-img", chatService.HandleImageUpload)
+        chatAPI.GET("/signature", chatService.GetCloudinarySignatureHandler)
     }
 }

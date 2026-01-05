@@ -40,6 +40,7 @@ type UserKYC struct {
 	Level     string    `json:"level,omitempty"`
 	Faculty   string    `json:"faculty,omitempty"`
 	Dept      string    `json:"dept,omitempty"`
+	Address string `json:"address,omitempty"`
 	Matric    string    `json:"matric,omitempty"`
 	AboutMe string `json:"about_me,omitempty"`
 	ProfileImg *UploadedFile `json:"profile_img,omitempty"`
@@ -112,6 +113,14 @@ type ProductLog struct {
 }
 
 type AuthLog struct {
+	ID *uuid.UUID `json:"id,omitempty"`
+	UserID string `json:"user_id"`
+	Reason string `json:"reason"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
+}
+
+type ChatLog struct {
 	ID *uuid.UUID `json:"id,omitempty"`
 	UserID string `json:"user_id"`
 	Reason string `json:"reason"`
@@ -234,16 +243,16 @@ type UserAgentInfo struct {
     FirstName    string          `json:"first_name"`
     LastName     string          `json:"last_name"`
     Phone        string          `json:"phone"`
-    VendorMetrics VendorMetrics `json:"vendor_metrics"`
+    VendorMetrics *VendorMetrics `json:"vendor_metrics"`
     
-    VendorKyc     VendorKycInfo `json:"vendor_kyc"`
+    VendorKyc     *VendorKycInfo `json:"vendor_kyc"`
 }
 
 // db/models.go (or similar)
 
 type EnrichedHostel struct {
     Hostel 
-    Users UserAgentInfo `json:"vendor_info"`
+    Users *UserAgentInfo `json:"vendor_info"`
 }
 
 
@@ -258,4 +267,24 @@ type ProductItem struct {
 	Video *UploadedFile `json:"product_video"`
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 	UpdatedAt *time.Time `json:"updated_at,omitempty"`
+}
+
+type UserProfileInfo struct {
+	FirstName string `json:"first_name"`
+	LastName string `json:"last_name"`
+	Email string `json:"email"`
+	Phone string `json:"phone"`
+	KYC *UserKYC `json:"kyc_data"`
+}
+
+type VendorProfileInfo struct {
+	FirstName string `json:"first_name"`
+	LastName string `json:"last_name"`
+	Email string `json:"email"`
+	Phone string `json:"phone"`
+	KYC *struct {
+		ProfileImg *UploadedFile `json:"profile_img"`
+		Address string `json:"address"`
+		AboutMe string `json:"about_me"`
+	} `json:"kyc_data"`
 }

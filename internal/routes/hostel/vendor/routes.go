@@ -279,6 +279,18 @@ func GetAllAgentsHostelHandler(c *gin.Context) {
 
 func GetCloudinarySignatureHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		user, exists := c.Get("user")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not authenticated"})
+			return
+		}
+
+		getUser, ok := user.(*db.User)
+		if !ok {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user type"})
+			return
+		}	
+		
 		timestamp := time.Now().Unix()
 
 		// 2. Use url.Values instead of a map
@@ -290,6 +302,7 @@ func GetCloudinarySignatureHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 		// This matches the signature: func SignParameters(params url.Values, secret string)
 		signature, err := api.SignParameters(params, cld.Config.Cloud.APISecret)
 		if err != nil {
+			log.Printf("[CRITICAL] user: %v failed to get cloudinary signature: %v", getUser.ID, err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 			return
 		}

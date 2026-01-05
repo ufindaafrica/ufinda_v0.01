@@ -17,7 +17,7 @@ The WebSocket endpoint is secured using the authentication token. It provides th
 | --- | --- | --- |
 | `ws` / `wss` | `/ws/chat` | Establishes a real-time connection. |
 
-**Example Connection URI:** `wss://base_url/ws/chat?token=<access_token>`
+**Example Connection URI:** `wss://[BASE_URL]/ws/chat?token=<access_token>`
 
 ---
 
@@ -47,7 +47,7 @@ Retrieves all chat rooms where the authenticated user is either the buyer or the
 
 ---
 
-### 2. GET `/chat/rooms/with-last-message`
+### 2. GET `[BASE_URL]/chat/rooms/with-last-message`
 
 Retrieves chat rooms for the authenticated user, fetching only the **most recent message** for each room. Used for the main "Inbox" screen.
 
@@ -79,7 +79,7 @@ Retrieves chat rooms for the authenticated user, fetching only the **most recent
 
 ---
 
-### 3. POST `/chat/rooms`
+### 3. POST `[BASE_URL]/chat/rooms`
 
 Creates a new room or returns an existing one between two parties.
 
@@ -111,7 +111,7 @@ Creates a new room or returns an existing one between two parties.
 
 ---
 
-### 4. GET `/chat/messages`
+### 4. GET `[BASE_URL]/chat/messages`
 
 Fetches paginated message history for a specific room.
 
@@ -137,7 +137,7 @@ Fetches paginated message history for a specific room.
 
 ---
 
-### 5. POST `/chat/messages`
+### 5. POST `[BASE_URL]/chat/messages`
 
 REST fallback to send a message.
 
@@ -170,7 +170,7 @@ REST fallback to send a message.
 
 ---
 
-### 6. POST `/chat/messages/mark-read`
+### 6. POST `[BASE_URL]/chat/messages/mark-read`
 
 Updates unread messages in a room to `is_read: true`.
 
@@ -188,7 +188,7 @@ Updates unread messages in a room to `is_read: true`.
 
 ---
 
-### 7. GET `/chat/unread-count`
+### 7. GET `[BASE_URL]/chat/unread-count`
 
 Total count of unread messages across all rooms for the user.
 
@@ -203,22 +203,78 @@ Total count of unread messages across all rooms for the user.
 
 ---
 
-### 8. POST `/chat/upload-img`
+### GET `[BASE_URL]/chat/signature`
 
-Uploads a raw image file to Cloudinary.
+This endpoint provides the necessary security credentials for the client (frontend) to upload media directly to **Cloudinary**. This prevents your backend from handling large file bytes, ensuring high performance and stability on limited-RAM hosting like Render.
 
-**Request Body:** `multipart/form-data` with field `image`.
+---
 
-**Expected Payload (Success 200 OK):**
+#### Request
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `[BASE_URL]/hostels/signature` | Generates a signed upload ticket for Cloudinary. |
+
+#### Headers
+
+| Header | Example Value | Description |
+| --- | --- | --- |
+| `Authorization` | `Bearer <access_token>` | **Required**. Only authenticated vendors can request signatures. |
+
+---
+
+#### Workflow
+
+1. **Timestamp Generation**: The server generates a Unix timestamp to ensure the signature is time-sensitive and cannot be reused indefinitely.
+2. **Parameter Mapping**: The system prepares the required upload parameters (e.g., `folder: "chat"`).
+3. **Cryptographic Signing**: The server uses your `CLOUDINARY_API_SECRET` to create a HMAC-SHA1 hash of the parameters.
+4. **Credential Delivery**: The server returns the signature, timestamp, and public API keys to the client.
+5. **Direct Upload**: The client sends the file and these credentials directly to Cloudinary's API.
+
+---
+
+#### Responses
+
+#### Success
+
+| Status Code | Description |
+| --- | --- |
+| `200 OK` | Signature generated successfully. |
+
+**Body**
 
 ```json
 {
-  "url": "https://res.cloudinary.com/...",
-  "public_id": "chat/abc123",
-  "message_type": "image"
+  "api_key": "123456789012345",
+  "cloud_name": "ufinda-cloud",
+  "folder": "chat",
+  "signature": "a5e8f230b8c7...8d2f",
+  "timestamp": 1735468200
 }
 
 ```
+
+#### Errors
+
+| Status Code | Description |
+| --- | --- |
+| `401 Unauthorized` | User is not logged in. |
+| `500 Internal Error` | Failed to generate signature due to configuration issues. |
+
+---
+
+#### Client Implementation Note
+
+To perform the upload after receiving this signature, the client should send a `POST` request to:
+`https://api.cloudinary.com/v1_1/<cloud_name>/auto/upload`
+
+**Form Data Fields:**
+
+* `file`: The media file.
+* `api_key`: From the response above.
+* `timestamp`: From the response above.
+* `signature`: From the response above.
+* `folder`: From the response above.
 
 ---
 

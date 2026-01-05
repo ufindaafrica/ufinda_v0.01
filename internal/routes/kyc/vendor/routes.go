@@ -93,7 +93,7 @@ func CreateOnboardVendorKycHandler() gin.HandlerFunc {
         _, err := vendorkycdb.FindVendorKYC(getUser.ID)
         isKYCFound := err == nil
 
-        if err != nil && !errors.Is(err, vendorkycdb.ErrorKYCNotFound) {
+        if err != nil && !errors.Is(err, vendorkycdb.ErrKYCNotFound) {
             kyclog.LogKYC(getUser.ID, err)
             c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
             return
@@ -153,6 +153,18 @@ func CreateOnboardVendorKycHandler() gin.HandlerFunc {
 
 func GetCloudinarySignatureHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		user, exists := c.Get("user")
+        if !exists {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not authenticated"})
+            return
+        }
+
+        getUser, ok := user.(*db.User)
+        if !ok {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user"})
+            return
+        }
+
 		timestamp := time.Now().Unix()
 
 		// 2. Use url.Values instead of a map
@@ -164,6 +176,7 @@ func GetCloudinarySignatureHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 		// This matches the signature: func SignParameters(params url.Values, secret string)
 		signature, err := api.SignParameters(params, cld.Config.Cloud.APISecret)
 		if err != nil {
+			log.Printf("[CRITICAL] user: %v failed to get cloudinary signature: %v", getUser.ID, err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 			return
 		}
@@ -176,4 +189,31 @@ func GetCloudinarySignatureHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 			"folder":     "kyc",
 		})
 	}
+}
+
+func GetVendorProfileHandler(c *gin.Context) {
+		user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+
+	getUser, ok := user.(*db.User)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user type"})
+		return
+	}
+
+	profile, err := vendorkycdb.GetVendorProfile(getUser.ID)
+	if err != nil {
+		kyclog.LogKYC(getUser.ID, err)
+		if errors.Is(err, vendorkycdb.ErrUserNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "We couldn't find a profile for this account."})
+		}else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, profile)
 }

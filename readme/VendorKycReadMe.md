@@ -268,3 +268,71 @@ The client will receive a single JSON object (the `KYCStatusUpdate` payload) onc
 | **`SYSTEM_ERROR`** | `"KYC result determined but failed to save to database. Contact support."` | Critical infrastructure failure (e.g., database write failure). The user should be instructed to contact support. |
 
 -----
+
+### GET `/kyc/vendor/profile`
+
+This endpoint retrieves the complete professional profile for the authenticated vendor or agent. It aggregates account details from the `users` table with business-specific onboarding data from the `vendor_kyc` table.
+
+---
+
+#### Request
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `/kyc/vendor/profile` | Fetches the authenticated vendor's business profile and KYC data. |
+
+#### Headers
+
+| Header | Value | Description |
+| --- | --- | --- |
+| `Authorization` | `Bearer <access_token>` | **Required** to identify the vendor. |
+
+---
+
+#### Workflow
+
+1. **Identity Extraction**: The handler retrieves the vendor's details from the trusted context provided by the `VendorAuthMiddleware`.
+2. **Resource Embedding**: The system executes a specialized query that joins the `users` and `vendor_kyc` tables using the `fk_vendor_kyc_link` constraint.
+3. **Data Aliasing**: To maintain a consistent API structure across the **ufinda** ecosystem, the vendor-specific data is aliased to the `kyc_data` key.
+4. **Logging**: Any retrieval failures are logged with full context to the `kyc_log` table to help the support team diagnose vendor onboarding issues.
+
+---
+
+#### Success Response `200 OK`
+
+Returns a unified object representing the vendor's public and private profile data.
+
+**Body:**
+
+```json
+{
+  "first_name": "Samuel",
+  "last_name": "Hostels",
+  "email": "sam@hostelagent.ng",
+  "phone": "+2347098765432",
+  "kyc_data": {
+    "profile_img": {
+      "url": "https://res.cloudinary.com/.../vendor_01.jpg",
+      "public_id": "kyc/vendor_sam_pic"
+    },
+    "address": "45 Ikorodu Road, Lagos",
+    "about_me": "Leading agent for off-campus housing near Unilag and Yabatech."
+  }
+}
+
+```
+
+> **Note:** If the vendor has registered an account but hasn't submitted their business details, `kyc_data` will be `null`.
+
+---
+
+#### Errors
+
+| Status Code | Description |
+| --- | --- |
+| `401 Unauthorized` | **Missing Token**: The request lacks a valid Bearer token. |
+| `403 Forbidden` | **Role Mismatch**: The authenticated user does not have `vendor` or `agent` privileges. |
+| `404 Not Found` | **Not Found**: No vendor profile matches the provided authentication token. |
+| `500 Internal Server Error` | **Database Failure**: Internal error during record lookup. |
+
+---

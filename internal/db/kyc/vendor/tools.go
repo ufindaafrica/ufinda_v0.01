@@ -10,7 +10,8 @@ import (
 	"io"
 )
 
-var ErrorKYCNotFound = errors.New("no kyc found")
+var ErrKYCNotFound = errors.New("no kyc found")
+var ErrUserNotFound = errors.New("user not found")
 
 func CreateVendorKyc(data db.VendorKYC) error {
 	// 1. Define the endpoint for creation
@@ -125,8 +126,46 @@ func FindVendorKYC(id string) (*db.VendorKYC, error) {
 	}
 
 	if len(kyc) == 0 {
-		return nil, ErrorKYCNotFound
+		return nil, ErrKYCNotFound
 	}
 
 	return &kyc[0], nil
+}
+
+func GetVendorProfile(userID string) (*db.VendorProfileInfo, error) {
+	selectQuery := "first_name,last_name,email,phone,kyc_data:fk_vendor_kyc(profile_img,address,about_me)"
+
+	params := url.Values{}
+	params.Set("id", "eq."+userID)
+	params.Set("select", selectQuery)
+	params.Set("limit", "1")
+
+	
+	finalURL := fmt.Sprintf("/rest/v1/users?%s", params.Encode())
+
+	// 3. Make the Request
+	resp, err := db.MakeDBRequest("GET", finalURL, nil, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user profile: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+
+        bodyString := string(bodyBytes)
+        
+        return nil, fmt.Errorf("failed to get user profile. Status: %d, Response Body: %s", resp.StatusCode, bodyString)
+	}
+
+	var users []db.VendorProfileInfo
+	if err := json.NewDecoder(resp.Body).Decode(&users); err != nil {
+		return nil, fmt.Errorf("failed to get user profile: %w", err)
+	}
+
+	if len(users) == 0 {
+		return nil, ErrUserNotFound
+	}
+
+	return &users[0], nil
 }

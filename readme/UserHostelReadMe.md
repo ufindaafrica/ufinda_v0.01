@@ -42,6 +42,7 @@ Most retrieval endpoints return an "Enriched" hostel object which includes neste
 }
 
 ```
+> **Note:** If the vendor has no ratings/metrics or no kyc the KYC, the `vendor_kyc` and `vendor_metrics` field will be `null`.
 
 ---
 

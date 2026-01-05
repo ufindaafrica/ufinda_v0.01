@@ -21,7 +21,6 @@ import (
 )
 
 
-// <---------------------> Begin Sign Up And Verify OTP <---------------------->
 func EmailSignUpHandler(c *gin.Context) {
 	var req SignupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -192,9 +191,7 @@ func VerifyOtpHandler(c *gin.Context) {
 		"role": user.Role,
 	})
 }
-// <---------------------> End Sign Up And Verify OTP <---------------------->
 
-// <---------------------> Begin Login <---------------------->
 func EmailLoginHandler(c *gin.Context) {
     var loginObj LoginRequest
     if err := c.ShouldBindJSON(&loginObj); err != nil {
@@ -339,87 +336,93 @@ func ResendOTPHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "otp resent successfully"})
 }
-// <---------------------> End Resend OTP <---------------------->
 
-// <---------------------> Begin Logout OTP <---------------------->
 func LogoutHandler(c *gin.Context) {
-    // 1. Extract the access and refresh token from the payload.
-	accesstoken := c.GetHeader("Authorization")
-
+	// 1. Extract tokens
+	authHeader := c.GetHeader("Authorization")
 	refreshtoken := c.GetHeader("X-Refresh-Token")
+
 	if refreshtoken == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "refresh token header not provided"})
-		return		
-	}
-
-	accesstoken = strings.TrimPrefix(accesstoken, "Bearer ")
-	refreshtoken = strings.TrimPrefix(refreshtoken, "Refresh ")
-
-	accessclaims, err := token.ValidateToken(accesstoken)
-	if err != nil {
-		if errors.Is(err, token.ErrInvalidToken){
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-		}
-		log.Printf("[CRITCAL] error validating token: %w", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
 
-	// validate token before blacklisting
+	accesstoken := strings.TrimPrefix(authHeader, "Bearer ")
+	refreshtoken = strings.TrimPrefix(refreshtoken, "Refresh ")
+
+	// 2. Validate Access Token
+	// We use a "soft" check here. If it's expired, we still want to try and revoke the refresh token.
+	accessclaims, err := token.ValidateToken(accesstoken)
+	if err != nil {
+		// Log as info/warning, not a critical failure for logout
+		log.Printf("[INFO] Access token validation failed during logout: %v", err)
+	}
+
+	// 3. Validate Refresh Token
+	// This MUST be valid (or at least signed correctly) to identify which session to kill.
 	refreshclaims, err := token.ValidateToken(refreshtoken)
 	if err != nil {
-		if errors.Is(err, token.ErrInvalidToken){
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		// If the refresh token is also expired or invalid, the session is already effectively dead.
+		if errors.Is(err, token.ErrInvalidToken) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid refresh token"})
+			return
 		}
-		log.Printf("[CRITCAL] error validating token: %w", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		log.Printf("[ERROR] Refresh token validation error: %v", err)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "session already expired"})
 		return
 	}
 
 	refreshjti := refreshclaims.ID
+	userID := refreshclaims.UserID
 
+	// 4. Check if token is already blacklisted
 	isblacklisted, err := token.IsTokenBlacklisted(c.Request.Context(), refreshjti)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] Blacklist check failed: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 
-	// check if token had already been blacklisted
 	if isblacklisted {
-		// create a log
-		log  := authlog.Logs["1"]
-		fmtMessage := fmt.Sprintf(log.Message, refreshtoken)
-		userID := refreshclaims.UserID
-		newLog := db.SecurityLog{
+		// Log the attempt to reuse a blacklisted token for security auditing
+		secLog := db.SecurityLog{
 			UserID: &userID,
-			Log: fmtMessage,
-			Level: log.Level,
+			Log:    fmt.Sprintf("Logout attempted with already blacklisted refresh token: %s", refreshjti),
+			Level:  "warning",
 		}
-
-		authlog.SecurityLog(newLog)
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "expired token"})
+		authlog.SecurityLog(secLog)
+		
+		c.JSON(http.StatusOK, gin.H{"message": "already logged out"})
 		return
 	}
 
-	accessjti := accessclaims.ID
-	accessexp := accessclaims.ExpiresAt.Time
-	accessduration := time.Until(accessexp)
-	
+	// 5. Calculate remaining durations for Redis/Blacklist TTL
+	var accessjti string
+	var accessduration time.Duration
+	if accessclaims != nil {
+		accessjti = accessclaims.ID
+		// Only set duration if it's in the future
+		if time.Until(accessclaims.ExpiresAt.Time) > 0 {
+			accessduration = time.Until(accessclaims.ExpiresAt.Time)
+		}
+	}
+
 	refreshexp := refreshclaims.ExpiresAt.Time
 	refreshduration := time.Until(refreshexp)
+	if refreshduration < 0 {
+		refreshduration = time.Second * 1 // Minimal TTL if already expired
+	}
 
+	// 6. Revoke Tokens
 	if err := token.RevokeTokens(c.Request.Context(), accessjti, refreshjti, accessduration, refreshduration); err != nil {
-		log.Printf("[CRITICAL] failed to revoke token: %w", err)
+		log.Printf("[CRITICAL] failed to revoke tokens: %v", err) // Fixed: use %v not %w
 		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
 
-    // The client app, upon receiving this, should delete the tokens from its local storage.
-    c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }
-// <---------------------> End Logout OTP <---------------------->
 
-// <---------------------> Begin Refresh Token <---------------------->
 func RefreshTokenHandler(c *gin.Context) {
 	refreshToken := c.GetHeader("X-Refresh-Token")
 	if refreshToken == "" {
@@ -522,7 +525,7 @@ func DeleteCreatedUser(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 		// delete all user's assets in cloudinary
 		if createdUser.Role == "user" {
 			kyc, err := userkycdb.FindUserKYC(createdUser.ID)
-			if err != nil && !errors.Is(err, userkycdb.ErrorKYCNotFound) {
+			if err != nil && !errors.Is(err, userkycdb.ErrKYCNotFound) {
 				authlog.LogAuth(createdUser.ID,  err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 				return
@@ -538,7 +541,7 @@ func DeleteCreatedUser(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 			}
 		} else if createdUser.Role == "vendor" {
 			kyc, err := vendorkycdb.FindVendorKYC(createdUser.ID)
-			if err != nil && !errors.Is(err, vendorkycdb.ErrorKYCNotFound) {
+			if err != nil && !errors.Is(err, vendorkycdb.ErrKYCNotFound) {
 				authlog.LogAuth(createdUser.ID,  err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 				return

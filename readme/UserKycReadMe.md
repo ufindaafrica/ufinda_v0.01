@@ -180,3 +180,81 @@ Returned when the data is successfully saved to the database.
 | `500 Internal Server Error` | **Database Error**: Failure to find, create, or update the KYC record in the database. |
 
 ---
+
+### GET `/kyc/user/profile`
+
+This endpoint retrieves the complete profile information for the authenticated student user. It combines basic account data (from the `users` table) with verified academic and personal details (from the `user_kyc` table) into a single unified response.
+
+---
+
+#### Request
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `[BASE_URL]/kyc/user/profile` | Fetches the authenticated user's profile and KYC data. |
+
+#### Headers
+
+| Header | Value | Description |
+| --- | --- | --- |
+| `Authorization` | `Bearer <access_token>` | **Required** to identify the user. |
+
+---
+
+#### Workflow
+
+1. **Authentication**: The handler extracts the `user` object from the Gin context (populated by your Auth middleware).
+2. **Data Retrieval**: It calls `userkycdb.GetUserProfile`, which performs a PostgREST resource embedding query.
+* This query uses the unique constraint `fk_user_kyc_link` to join the `users` and `user_kyc` tables.
+
+
+3. **Error Handling**:
+* If the user doesn't exist in the database, it returns a `404 Not Found`.
+* If a database error occurs, it logs the incident to `kyc_log` using `%w` for error wrapping and returns a `500 Internal Server Error`.
+
+
+4. **Data Transformation**: The academic details are nested under the `kyc_data` key for a cleaner JSON structure.
+
+---
+
+#### Success Response `200 OK`
+
+The response returns a single object containing the user's basic info and their nested KYC details.
+
+**Body:**
+
+```json
+{
+  "first_name": "Ola",
+  "last_name": "Dev",
+  "email": "oladev@example.com",
+  "phone": "+2348012345678",
+  "kyc_data": {
+    "profile_img": {
+      "url": "https://res.cloudinary.com/.../image.jpg",
+      "public_id": "kyc/user_123_pic"
+    },
+    "address": "123 University Road, Lagos",
+    "level": "400",
+    "dept": "Computer Science",
+    "faculty": "Science",
+    "matric": "CSC/2022/001",
+    "about_me": "Fullstack developer passionate about building Africa."
+  }
+}
+
+```
+
+> **Note:** If the user has not completed their KYC, the `kyc_data` field will be `null`.
+
+---
+
+#### Errors
+
+| Status Code | Description |
+| --- | --- |
+| `401 Unauthorized` | **Authentication Failed**: No valid token provided or session expired. |
+| `404 Not Found` | **Missing Profile**: The account exists but the profile record could not be retrieved. |
+| `500 Internal Server Error` | **Server Error**: Unexpected database failure. The error is logged internally with the full context. |
+
+---
