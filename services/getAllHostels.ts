@@ -21,7 +21,7 @@ export const getAllHostels = async () => {
             }
         )
 
-        result[0] = res.status
+        result[0] = "200"
         result[1] = res.data
     } catch (err: unknown) {
         if (axios.isAxiosError(err)) {

@@ -44,7 +44,8 @@ export default function Index() {
         const auth = await SecureStore.getItemAsync('AUTH')
         const mode = await SecureStore.getItemAsync('MODE')
         if (auth == null) {
-          router.replace("/auth/login")
+          // router.replace("/auth/login")
+          router.replace("/(tabs)/profile")
         } else {
           if (mode === "user") router.replace("/(tabs)/home")
           else router.replace("/(vendor)/dashboard")

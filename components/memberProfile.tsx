@@ -53,7 +53,7 @@ export default function MemberProfile() {
                 <Text style={[roboto.bodySmall, colors.grays]}>My uFinda account</Text>
                 <Setting setting="Update Kyc" kyc icon settingFun={() => router.push("/pages/updateKyc")} />
                 <Setting setting="Make money" icon />
-                <Setting setting="FAQ" icon />
+                <Setting setting="FAQ" icon settingFun={() => router.push("/pages/faqs")} />
             </View>
             <LineBreak />
             <View style={globals.authContainer}>

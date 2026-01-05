@@ -185,6 +185,7 @@ export default function Home() {
 
     const allHostels = async () => {
         const apiHostels = await getAllHostels()
+        console.log(apiHostels)
 
         if (apiHostels[0] == '200') {
             setHostels(apiHostels[1])
