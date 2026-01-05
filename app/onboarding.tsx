@@ -84,7 +84,7 @@ export default function Onboarding() {
 
                     <TouchableOpacity
                         style={onboardingStyles.button}
-                        onPress={() => router.replace("/auth/mode")}
+                        onPress={() => router.replace("/auth/login")}
                     >
                         <Text style={[onboardingStyles.buttonText, roboto.mediumEmphasizedBold]}>Get Started</Text>
                     </TouchableOpacity>

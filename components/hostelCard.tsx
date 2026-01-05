@@ -4,7 +4,6 @@ import { images } from "@/constants/images";
 import { hostelCardStyles } from "@/styles/hostelCard"
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { getItemAsync, setItemAsync } from "expo-secure-store";
 import { roboto } from "@/styles/globals";
 import { createNewChat } from "@/services/newChat";
 import { EnrichedHostel } from "@/types";

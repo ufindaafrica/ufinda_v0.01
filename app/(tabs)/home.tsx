@@ -6,7 +6,6 @@ import { getAllHostels } from "@/services/getAllHostels";
 import { globals, roboto } from "@/styles/globals";
 import { homeStyles } from "@/styles/home";
 import { EnrichedHostel } from "@/types";
-import { getItemAsync, setItemAsync } from "expo-secure-store";
 import { useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -14,6 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { searchHostels, searchParams } from "@/services/searchHostels";
 import { toast } from "@/deps/toast";
 import { text } from "@/constants/texts";
+import { router } from "expo-router";
 
 
 export default function Home() {
@@ -167,15 +167,6 @@ export default function Home() {
     const [savedIds, setSavedIds] = useState<Array<string>>([])
     const [reloadHome, setReloadHome] = useState(false)
 
-    // useFocusEffect(useCallback(() => {
-    //     const savedHostels = async () => {
-    //         const favHostels = JSON.parse(await getItemAsync('SAVED') || "[]")
-    //         setSavedIds(favHostels)
-    //     }
-    //     savedHostels()
-
-    // }, [reloadHome]))
-
     useEffect(() => {
         const savedHostelData = async () => {
             setHostels(JSON.parse(await AsyncStorage.getItem('HOSTELS') ?? "[]"))
@@ -198,6 +189,8 @@ export default function Home() {
         if (apiHostels[0] == '200') {
             setHostels(apiHostels[1])
             // await AsyncStorage.setItem('HOSTELS', JSON.stringify(apiHostels[1]))
+        } else {
+            router.replace("/auth/login")
         }
         return
     }

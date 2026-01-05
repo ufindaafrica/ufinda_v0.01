@@ -7,6 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import * as Secure from "expo-secure-store"
 import { router } from "expo-router";
 import BackArrow from "@/components/back";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 
 export default function Mode () {

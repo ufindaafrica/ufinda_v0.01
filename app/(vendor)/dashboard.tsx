@@ -4,9 +4,12 @@ import Plus from "@/components/plus";
 import VendorAppHeader from "@/components/vendorAppHeader";
 import { AgentHostels } from "@/constants/dummy_data";
 import { images } from "@/constants/images";
+import { getAgentInfo } from "@/services/agentInfo";
 import { dashboardStyles } from "@/styles/dashboard";
 import {globals, roboto } from "@/styles/globals";
 import { router } from "expo-router";
+import { getItemAsync } from "expo-secure-store";
+import { useEffect } from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -38,6 +41,27 @@ export default function Dashboard() {
         ["Profile View", images.vendorUser, 14],
         ["Appointments", images.appointments, 6]
     ]
+
+    const vendorInfo = async () => {
+        const id = await getItemAsync("ID")
+        if (!id) {
+            router.replace("/auth/login")
+            return
+        }
+        
+        const vendorData = await getAgentInfo(id)
+        if (vendorData[0] != "200") {
+            router.replace("/auth/login")
+            return
+        }
+    }
+
+    useEffect(() => {
+        const loadVendor = async () => {
+            await vendorInfo()
+        }
+        loadVendor()
+    }, [])
 
     return (
         <SafeAreaView style={[globals.vendorContainer]}>

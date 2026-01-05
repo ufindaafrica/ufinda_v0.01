@@ -1,23 +1,15 @@
-import { Inter_300Light, Inter_400Regular, Inter_700Bold, useFonts } from "@expo-google-fonts/inter";
 import { useFonts as useRobotoFonts, Roboto_700Bold, Roboto_400Regular } from "@expo-google-fonts/roboto"
 import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
-import Otp from "./auth/otp";
 import Onboarding from "./onboarding";
 import Splash from "./splash";
-import Mode from "./auth/mode";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Index() {
 
   const [splashScreen, setSplashScreen] = useState(true)
   const [firstOpen, setFirstOpen] = useState(true)
-
-  const [fontsLoaded] = useFonts({
-    Inter_700Bold,
-    Inter_400Regular,
-    Inter_300Light,
-  })
 
   const [robotoFontsLoaded] = useRobotoFonts({
     Roboto_700Bold,
@@ -28,10 +20,10 @@ export default function Index() {
 
     const initOnboarding = async () => {
 
-      const storedFirstOpen = await SecureStore.getItemAsync("firstOpen")
+      const storedFirstOpen = await AsyncStorage.getItem("firstOpen")
 
       if (storedFirstOpen == null) {
-        await SecureStore.setItemAsync("firstOpen", "false")
+        await AsyncStorage.setItem("firstOpen", "false")
       } else {
         setFirstOpen(false)
       }
@@ -47,35 +39,28 @@ export default function Index() {
   }, []);
 
   useEffect(() => {
-    if (!splashScreen && firstOpen === false) {
-      if (SecureStore.getItem("AUTH") == null) {
-        // router.replace("/auth/mode")
-        // router.replace("/auth/otp")
-        router.replace("/auth/login")
-        // router.replace("/(tabs)/home")
-        // router.replace("/auth/pic")
-        // router.replace("/auth/login")
-        // router.replace("/onboarding")
-        // router.replace("/auth/vendorOtp")
-        // router.replace("/dashboard")
-        // router.replace("/(vendor)/ads")
-        // router.replace("/vendorPages/newHostel")
-        // router.replace("/(vendor)/chat")
-      } else {
-        // router.replace("/(tabs)/home")
-        // router.replace("/auth/mode")
+    const navigate = async () => {
+      if (!splashScreen && firstOpen === false) {
+        const auth = await SecureStore.getItemAsync('AUTH')
+        const mode = await SecureStore.getItemAsync('MODE')
+        if (auth == null) {
+          router.replace("/auth/login")
+        } else {
+          if (mode === "user") router.replace("/(tabs)/home")
+          else router.replace("/(vendor)/dashboard")
+        }
       }
     }
+
+    navigate()
   }, [splashScreen, firstOpen]);
 
-  
-  if (!fontsLoaded || !robotoFontsLoaded || firstOpen === null) return null
 
-  
+  if (!robotoFontsLoaded || firstOpen === null) return null
+
+
   if (splashScreen) return <Splash />
   if (firstOpen) return <Onboarding />
-  // return <Mode />
-  // return <Otp/>
 
 }
 
