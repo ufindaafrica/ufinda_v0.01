@@ -46,7 +46,7 @@ Most retrieval endpoints return an "Enriched" hostel object which includes neste
 
 ---
 
-### GET `/hostels/all`
+### GET `[BASE_URL]/hostels/all`
 
 Retrieves all available hostels. Results are paginated and sorted by the most recently created.
 
@@ -54,7 +54,6 @@ Retrieves all available hostels. Results are paginated and sorted by the most re
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `limit` | `string` | `10` | Number of items per page. |
 | `page` | `string` | `1` | Current page number. |
 
 #### Responses
@@ -64,7 +63,7 @@ Retrieves all available hostels. Results are paginated and sorted by the most re
 
 ---
 
-### GET `/hostels/search`
+### GET `[BASE_URL]/hostels/search`
 
 Performs a filtered search across the hostel database.
 
@@ -76,12 +75,11 @@ Performs a filtered search across the hostel database.
 | `price_min` | `string` | Minimum total psckage. |
 | `price_max` | `string` | Maximum total package. |
 | `type` | `string` | Room type (e.g., "single room"). |
-| `limit` | `string` | Results per page. |
 | `page` | `string` | Current page. |
 
 ---
 
-### GET `/hostels/:id`
+### GET `[BASE_URL]/hostels/:id`
 
 Retrieves the full details of a specific hostel by its unique identifier.
 
@@ -98,7 +96,7 @@ Retrieves the full details of a specific hostel by its unique identifier.
 
 ---
 
-### GET `/hostels/:id/similar`
+### GET `[BASE_URL]/hostels/:id/similar`
 
 Retrieves hostels similar to the one specified (usually based on room type and price range).
 
@@ -112,12 +110,11 @@ Retrieves hostels similar to the one specified (usually based on room type and p
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `limit` | `int` | `10` | Number of similar hostels to return. |
 | `page` | `int` | `1` | Pagination page. |
 
 ---
 
-### POST `/hostels/fav/:id`
+### POST `[BASE_URL]/hostels/fav/:id`
 
 Adds a specific hostel to the authenticated user's favorites list.
 

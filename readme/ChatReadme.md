@@ -115,7 +115,7 @@ Creates a new room or returns an existing one between two parties.
 
 Fetches paginated message history for a specific room.
 
-**Query Params:** `room_id` (Required), `limit`, `offset`.
+**Query Params:** `room_id` (Required), `page`.
 
 **Expected Payload (Success 200 OK):**
 
@@ -213,7 +213,7 @@ This endpoint provides the necessary security credentials for the client (fronte
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
-| `GET` | `[BASE_URL]/hostels/signature` | Generates a signed upload ticket for Cloudinary. |
+| `GET` | `[BASE_URL]/chat/signature` | Generates a signed upload ticket for Cloudinary. |
 
 #### Headers
 
@@ -280,20 +280,93 @@ To perform the upload after receiving this signature, the client should send a `
 
 ## II. WebSocket Protocol (Real-Time)
 
-### A. Mobile ➡️ Server (Actions)
+The ufinda Chat Service uses WebSockets for low-latency communication. All data exchanged between the client (Mobile) and the server must be valid **JSON**.
 
-| Type | Payload Example |
-| --- | --- |
-| **`join_room`** | `{"room_id": "UUID"}` |
-| **`message`** | `{"room_id": "UUID", "content": "...", "message_type": "text"}` |
+### 1. The Global Envelope
 
-### B. Server ➡️ Mobile (Events)
+Every message sent or received follows a strict envelope structure. The `type` field tells the parser how to interpret the `payload`.
 
-#### `type: "message"`
+```json
+{
+  "type": "ACTION_TYPE",
+  "payload": { ... }
+}
 
-Broadcast to the recipient when a new message arrives.
+```
 
-**Expected Payload:**
+---
+
+### 2. Client-to-Server Actions (Mobile ➡️ Server)
+
+Mobile developers must emit these events to manage chat states.
+
+#### **A. `join_room**`
+
+Used to subscribe the current connection to a specific chat room. You must join a room to receive real-time broadcasts for that room.
+
+* **When to send:** As soon as the user opens a specific chat screen.
+* **Payload:**
+
+```json
+{
+  "type": "join_room",
+  "payload": {
+    "room_id": "fa1bd5a1-bad2-4699-a13f-7fa96f7946d8"
+  }
+}
+
+```
+
+#### **B. `leave_room**`
+
+Used to unsubscribe from a room. This prevents the client from receiving unnecessary background data.
+
+* **When to send:** When the user exits the chat screen back to the inbox.
+* **Payload:**
+
+```json
+{
+  "type": "leave_room",
+  "payload": {
+    "room_id": "fa1bd5a1-bad2-4699-a13f-7fa96f7946d8"
+  }
+}
+
+```
+
+#### **C. `message**`
+
+Sends a new message to the room.
+
+* **Note:** For images, upload to Cloudinary first and send the URL as `content`.
+* **Payload:**
+
+```json
+{
+  "type": "message",
+  "payload": {
+    "room_id": "fa1bd5a1-bad2-4699-a13f-7fa96f7946d8",
+    "content": "Is this hostel still available?",
+    "message_type": "text",
+    "public_id": "" 
+  }
+}
+
+```
+
+*(Use `message_type: "image"` and provide a `public_id` if sending an image).*
+
+---
+
+### 3. Server-to-Client Events (Server ➡️ Mobile)
+
+These are events the Mobile app must listen for to update the UI.
+
+#### **A. `message` (Broadcast)**
+
+Sent to all participants in a room when a new message is saved.
+
+* **Payload:**
 
 ```json
 {
@@ -304,17 +377,19 @@ Broadcast to the recipient when a new message arrives.
     "sender_id": "sender_uuid",
     "content": "Hey!",
     "message_type": "text",
-    "created_at": "2025-12-05T17:00:00Z"
+    "public_id": "",
+    "created_at": "2026-01-05T17:00:00Z"
   }
 }
 
 ```
 
-#### `type: "message_delivered"`
+#### **B. `message_delivered**`
 
-Confirmation sent back to the **sender** after the database successfully saves the message.
+An acknowledgment sent **only to the sender**.
 
-**Expected Payload:**
+* **Usage:** Use this to change your UI "sending" indicator to a "delivered" checkmark.
+* **Payload:**
 
 ```json
 {
@@ -324,4 +399,22 @@ Confirmation sent back to the **sender** after the database successfully saves t
   }
 }
 
----------
+```
+
+#### **C. `error**`
+
+Sent when an action fails (e.g., malformed JSON or invalid Room ID).
+
+* **Payload:**
+
+```json
+{
+  "type": "error",
+  "payload": {
+    "message": "invalid json format"
+  }
+}
+
+```
+
+---

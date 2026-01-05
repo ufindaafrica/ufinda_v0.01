@@ -10,7 +10,7 @@ The base URL for all API requests:
 
 -----
 
-### GET `/hostels/signature`
+### GET `[BASE_URL]/hostels/signature`
 
 This endpoint provides the necessary security credentials for the client (frontend) to upload media directly to **Cloudinary**. This prevents your backend from handling large file bytes, ensuring high performance and stability on limited-RAM hosting like Render.
 
@@ -169,7 +169,7 @@ This endpoint allows verified vendors to create a new hostel listing. It uses a 
 
 ---
 
-### PATCH `/hostels/:id`
+### PATCH `[BASE_URL]/hostels/:id`
 
 This endpoint allows an authenticated and verified **Vendor** to partially update a hostel listing they own. It accepts a **JSON payload**. Fields not included in the request will remain unchanged.
 
@@ -237,7 +237,7 @@ This endpoint allows an authenticated and verified **Vendor** to partially updat
 
 ---
 
-### DELETE `/hostels/:id`
+### DELETE `[BASE_URL]/hostels/:id`
 
 This endpoint allows an authenticated and verified **Vendor** to permanently delete a hostel listing that they own. This action also triggers the removal of all associated media (images and videos) from Cloudinary.
 
@@ -306,7 +306,7 @@ No request body is required for this endpoint.
 
 ---
 
-### GET `/hostels/agents`
+### GET `[BASE_URL]/hostels/agents`
 
 This endpoint allows an authenticated **Vendor** (Agent) to retrieve a list of all hostel listings they have created. It returns the full details of each hostel associated with the vendor's unique ID.
 

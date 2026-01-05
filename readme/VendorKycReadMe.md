@@ -10,17 +10,7 @@ The base URL for all API requests:
 
 -----
 
-## Base URL
-The base URL for all API requests:
-
-| Environment | URL |
-| :--- | :--- |
-| **Production** | `http://ufinda-v0-01.onrender.com` |
-| **Local Dev** | `http://localhost:8080` |
-
------
-
-### GET `/kyc/vendor/signature`
+### GET `[BASE_URL]/kyc/vendor/signature`
 
 This endpoint provides the necessary security credentials for the client (frontend) to upload media directly to **Cloudinary**. This prevents your backend from handling large file bytes, ensuring high performance and stability on limited-RAM hosting like Render.
 
@@ -146,7 +136,7 @@ None.
 
 ### 2\. Mini-KYC: Update Vendor Profile
 
-### POST `/kyc/vendor`
+### POST `[BASE_URL]/kyc/vendor`
 
 This endpoint allows vendors/agents to submit or update their onboarding details. Like the student KYC, this endpoint has been migrated from multipart forms to a **JSON-based workflow**. The vendor is responsible for uploading their profile image to Cloudinary on the client side and providing the metadata in the request.
 
@@ -239,7 +229,7 @@ After the vendor launches the Dojah widget (using the URL from the first endpoin
 
 | Protocol | Endpoint | Description |
 | :--- | :--- | :--- |
-| `ws` in `devt` and `wss` in `prod` | `wss://ufinda-v0-01.onrender.com/ws?user_id=<VENDOR_ID>` | Connects the client to a real-time channel associated with the specific vendor. |
+| `ws` in `devt` and `wss` in `prod` | `wss://[BASE_URL]/ws?user_id=<VENDOR_ID>` | Connects the client to a real-time channel associated with the specific vendor. |
 
 ### Connection Process
 
@@ -269,7 +259,7 @@ The client will receive a single JSON object (the `KYCStatusUpdate` payload) onc
 
 -----
 
-### GET `/kyc/vendor/profile`
+### GET `[BASE_URL]/kyc/vendor/profile`
 
 This endpoint retrieves the complete professional profile for the authenticated vendor or agent. It aggregates account details from the `users` table with business-specific onboarding data from the `vendor_kyc` table.
 
@@ -279,7 +269,7 @@ This endpoint retrieves the complete professional profile for the authenticated 
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
-| `GET` | `/kyc/vendor/profile` | Fetches the authenticated vendor's business profile and KYC data. |
+| `GET` | `[BASE_URL]/kyc/vendor/profile` | Fetches the authenticated vendor's business profile and KYC data. |
 
 #### Headers
 
@@ -292,7 +282,7 @@ This endpoint retrieves the complete professional profile for the authenticated 
 #### Workflow
 
 1. **Identity Extraction**: The handler retrieves the vendor's details from the trusted context provided by the `VendorAuthMiddleware`.
-2. **Resource Embedding**: The system executes a specialized query that joins the `users` and `vendor_kyc` tables using the `fk_vendor_kyc_link` constraint.
+2. **Resource Embedding**: The system executes a specialized query that joins the `users` and `vendor_kyc` tables using the `fk_vendor_kyc` constraint.
 3. **Data Aliasing**: To maintain a consistent API structure across the **ufinda** ecosystem, the vendor-specific data is aliased to the `kyc_data` key.
 4. **Logging**: Any retrieval failures are logged with full context to the `kyc_log` table to help the support team diagnose vendor onboarding issues.
 

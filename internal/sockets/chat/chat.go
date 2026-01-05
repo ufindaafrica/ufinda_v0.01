@@ -1007,19 +1007,12 @@ func (cs *SupabaseChatService) GetChatHistoryHandler(c *gin.Context) {
 	userID := c.GetString("id")
 
 	roomID := c.Query("room_id")
-	limitStr := c.DefaultQuery("limit", "50")
-	offsetStr := c.DefaultQuery("offset", "0")
+	pageStr := c.DefaultQuery("page", "1")
+	page, _ := strconv.Atoi(pageStr)
+	if page < 1 { page = 1 }
+	offset := (page - 1) * DefaultPageSize
 
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil || limit <= 0 {
-		limit = 50
-	}
-	offset, err := strconv.Atoi(offsetStr)
-	if err != nil || offset < 0 {
-		offset = 0
-	}
-
-	messages, err := cs.GetChatHistory(roomID, limit, offset)
+	messages, err := cs.GetChatHistory(roomID, DefaultPageSize, offset)
 	if err != nil {
 		chatlog.LogChat(userID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})

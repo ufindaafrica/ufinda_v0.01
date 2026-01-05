@@ -8,6 +8,7 @@ import (
 	"strconv"
 )
 
+const DefaultPageSize = 20
 const MsgServerError = "An unexpected error occurred. Please try again."
 
 func GetCloudinarySignature(cld *cloudinary.Cloudinary) (map[string]interface{}, error) {

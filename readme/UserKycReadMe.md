@@ -9,7 +9,7 @@ The base URL for all API requests:
 | **Local Dev** | `http://localhost:8080` |
 -----
 
-### GET `/kyc/user/signature`
+### GET `[BASE_URL]/kyc/user/signature`
 
 This endpoint provides the necessary security credentials for the client (frontend) to upload media directly to **Cloudinary**. This prevents your backend from handling large file bytes, ensuring high performance and stability on limited-RAM hosting like Render.
 
@@ -84,7 +84,7 @@ To perform the upload after receiving this signature, the client should send a `
 
 ---
 
-### POST `/kyc/user`
+### POST `[BASE_URL]/kyc/user`
 
 This endpoint allows authenticated users to submit or update their Know Your Customer (KYC) details. It has been updated to accept a **JSON payload** instead of a multipart form. The profile image must now be uploaded by the client to Cloudinary beforehand, with the metadata sent in the request.
 
@@ -113,6 +113,7 @@ The request body must be a JSON object. All fields are optional to allow for par
 | `dept` | `string` | User's department. |
 | `faculty` | `string` | User's faculty. |
 | `matric` | `string` | User's matriculation number. |
+| `address` | `string` | User's address |
 | `about_me` | `string` | A short biography or description. |
 | `profile_img` | `object` | An object containing Cloudinary metadata (see below). |
 
@@ -130,6 +131,7 @@ The request body must be a JSON object. All fields are optional to allow for par
   "dept": "Computer Science",
   "faculty": "Science",
   "matric": "19/52HA044",
+  "address": "21, old road street",
   "about_me": "Tech enthusiast and final year student.",
   "profile_img": {
     "url": "https://res.cloudinary.com/demo/image/upload/v1234/profile.jpg",
@@ -181,7 +183,7 @@ Returned when the data is successfully saved to the database.
 
 ---
 
-### GET `/kyc/user/profile`
+### GET `[BASE_URL]/kyc/user/profile`
 
 This endpoint retrieves the complete profile information for the authenticated student user. It combines basic account data (from the `users` table) with verified academic and personal details (from the `user_kyc` table) into a single unified response.
 
@@ -205,7 +207,7 @@ This endpoint retrieves the complete profile information for the authenticated s
 
 1. **Authentication**: The handler extracts the `user` object from the Gin context (populated by your Auth middleware).
 2. **Data Retrieval**: It calls `userkycdb.GetUserProfile`, which performs a PostgREST resource embedding query.
-* This query uses the unique constraint `fk_user_kyc_link` to join the `users` and `user_kyc` tables.
+* This query uses the unique constraint `fk_user_kyc` to join the `users` and `user_kyc` tables.
 
 
 3. **Error Handling**:
