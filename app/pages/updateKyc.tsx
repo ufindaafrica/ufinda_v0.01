@@ -70,9 +70,11 @@ export default function UpdateKyc() {
         const update = mode === "user" ? await studentKyc(kycData) : await vendorKyc(kycData)
 
         if (update[0] != '200') {
+            setLoaderVisible(false)
             seterrorModal(true)
             setErrorText(update[1])
         } else {
+            setLoaderVisible(false)
             setCorrectModal(true)
             setCorrectModal(update[1])
         }

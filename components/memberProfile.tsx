@@ -52,7 +52,7 @@ export default function MemberProfile() {
             <View style={globals.authContainer}>
                 <Text style={[roboto.bodySmall, colors.grays]}>My uFinda account</Text>
                 <Setting setting="Update Kyc" kyc icon settingFun={() => router.push("/pages/updateKyc")} />
-                <Setting setting="Make money" icon />
+                <Setting setting="Make money" icon settingFun={() => toast("Coming soon")}/>
                 <Setting setting="FAQ" icon settingFun={() => router.push("/pages/faqs")} />
             </View>
             <LineBreak />
@@ -60,8 +60,8 @@ export default function MemberProfile() {
                 <Text style={[roboto.bodySmall, colors.grays]}>Settings</Text>
                 <Setting setting="Personal information" icon settingFun={() => router.push("/pages/userInfo")} />
                 <Setting setting="Language" value="English" />
-                <Setting setting="About uFinda" icon />
-                <Setting setting="Change password" icon />
+                <Setting setting="About uFinda" icon settingFun={() => router.push("/pages/faqs")}/>
+                <Setting setting="Change password" icon settingFun={() => toast("Coming Soon")} />
                 <Setting setting="Theme" icon value="Device theme" />
                 <TouchableOpacity onPress={signOut}>
                     <Text style={[roboto.bodyMedium, colors.foundationWarningDark, singleChatStyles.settings]}>Sign out</Text>
