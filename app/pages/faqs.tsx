@@ -15,7 +15,7 @@ export default function Faqs() {
     return (
         <SafeAreaProvider style={[globals.container, globals.lightContainer]}>
             <SafeAreaView style={[globals.container, globals.lightContainer]}>
-                <View style={idStyles.headerV}>
+                <View style={[idStyles.headerV, {paddingBottom: 0}]}>
                     <View style={idStyles.firstHeaderV}>
                         <BackArrow backFun={() => router.back()} large />
                         <Text style={roboto.titleLargeBold}>FAQs</Text>

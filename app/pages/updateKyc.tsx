@@ -111,7 +111,7 @@ export default function UpdateKyc() {
                     showsVerticalScrollIndicator={false}
                     enableOnAndroid={true}
                     extraScrollHeight={15}>
-                    <View style={idStyles.headerV}>
+                    <View style={[idStyles.headerV, {paddingBottom: 0}]}>
                         <View style={idStyles.firstHeaderV}>
                             <BackArrow backFun={() => router.back()} large />
                             <Text style={roboto.titleLargeBold}>Update Kyc</Text>

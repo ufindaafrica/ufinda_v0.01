@@ -58,7 +58,7 @@ export default function MemberProfile() {
             <LineBreak />
             <View style={globals.authContainer}>
                 <Text style={[roboto.bodySmall, colors.grays]}>Settings</Text>
-                <Setting setting="Personal information" icon />
+                <Setting setting="Personal information" icon settingFun={() => router.push("/pages/userInfo")} />
                 <Setting setting="Language" value="English" />
                 <Setting setting="About uFinda" icon />
                 <Setting setting="Change password" icon />
