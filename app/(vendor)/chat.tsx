@@ -1,11 +1,12 @@
 import ChatAppHeader from "@/components/chatAppHeader";
 import LineBreak from "@/components/lineBreak";
 import Plus from "@/components/plus";
-import { dummyHostels } from "@/constants/dummy_data";
 import { images } from "@/constants/images";
 import { lastMessageSentTime } from "@/deps/chatTime";
+import { getRole } from "@/deps/getRole";
 import { getAgentInfo } from "@/services/agentInfo";
 import { getAllChats } from "@/services/allChats";
+import { getStudentInfo, getVendorInfo } from "@/services/getStudentInfo";
 import { chatStyles } from "@/styles/chat";
 import { colors, globals, roboto } from "@/styles/globals";
 import { router, useFocusEffect } from "expo-router";
@@ -38,7 +39,7 @@ type LastMessage = {
     id?: string
 }
 
-type Agent = {
+type ChatMate = {
     name: string,
     profile_img: string,
     phone_number: string,
@@ -50,7 +51,13 @@ export default function VendorChat({ student }: VendorChatProps) {
     const [activated, setActivated] = useState("All")
     const [allChats, setAllChats] = useState<Array<Chat>>([])
     const [myId, setMyId] = useState("")
-    const [agentInfos, setAgentInfos] = useState<Array<Agent>>([])
+    const [chatMateInfos, setChatMateInfos] = useState<Array<ChatMate>>([])
+    const [role, setRole] = useState("")
+
+    const [reload, setReload] = useState(false)
+    // useFocusEffect(useCallback(() => {
+    //     setReload(!reload)
+    // }, []))
 
     const currentChats = () => {
         if (activated === "Unread") return allChats.filter(item => (item.last_message?.is_read == false && item.last_message?.sender_id !== myId))
@@ -58,66 +65,72 @@ export default function VendorChat({ student }: VendorChatProps) {
         if (activated === "Read") return allChats.filter(item => item.last_message?.is_read == true && item.last_message?.sender_id === myId)
 
         if (activated === "Sent") return allChats.filter(item => item.last_message?.sender_id === myId)
-        
+
         return allChats
     }
 
-    useEffect(() => {
+    useFocusEffect(useCallback(() => {
 
         const loadId = async () => {
             const id = await getItemAsync('ID')
             setMyId(id ?? "")
+            setReload(!reload)
         }
 
         loadId()
-    }, [])
+    }, []))
 
-    const agentInfo = async (vendorId: string) => {
-            const agent = (await getAgentInfo(vendorId))
-            console.log(agent)
-            const agentDat = agent?.[1]?.[0]?.vendor_info
-            console.log(agentDat)
-            const agentData: Agent = {
-                name: `${agentDat?.first_name ?? ""} ${agentDat?.last_name ?? ""}`,
-                profile_img: agentDat?.vendor_kyc?.profile_img?.url ?? "",
-                phone_number: agentDat?.phone ?? "",
-                id: vendorId
-            }
-            setAgentInfos(prev => {
-                const old = [...prev]
-                old.push(agentData)
-                return old
-            })
+
+    const chatMateInfo = async (chatMateId: string) => {
+        const chatMate = chatMateId.startsWith("usr") ? await getStudentInfo() : await getAgentInfo(chatMateId)
+        const chatMateDat = chatMateId.startsWith("usr") ? chatMate?.[1] : chatMate?.[1]?.[0]?.vendor_info
+        const chatMateData: ChatMate = {
+            name: `${chatMateDat?.first_name ?? ""} ${chatMateDat?.last_name ?? ""}`,
+            profile_img: chatMateId.startsWith("usr") ? chatMateDat?.kyc_data?.profile_img?.url ?? "" : chatMateDat?.vendor_kyc?.profile_img?.url ?? "",
+            phone_number: chatMateDat?.phone ?? "",
+            id: chatMateId
         }
+        console.log("final data =>", chatMateData)
+        setChatMateInfos(prev => {
+            const old = [...prev]
+            old.push(chatMateData)
+            return old
+        })
+    }
 
     useFocusEffect(useCallback(() => {
         const getChats = async () => {
-            const everyChat = (await getAllChats())[1]
+            if (!myId) return
+            
+            const everyChat = (await getAllChats())[1] ?? []
             console.log(everyChat)
-            const agentsInChats = everyChat?.map((chat:any) => chat?.vendor_id)
-            for (const agent of agentsInChats) {
-                await agentInfo(agent)
-            }
-            console.log(agentsInChats)
+            
+            const peopleInChats: Array<string> = everyChat?.map((chat: any) => chat?.buyer_id === myId ? chat?.vendor_id : chat?.buyer_id) ?? []
+            
+            await Promise.all(
+                peopleInChats.map(personId => chatMateInfo(personId))
+            )
+
+            console.log(peopleInChats)
             setAllChats(everyChat ?? [])
         }
 
         getChats()
-    }, []))
+    }, [myId]))
 
-    const getAgentName = (id: string) => {
-        const hostel = agentInfos.find(agent => agent.id == id)
+    const getChatMateName = (id: string) => {
+        const hostel = chatMateInfos.find(chatmate => chatmate.id == id)
         return hostel?.name ?? ""
     }
 
-    const getAgentPic = (id: string) => {
-        const picAgent = agentInfos.find(agent => agent.id == id)
-        return picAgent?.profile_img ?? ""
+    const getChatMatePic = (id: string) => {
+        const picChatMate = chatMateInfos.find(chatmate => chatmate.id == id)
+        return picChatMate?.profile_img ?? ""
     }
 
-    const getAgentData = (id: string) => {
-        const agent = agentInfos.find(agent => agent.id == id)
-        return agent
+    const getChatMateData = (id: string) => {
+        const chatmate = chatMateInfos.find(chatmate => chatmate.id == id)
+        return chatmate ?? {}
     }
 
     return (
@@ -151,18 +164,18 @@ export default function VendorChat({ student }: VendorChatProps) {
                                 params: {
                                     id: item.id,
                                     vendor_id: chatPersonId,
-                                    vendor_data: JSON.stringify(getAgentData(item?.vendor_id ?? ""))
+                                    chatmate_data: JSON.stringify(getChatMateData(item?.vendor_id ?? ""))
                                 }
                             })
                         }} key={idx} style={chatStyles.padding}>
                             <View style={chatStyles.eachChatV}>
-                                <ImageBackground source={getAgentPic(item?.vendor_id ?? "") ? {uri: getAgentPic(item?.vendor_id ?? "")} : images.laptop} style={chatStyles.laptopV}>
+                                <ImageBackground source={getChatMatePic(item?.vendor_id ?? "") ? { uri: getChatMatePic(item?.vendor_id ?? "") } : images.laptop} style={chatStyles.laptopV} imageStyle={chatStyles.imageV}>
                                     {item?.sender_profile_pic ? <Image source={item?.sender_profile_pic} style={chatStyles.profileImg} /> : <View style={[chatStyles.profileImg, chatStyles.nullPic]}>
-                                        <Text style={[roboto.mediumEmphasized, colors.white]}>{myId == item?.buyer_id ? (getAgentName(item?.vendor_id ?? "")).charAt(0) : item?.buyer_id?.charAt(0) ?? ""}</Text></View>}
+                                        <Text style={[roboto.mediumEmphasized, colors.white]}>{myId == item?.buyer_id ? (getChatMateName(item?.vendor_id ?? "")).charAt(0) : item?.buyer_id?.charAt(0) ?? ""}</Text></View>}
                                 </ImageBackground>
                                 <View style={chatStyles.chatRightV}>
                                     <View>
-                                        <Text style={roboto.bodyLargeBold}>{getAgentName(item?.vendor_id ?? "")}</Text>
+                                        <Text style={roboto.bodyLargeBold}>{getChatMateName(item?.vendor_id ?? "")}</Text>
                                         <View style={chatStyles.tickV}>
                                             {
                                                 (item?.unread_count ?? 0) > 0 ? null : (item?.last_message?.sender_id ?? "") === myId && <Image source={(item?.unread_count ?? 0) > 0 ? null : item?.last_message?.is_read ? images.greenTicks : images.twoticks} style={chatStyles.tick} />

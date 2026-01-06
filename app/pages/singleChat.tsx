@@ -101,18 +101,24 @@ export default function SingleChat() {
 
         return () => {
             active = false
-            chatSocket.current?.send(JSON.stringify({
+
+            const socket = chatSocket.current
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
                 type: 'leave_room',
                 payload: {
                     room_id: id
                 }
             }))
-            chatSocket.current?.close()
+            socket.close() 
+            }
+            
             chatSocket.current = null
         }
     }, [id]))
 
     const sendMessage = async (message: string) => {
+
         const newMessage = {
             content: message,
             message_type: "text",

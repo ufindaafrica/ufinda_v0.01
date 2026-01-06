@@ -12,7 +12,6 @@ import Loader from "@/components/loader";
 import ErrorModal from "@/components/errorModal";
 import { getItemAsync } from "expo-secure-store";
 import { userUploadSignature, vendorUploadSignature } from "@/services/uploadSignature";
-import { uploadAsync } from "expo-file-system/legacy";
 import { uploadToCloudinary } from "@/services/uploadToCloudinary";
 import { toast } from "@/deps/toast";
 import AsyncStorage from "@react-native-async-storage/async-storage";

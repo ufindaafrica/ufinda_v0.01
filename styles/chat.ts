@@ -35,7 +35,12 @@ export const chatStyles = StyleSheet.create({
 
     laptopV: { 
         width: scale(54), 
-        height: scale(54) 
+        height: scale(54),
+        borderRadius: 16
+    },
+
+    imageV: {
+        borderRadius: 8
     },
 
     profileImg: { 
