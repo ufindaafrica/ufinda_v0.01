@@ -4,10 +4,15 @@ import Message from "@/components/message";
 import { dummyHostels } from "@/constants/dummy_data";
 import { images } from "@/constants/images";
 import { isLast, isLastInGroup } from "@/deps/chatTime";
+import { pickChatMedia } from "@/deps/pickImage";
 import { verticalScale } from "@/deps/scale";
+import { toast } from "@/deps/toast";
 import { BARE_URL, getAccessToken } from "@/services/apiConstants";
 import { getChatMessages } from "@/services/chatMes";
 import { markAsRead } from "@/services/markRead";
+import { sendChat } from "@/services/sendMessage";
+import { chatUploadSignature } from "@/services/uploadSignature";
+import { uploadToCloudinary } from "@/services/uploadToCloudinary";
 import { colors, globals, roboto } from "@/styles/globals";
 import { singleChatStyles } from "@/styles/singleChat";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -28,12 +33,18 @@ export type Message = {
     public_id?: string
 }
 
+type ChatMedia = {
+    uri: any,
+    name: string,
+    type: string
+}
+
 export default function SingleChat() {
 
     const params = useLocalSearchParams()
     const id = params.id
     const vendorIdString = Array.isArray(params.vendor_id) ? params.vendor_id[0] : params.vendor_id
-    const bookString = Array.isArray(params.book) ? params.book[0] : params.book 
+    const bookString = Array.isArray(params.book) ? params.book[0] : params.book
     const chatmate = Array.isArray(params.chatmate_data) ? params.chatmate_data[0] : params.chatmate_data
     const chatMateData = chatmate ? JSON.parse(chatmate) : null
 
@@ -45,7 +56,12 @@ export default function SingleChat() {
     }, [params.book])
 
     const [message, setMessage] = useState("")
+    const [image, setImage] = useState<ChatMedia | null>()
+    const [audio, setAudio] = useState()
     const [allMessages, setAllMessages] = useState<Array<Message>>([])
+
+    const [imgLoading, setImgLoading] = useState(false)
+    const [mediaUpload, setMediaUpload] = useState(0)
 
     const [userToken, setUserToken] = useState("")
     const [chatUrl, setChatUrl] = useState("")
@@ -73,6 +89,7 @@ export default function SingleChat() {
                         room_id: id
                     }
                 }))
+                console.log("room joined")
             }
 
             chatS.onmessage = (event) => {
@@ -89,11 +106,11 @@ export default function SingleChat() {
             chatS.onclose = () => {
                 chatSocket.current = null
             }
-            
+
         }
 
         const markRead = async () => {
-            await markAsRead({room_id: id})
+            await markAsRead({ room_id: id })
         }
 
         joinChatRoom()
@@ -105,44 +122,121 @@ export default function SingleChat() {
             const socket = chatSocket.current
             if (socket && socket.readyState === WebSocket.OPEN) {
                 socket.send(JSON.stringify({
-                type: 'leave_room',
-                payload: {
-                    room_id: id
-                }
-            }))
-            socket.close() 
+                    type: 'leave_room',
+                    payload: {
+                        room_id: id
+                    }
+                }))
+                socket.close()
             }
-            
+
             chatSocket.current = null
         }
     }, [id]))
 
-    const sendMessage = async (message: string) => {
+    const sendMessage = async (message: string, type: "text" | "image" | "audio" = "text") => {
 
-        const newMessage = {
-            content: message,
-            message_type: "text",
-            created_at: new Date(),
-            personal: true,
-            sender_id: userId
+        if (type === "text") {
+            const newMessage = {
+                content: message,
+                message_type: "text",
+                created_at: new Date(),
+                personal: true,
+                sender_id: userId
+            }
+
+            try {
+                chatSocket.current?.send(JSON.stringify({
+                    type: "message",
+                    payload: {
+                        room_id: id,
+                        content: newMessage.content,
+                        message_type: "text"
+                    }
+                }))
+            } catch {
+                const sent = await sendChat(newMessage)
+                if (sent[0] != "200") {
+                    toast("error sending message. resend")
+                    return
+                }
+            }
+
+            setAllMessages(prev => {
+                const messages = [...prev, newMessage]
+                return messages
+            })
+
+            Keyboard.dismiss()
+            setMessage("")
+        } else {
+            setImgLoading(true)
+
+            const uploadSignature = await chatUploadSignature()
+
+            if (uploadSignature[0] != "200") {
+                setImgLoading(false)
+                toast("error uploading media. try again.")
+                return
+            }
+
+            else {
+                const mediaUpload = await uploadToCloudinary({
+                    files: [image],
+                    api_key: uploadSignature?.[1]?.api_key,
+                    cloud_name: uploadSignature?.[1]?.cloud_name,
+                    folder: uploadSignature?.[1]?.folder,
+                    timestamp: uploadSignature?.[1]?.timestamp,
+                    signature: uploadSignature?.[1]?.signature,
+                    setUploadProgress: setMediaUpload
+                })
+
+                if (mediaUpload[0] != "200") {
+                    setImgLoading(false)
+                    toast("error uploading media. try again.")
+                    return
+                }
+
+                const newMessage = {
+                    content: mediaUpload?.[1]?.url ?? "",
+                    message_type: "image",
+                    created_at: new Date(),
+                    personal: true,
+                    sender_id: userId,
+                    public_id: mediaUpload?.[1]?.public_id ?? "",
+                }
+
+                try {
+                    chatSocket.current?.send(JSON.stringify({
+                        type: "message",
+                        payload: {
+                            room_id: id,
+                            content: newMessage.content,
+                            message_type: "image",
+                            public_id: newMessage.public_id
+                        }
+                    }))
+                } catch {
+                    const sent = await sendChat(newMessage)
+                    if (sent[0] != "200") {
+                        setImgLoading(false)
+                        toast("error sending message. resend")
+                        return
+                    }
+                }
+
+                setImgLoading(false)
+
+                setAllMessages(prev => {
+                    const messages = [...prev, newMessage]
+                    return messages
+                })
+
+                Keyboard.dismiss()
+                setMessage("")
+            }
         }
 
-        chatSocket.current?.send(JSON.stringify({
-            type: "message",
-            payload: {
-                room_id: id,
-                content: newMessage.content,
-                message_type: "text"
-            }
-        }))
-
-        setAllMessages(prev => {
-            const messages = [...prev, newMessage]
-            return messages
-        })
-
-        Keyboard.dismiss()
-        setMessage("")
     }
 
     useEffect(() => {
@@ -181,7 +275,7 @@ export default function SingleChat() {
         return () => keyboardDidShow?.remove()
     }, [])
 
-    
+
 
     return (
         <SafeAreaView style={[globals.container, globals.lightContainer]}>
@@ -212,13 +306,19 @@ export default function SingleChat() {
                     ref={scrollViewRef}
                     onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
                     showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{paddingBottom: 10}}>
+                    contentContainerStyle={{ paddingBottom: 10 }}>
 
                     <Text style={[roboto.bodySmall, colors.darkBurntOrange, singleChatStyles.encrypted]}>Messages are encrypted</Text>
 
                     {
                         allMessages.map((item, idx) =>
-                            <Message key={idx} message={item.content} personal={item.personal ? item.personal : item.sender_id === userId ? true : false} last={isLastInGroup(idx, allMessages)} time={item.created_at ? new Date(item.created_at).toTimeString().slice(0, 5) : ""} status={isLast(idx, allMessages) && item.is_read} />)
+                            <Message key={idx} message={item.content} personal={item.personal ? item.personal : item.sender_id === userId ? true : false} last={isLastInGroup(idx, allMessages)} time={item.created_at ? new Date(item.created_at).toTimeString().slice(0, 5) : ""} status={isLast(idx, allMessages) && item.is_read} type={item?.message_type} />)
+                    }
+
+                    {
+                        imgLoading && <View style={{ paddingTop: 8 }}>
+                            <Message personal type="image" percentUpload={mediaUpload} />
+                        </View>
                     }
 
                 </ScrollView>
@@ -234,11 +334,17 @@ export default function SingleChat() {
                                 value={message}
                                 onChangeText={(text) => { setMessage(text) }} />
                         </View>
-                        <TouchableOpacity>
+                        <TouchableOpacity disabled={imgLoading} onPress={async () => {
+                            const media = await pickChatMedia()
+                            if (media != null) {
+                                setImage(media)
+                                setMessage(media.uri.toString())
+                            }
+                        }}>
                             <Image source={images.camera} style={singleChatStyles.smallImg} />
                         </TouchableOpacity>
                     </View>
-                    <TouchableOpacity onPress={() => message && sendMessage(message)} style={[singleChatStyles.sendView]}>
+                    <TouchableOpacity disabled={imgLoading} onPress={() => image ? sendMessage(message, "image") : message && sendMessage(message)} style={[singleChatStyles.sendView]}>
                         <Image source={message ? images.send : images.mic} style={singleChatStyles.smallImg} />
                     </TouchableOpacity>
                 </View>

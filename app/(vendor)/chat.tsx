@@ -180,7 +180,7 @@ export default function VendorChat({ student }: VendorChatProps) {
                                             {
                                                 (item?.unread_count ?? 0) > 0 ? null : (item?.last_message?.sender_id ?? "") === myId && <Image source={(item?.unread_count ?? 0) > 0 ? null : item?.last_message?.is_read ? images.greenTicks : images.twoticks} style={chatStyles.tick} />
                                             }
-                                            <Text style={[roboto.bodySmall, colors.grays]}>{item?.last_message?.content ?? ""}</Text>
+                                            <Text style={[roboto.bodySmall, colors.grays]}>{item?.last_message?.message_type === "image" ? "📸 Picture" : item?.last_message?.content ?? ""}</Text>
                                         </View>
                                     </View>
                                     <View>

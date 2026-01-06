@@ -1,4 +1,5 @@
 import * as ImagePicker from "expo-image-picker"
+import { toast } from "./toast"
 // import { Image as ImageCompressor, Video as VideoCompressor } from "react-native-compressor"
 // import * as FileSystem from "expo-file-system/legacy"
 
@@ -75,3 +76,31 @@ export const pickMedia = async (type: "image" | "video") => {
         }
     }
 }
+
+
+export const pickChatMedia = async () => {
+
+    const selectedImage = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images", "videos"],
+        allowsMultipleSelection: false,
+        allowsEditing: false
+    })
+
+    if (!selectedImage.canceled) {
+
+        if ((selectedImage.assets[0].fileSize ?? 0) >= 500 * 1024 * 1024) {
+            toast("file size is too big")
+            return null
+        }
+
+        return {
+            "uri": selectedImage.assets[0].uri,
+            "name": selectedImage.assets[0].fileName ?? "",
+            "type": `${selectedImage.assets[0].type}/` + (selectedImage.assets[0].fileName?.split(".").pop()?.toLowerCase() ?? "")
+        }
+
+    } else {
+        return null
+    }
+}
+
