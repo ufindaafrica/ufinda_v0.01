@@ -146,8 +146,8 @@ export default function SignUp() {
         setLoaderVisible(true)
 
         const newUser = {
-            firstName: firstName.trim(),
-            lastName: lastName.trim(),
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
             email: email.trim().toLowerCase(),
             phone: "+234" + phone.trim().slice(),
             password: password.trim(),

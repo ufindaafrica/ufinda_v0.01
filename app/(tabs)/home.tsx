@@ -14,6 +14,7 @@ import { searchHostels, searchParams } from "@/services/searchHostels";
 import { toast } from "@/deps/toast";
 import { text } from "@/constants/texts";
 import { router } from "expo-router";
+import { getRole } from "@/deps/getRole";
 
 
 export default function Home() {
@@ -174,6 +175,7 @@ export default function Home() {
         const savedHostels = async () => {
             const favHostels = JSON.parse(await AsyncStorage.getItem('SAVED') || "[]")
             setSavedIds(favHostels)
+            console.log(await getRole())
         }
         savedHostelData()
         savedHostels()
@@ -185,7 +187,7 @@ export default function Home() {
 
     const allHostels = async () => {
         const apiHostels = await getAllHostels()
-        console.log(apiHostels)
+        // console.log(apiHostels)
 
         if (apiHostels[0] == '200') {
             setHostels(apiHostels[1])

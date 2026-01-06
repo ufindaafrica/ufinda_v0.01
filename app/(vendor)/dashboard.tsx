@@ -43,24 +43,25 @@ export default function Dashboard() {
     ]
 
     const vendorInfo = async () => {
-        const id = await getItemAsync("ID")
-        if (!id) {
-            router.replace("/auth/login")
-            return
-        }
+        // const id = await getItemAsync("ID")
+        // if (!id) {
+        //     router.replace("/auth/login")
+        //     return
+        // }
         
-        const vendorData = await getAgentInfo(id)
-        if (vendorData[0] != "200") {
-            router.replace("/auth/login")
-            return
-        }
+        // const vendorData = await getAgentInfo(id)
+        // console.log(vendorData)
+        // if (vendorData[0] != "200") {
+        //     router.replace("/auth/login")
+        //     return
+        // }
     }
 
     useEffect(() => {
-        const loadVendor = async () => {
-            await vendorInfo()
-        }
-        loadVendor()
+        // const loadVendor = async () => {
+        //     await vendorInfo()
+        // }
+        // loadVendor()
     }, [])
 
     return (

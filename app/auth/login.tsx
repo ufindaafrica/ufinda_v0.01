@@ -59,8 +59,12 @@ export default function Login() {
         if (result[0] != "200") {
             setErrorText(result[1])
         } else {
-            if (result[1] == "user") router.replace("/(tabs)/home")
-            else router.replace("/(vendor)/dashboard")
+            if (result[1] == "user") {
+                router.replace("/(tabs)/home")
+            }
+            else {
+                router.replace("/(vendor)/dashboard")
+            }
         }
 
     }

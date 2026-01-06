@@ -99,7 +99,7 @@ export default function VendorChat({ student }: VendorChatProps) {
                 await agentInfo(agent)
             }
             console.log(agentsInChats)
-            setAllChats(everyChat)
+            setAllChats(everyChat ?? [])
         }
 
         getChats()
@@ -134,7 +134,7 @@ export default function VendorChat({ student }: VendorChatProps) {
                 {
                     ["All", "Unread", "Read", "Sent"].map((item, idx) =>
                         <TouchableOpacity onPress={() => setActivated(item)} key={idx} style={[chatStyles.eachOption, (activated === item) && chatStyles.activated]}>
-                            <Text style={[roboto.bodyMedium, colors.foundationPrimaryNormal, (activated === item) && colors.white]}>{item}</Text>
+                            <Text style={[roboto.bodyMedium, colors.foundationPrimaryNormal, (activated === item) && colors.white]}>{item ?? ""}</Text>
                         </TouchableOpacity>)
                 }
             </View>

@@ -27,6 +27,7 @@ export default function UpdateKyc() {
     const matricNoRef = useRef<TextInput | null>(null)
     const facultyRef = useRef<TextInput | null>(null)
     const deptRef = useRef<TextInput | null>(null)
+    const levelRef = useRef<TextInput | null>(null)
 
     const [address, setAddress] = useState("")
     const [lga, setLga] = useState("")
@@ -34,6 +35,7 @@ export default function UpdateKyc() {
     const [matricNo, setMatricNo] = useState("")
     const [faculty, setFaculty] = useState("")
     const [dept, setDept] = useState("")
+    const [level, setLevel] = useState("")
 
     const [mode, setMode] = useState("")
     useEffect(() => {
@@ -53,18 +55,19 @@ export default function UpdateKyc() {
     const onSubmit = async () => {
         setLoaderVisible(true)
 
-        if (address == "" && lga == "" && state == "" && matricNo == "" && faculty == "" && dept == "") {
+        if (address == "" && lga == "" && state == "" && matricNo == "" && faculty == "" && dept == "" && level == "") {
             setLoaderVisible(false)
             return
         }
 
         const kycData = {
-            ...(address && {address: address}),
-            ...(lga && {lga: lga}),
-            ...(state && {state: state}),
-            ...(matricNo && {matricNo: matricNo}),
-            ...(faculty && {faculty: faculty}),
-            ...(dept && {dept: dept})
+            ...(address && { address: address }),
+            ...(lga && { lga: lga }),
+            ...(state && { state: state }),
+            ...(matricNo && { matric: matricNo }),
+            ...(faculty && { faculty: faculty }),
+            ...(dept && { dept: dept }),
+            ...(level && { level: level})
         }
 
         const update = mode === "user" ? await studentKyc(kycData) : await vendorKyc(kycData)
@@ -76,7 +79,7 @@ export default function UpdateKyc() {
         } else {
             setLoaderVisible(false)
             setCorrectModal(true)
-            setCorrectModal(update[1])
+            setCorrectText(update[1])
         }
     }
 
@@ -113,7 +116,7 @@ export default function UpdateKyc() {
                     showsVerticalScrollIndicator={false}
                     enableOnAndroid={true}
                     extraScrollHeight={15}>
-                    <View style={[idStyles.headerV, {paddingBottom: 0}]}>
+                    <View style={[idStyles.headerV, { paddingBottom: 0 }]}>
                         <View style={idStyles.firstHeaderV}>
                             <BackArrow backFun={() => router.back()} large />
                             <Text style={roboto.titleLargeBold}>Update Kyc</Text>
@@ -128,28 +131,32 @@ export default function UpdateKyc() {
                             value={address}
                             onChangeText={(text) => setAddress(text)}
                             returnKeyType="next"
-                            onSubmitEditing={() => focusNext(lgaRef, keyboardScrollViewRef)} />
+                            onSubmitEditing={() => mode === "user" ? focusNext(matricNoRef, keyboardScrollViewRef) : focusNext(lgaRef, keyboardScrollViewRef)} />
                     </View>
-                    <View style={{ padding: moderateScale(16), paddingBottom: 0 }}>
-                        <Input
-                            ref={lgaRef}
-                            label="LGA"
-                            hint="ex. ikeja"
-                            value={lga}
-                            onChangeText={(text) => setLga(text)}
-                            returnKeyType="next"
-                            onSubmitEditing={() => focusNext(stateRef, keyboardScrollViewRef)} />
-                    </View>
-                    <View style={{ padding: moderateScale(16), paddingBottom: 0 }}>
-                        <Input
-                            ref={stateRef}
-                            label="State"
-                            hint="ex. Lagos"
-                            value={state}
-                            onChangeText={(text) => setState(text)}
-                            returnKeyType={mode === "user" ? "next" : "done"}
-                            onSubmitEditing={() => mode === "user" ? focusNext(matricNoRef, keyboardScrollViewRef) : Keyboard.dismiss()} />
-                    </View>
+                    {
+                        mode != "user" && <View style={{ padding: moderateScale(16), paddingBottom: 0 }}>
+                            <Input
+                                ref={lgaRef}
+                                label="LGA"
+                                hint="ex. ikeja"
+                                value={lga}
+                                onChangeText={(text) => setLga(text)}
+                                returnKeyType="next"
+                                onSubmitEditing={() => focusNext(stateRef, keyboardScrollViewRef)} />
+                        </View>
+                    }
+                    {
+                        mode != "user" && <View style={{ padding: moderateScale(16), paddingBottom: 0 }}>
+                            <Input
+                                ref={stateRef}
+                                label="State"
+                                hint="ex. Lagos"
+                                value={state}
+                                onChangeText={(text) => setState(text)}
+                                returnKeyType={mode === "user" ? "next" : "done"}
+                                onSubmitEditing={() => mode === "user" ? focusNext(matricNoRef, keyboardScrollViewRef) : Keyboard.dismiss()} />
+                        </View>
+                    }
                     {
                         mode === "user" && <View style={{ padding: moderateScale(16), paddingBottom: 0 }}>
                             <Input
@@ -182,6 +189,18 @@ export default function UpdateKyc() {
                                 hint="ex. Petroleum Eng"
                                 value={dept}
                                 onChangeText={(text) => setDept(text)}
+                                returnKeyType="next"
+                                onSubmitEditing={() => focusNext(levelRef, keyboardScrollViewRef)} />
+                        </View>
+                    }
+                    {
+                        mode === "user" && <View style={{ padding: moderateScale(16), paddingBottom: 0 }}>
+                            <Input
+                                ref={levelRef}
+                                label="Level"
+                                hint="ex. 300"
+                                value={level}
+                                onChangeText={(text) => setLevel(text)}
                                 returnKeyType="done"
                                 onSubmitEditing={() => Keyboard.dismiss()} />
                         </View>
@@ -201,7 +220,7 @@ export default function UpdateKyc() {
                 }
 
                 {
-                    correctModal ? <ErrorModal correct text={correctText} errorFun={() => { setCorrectText(""); mode === "user" ? router.replace("/(tabs)/profile") : router.replace("/(vendor)/profile")}} /> : null
+                    correctModal ? <ErrorModal correct text={correctText} errorFun={() => { setCorrectText(""); mode === "user" ? router.replace("/(tabs)/profile") : router.replace("/(vendor)/profile") }} /> : null
                 }
             </SafeAreaView>
         </SafeAreaProvider>

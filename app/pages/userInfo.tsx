@@ -1,8 +1,11 @@
 import BackArrow from "@/components/back";
 import Input from "@/components/input";
 import LineBreak from "@/components/lineBreak";
+import Loader from "@/components/loader";
 import Select from "@/components/select";
 import { moderateScale } from "@/deps/scale";
+import { toast } from "@/deps/toast";
+import { getStudentInfo, getVendorInfo } from "@/services/getStudentInfo";
 import { globals, roboto } from "@/styles/globals";
 import { idStyles } from "@/styles/id";
 import { signupStyles } from "@/styles/signup";
@@ -36,10 +39,55 @@ export default function PersonalInformation() {
         getMode()
     }, [])
 
+    const [loaderVisible, setLoaderVisible] = useState(false)
+
+    const getUserInfo = async () => {
+        if (!mode) return
+
+        setLoaderVisible(true)
+
+        let info = []
+
+        if (mode === "user") {
+            info = await getStudentInfo()
+
+            if (info[0] != "200") {
+                setLoaderVisible(false)
+                toast(info[1])
+            }
+        } else {
+            info = await getVendorInfo()
+
+            if (info[0] != "200") {
+                setLoaderVisible(false)
+                toast(info[1])
+            }
+        }
+
+        setFirstName(info[1]?.first_name ?? "")
+        setLastName(info[1]?.last_name ?? "")
+        setEmail(info[1]?.email ?? "")
+        setAddress(info[1]?.kyc_data?.address ?? "")
+        setLevel(info[1]?.kyc_data?.level ?? "")
+        setMatricNo(info[1]?.kyc_data?.matric ?? "")
+        setFaculty(info[1]?.kyc_data?.faculty ?? "")
+        setDept(info[1]?.kyc_data?.dept ?? "")
+
+        setLoaderVisible(false)
+    }
+
+    useEffect(() => {
+        const setInfo = async () => {
+            await getUserInfo()
+        }
+
+        setInfo()
+    }, [mode])
+
     return (
         <SafeAreaProvider style={[globals.container, globals.lightContainer]}>
             <SafeAreaView style={[globals.container, globals.lightContainer]}>
-                <View style={[idStyles.headerV, {paddingBottom: 0}]}>
+                <View style={[idStyles.headerV, { paddingBottom: 0 }]}>
                     <View style={idStyles.firstHeaderV}>
                         <BackArrow backFun={() => router.back()} large />
                         <Text style={roboto.titleLargeBold}>Personal Information</Text>
@@ -73,12 +121,14 @@ export default function PersonalInformation() {
                             value={address}
                             editable={false} />
                     </View>
-                    <View style={[signupStyles.formPadding, { paddingHorizontal: moderateScale(16) }]}>
-                        <Input
-                            label="LGA:"
-                            value={lga}
-                            editable={false} />
-                    </View>
+                    {
+                        mode != "user" && <View style={[signupStyles.formPadding, { paddingHorizontal: moderateScale(16) }]}>
+                            <Input
+                                label="LGA:"
+                                value={lga}
+                                editable={false} />
+                        </View>
+                    }
                     {mode === "user" && <View style={[signupStyles.formPadding, { paddingHorizontal: moderateScale(16) }]}>
                         <Input
                             label="Matric No:"
@@ -104,10 +154,13 @@ export default function PersonalInformation() {
                             editable={false} />
                     </View>}
 
-                    <View style={{padding: moderateScale(16), paddingTop: moderateScale(24)}}>
+                    <View style={{ padding: moderateScale(16), paddingTop: moderateScale(24) }}>
                         <Select text="Continue" selected selectFun={() => router.back()} />
                     </View>
                 </ScrollView>
+                {
+                    loaderVisible ? <Loader /> : null
+                }
             </SafeAreaView>
         </SafeAreaProvider>
     )

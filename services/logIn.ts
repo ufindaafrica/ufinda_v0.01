@@ -27,6 +27,8 @@ export const logIn = async (data : any) => {
         await setItemAsync("REFRESH_TOKEN", res.data["refresh_token"])
         await setItemAsync("ID", res.data["id"])
         await setItemAsync("ROLE", res.data["role"])
+
+        console.log(result)
     } catch (err: unknown) {
 
         if (axios.isAxiosError(err)) {

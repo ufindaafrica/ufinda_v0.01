@@ -9,9 +9,8 @@ export const logOut = async () => {
     const refresh_token = await getRefreshToken()
 
     try {
-        const res = await axios.post(
+        const res = await axios.get(
             "/auth/logout",
-            {},
             {
                 baseURL: BASE_URL,
                 timeout: timeout,
