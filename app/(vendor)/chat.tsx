@@ -39,7 +39,7 @@ type LastMessage = {
     id?: string
 }
 
-type ChatMate = {
+export type ChatMate = {
     name: string,
     profile_img: string,
     phone_number: string,
@@ -101,7 +101,7 @@ export default function VendorChat({ student }: VendorChatProps) {
     useFocusEffect(useCallback(() => {
         const getChats = async () => {
             if (!myId) return
-            
+
             const everyChat = (await getAllChats())[1] ?? []
             console.log(everyChat)
             
@@ -164,7 +164,7 @@ export default function VendorChat({ student }: VendorChatProps) {
                                 params: {
                                     id: item.id,
                                     vendor_id: chatPersonId,
-                                    chatmate_data: JSON.stringify(getChatMateData(item?.vendor_id ?? ""))
+                                    chatmate_data: JSON.stringify(getChatMateData(chatPersonId ?? ""))
                                 }
                             })
                         }} key={idx} style={chatStyles.padding}>

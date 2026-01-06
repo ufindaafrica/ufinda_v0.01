@@ -34,8 +34,8 @@ export default function SingleChat() {
     const id = params.id
     const vendorIdString = Array.isArray(params.vendor_id) ? params.vendor_id[0] : params.vendor_id
     const bookString = Array.isArray(params.book) ? params.book[0] : params.book 
-    const vendor = Array.isArray(params.vendor_data) ? params.vendor_data[0] : params.vendor_data
-    const vendorData = vendor ? JSON.parse(vendor) : null
+    const chatmate = Array.isArray(params.chatmate_data) ? params.chatmate_data[0] : params.chatmate_data
+    const chatMateData = chatmate ? JSON.parse(chatmate) : null
 
     const messageRef = useRef<TextInput>(null)
 
@@ -190,15 +190,15 @@ export default function SingleChat() {
                 <View style={singleChatStyles.row}>
                     <BackArrow backFun={() => router.back()} />
                     <View style={[singleChatStyles.row, singleChatStyles.gap]}>
-                        <Avatar img={vendorData?.profile_img} />
+                        <Avatar img={chatMateData?.profile_img} />
                         <View>
-                            <Text style={[roboto.titleSmallBold, singleChatStyles.bottomPadding]}>{vendorData?.name ?? ""}</Text>
+                            <Text style={[roboto.titleSmallBold, singleChatStyles.bottomPadding]}>{chatMateData?.name ?? ""}</Text>
                             <Text style={roboto.caption}>Active recently</Text>
                         </View>
                     </View>
                 </View>
                 <View style={[singleChatStyles.row, singleChatStyles.jCenter, singleChatStyles.headerRight]}>
-                    <TouchableOpacity onPress={() => Linking.openURL(`tel:${vendorData.phone_number}`)}>
+                    <TouchableOpacity onPress={() => Linking.openURL(`tel:${chatMateData.phone_number}`)}>
                         <Image source={images.outlineCall} style={singleChatStyles.img} />
                     </TouchableOpacity>
                     <TouchableOpacity>
