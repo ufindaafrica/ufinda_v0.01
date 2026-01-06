@@ -15,6 +15,7 @@ import { chatUploadSignature } from "@/services/uploadSignature";
 import { uploadToCloudinary } from "@/services/uploadToCloudinary";
 import { colors, globals, roboto } from "@/styles/globals";
 import { singleChatStyles } from "@/styles/singleChat";
+import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder, useAudioRecorderState } from "expo-audio";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { getItemAsync } from "expo-secure-store";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -57,8 +58,45 @@ export default function SingleChat() {
 
     const [message, setMessage] = useState("")
     const [image, setImage] = useState<ChatMedia | null>()
-    const [audio, setAudio] = useState()
+    const [audio, setAudio] = useState("")
     const [allMessages, setAllMessages] = useState<Array<Message>>([])
+
+    const audioRecorder = useAudioRecorder(RecordingPresets.LOW_QUALITY)
+    const recorderState = useAudioRecorderState(audioRecorder)
+
+    const toRecord = () : boolean => {
+        return !message && !recorderState.isRecording
+    }
+
+    const record = async () => {
+        console.log("recording")
+        const status = await AudioModule.requestRecordingPermissionsAsync()
+        if (!status.granted) {
+            toast("please grant microphone access to record voice note.")
+            return
+        }
+
+        setAudioModeAsync({
+            playsInSilentMode: true,
+            allowsRecording: true
+        })
+
+        await audioRecorder.prepareToRecordAsync()
+        audioRecorder.record()
+    }
+
+    const stopRecording = async () => {
+        console.log('stopping record')
+        await audioRecorder.stop()
+        setAudio(audioRecorder.uri ?? "")
+        console.log(audioRecorder.uri)
+    }
+
+    useEffect(() => {
+        if (audio != "") {
+            sendMessage(audio, "audio")
+        }
+    }, [audio])
 
     const [imgLoading, setImgLoading] = useState(false)
     const [mediaUpload, setMediaUpload] = useState(0)
@@ -170,71 +208,156 @@ export default function SingleChat() {
             Keyboard.dismiss()
             setMessage("")
         } else {
-            setImgLoading(true)
 
-            const uploadSignature = await chatUploadSignature()
+            if (type === "image") {
+                setImgLoading(true)
 
-            if (uploadSignature[0] != "200") {
-                setImgLoading(false)
-                toast("error uploading media. try again.")
-                return
-            }
+                const uploadSignature = await chatUploadSignature()
 
-            else {
-                const mediaUpload = await uploadToCloudinary({
-                    files: [image],
-                    api_key: uploadSignature?.[1]?.api_key,
-                    cloud_name: uploadSignature?.[1]?.cloud_name,
-                    folder: uploadSignature?.[1]?.folder,
-                    timestamp: uploadSignature?.[1]?.timestamp,
-                    signature: uploadSignature?.[1]?.signature,
-                    setUploadProgress: setMediaUpload
-                })
-
-                if (mediaUpload[0] != "200") {
+                if (uploadSignature[0] != "200") {
                     setImgLoading(false)
                     toast("error uploading media. try again.")
+                    setImage(null)
                     return
                 }
 
-                const newMessage = {
-                    content: mediaUpload?.[1]?.url ?? "",
-                    message_type: "image",
-                    created_at: new Date(),
-                    personal: true,
-                    sender_id: userId,
-                    public_id: mediaUpload?.[1]?.public_id ?? "",
-                }
+                else {
+                    const mediaUpload = await uploadToCloudinary({
+                        files: [image],
+                        api_key: uploadSignature?.[1]?.api_key,
+                        cloud_name: uploadSignature?.[1]?.cloud_name,
+                        folder: uploadSignature?.[1]?.folder,
+                        timestamp: uploadSignature?.[1]?.timestamp,
+                        signature: uploadSignature?.[1]?.signature,
+                        setUploadProgress: setMediaUpload
+                    })
 
-                try {
-                    chatSocket.current?.send(JSON.stringify({
-                        type: "message",
-                        payload: {
-                            room_id: id,
-                            content: newMessage.content,
-                            message_type: "image",
-                            public_id: newMessage.public_id
-                        }
-                    }))
-                } catch {
-                    const sent = await sendChat(newMessage)
-                    if (sent[0] != "200") {
+                    if (mediaUpload[0] != "200") {
                         setImgLoading(false)
-                        toast("error sending message. resend")
+                        setImage(null)
+                        toast("error uploading media. try again.")
                         return
                     }
+
+                    const newMessage = {
+                        content: mediaUpload?.[1]?.url ?? "",
+                        message_type: "image",
+                        created_at: new Date(),
+                        personal: true,
+                        sender_id: userId,
+                        public_id: mediaUpload?.[1]?.public_id ?? "",
+                    }
+
+                    try {
+                        chatSocket.current?.send(JSON.stringify({
+                            type: "message",
+                            payload: {
+                                room_id: id,
+                                content: newMessage.content,
+                                message_type: "image",
+                                public_id: newMessage.public_id
+                            }
+                        }))
+                    } catch {
+                        const sent = await sendChat(newMessage)
+                        if (sent[0] != "200") {
+                            setImgLoading(false)
+                            setImage(null)
+                            toast("error sending message. resend")
+                            return
+                        }
+                    } finally {
+                        setImage(null)
+                    }
+
+                    setImgLoading(false)
+
+                    setAllMessages(prev => {
+                        const messages = [...prev, newMessage]
+                        return messages
+                    })
+
+                    Keyboard.dismiss()
+                    setMessage("")
+                }
+            } else {
+                setImgLoading(true)
+
+                const uploadSignature = await chatUploadSignature()
+
+                if (uploadSignature[0] != "200") {
+                    setImgLoading(false)
+                    toast("error uploading media. try again.")
+                    setAudio("")
+                    return
                 }
 
-                setImgLoading(false)
+                else {
+                    const mediaUpload = await uploadToCloudinary({
+                        files: [{
+                            "uri": audio,
+                            "type": "audio/3gp",
+                            "name": "audioDat"
+                        }],
+                        api_key: uploadSignature?.[1]?.api_key,
+                        cloud_name: uploadSignature?.[1]?.cloud_name,
+                        folder: uploadSignature?.[1]?.folder,
+                        timestamp: uploadSignature?.[1]?.timestamp,
+                        signature: uploadSignature?.[1]?.signature,
+                        setUploadProgress: setMediaUpload
+                    })
 
-                setAllMessages(prev => {
-                    const messages = [...prev, newMessage]
-                    return messages
-                })
+                    if (mediaUpload[0] != "200") {
+                        setImgLoading(false)
+                        setAudio("")
+                        toast("error uploading media. try again.")
+                        return
+                    }
 
-                Keyboard.dismiss()
-                setMessage("")
+                    const newMessage = {
+                        content: mediaUpload?.[1]?.url ?? "",
+                        message_type: "audio",
+                        created_at: new Date(),
+                        personal: true,
+                        sender_id: userId,
+                        public_id: mediaUpload?.[1]?.public_id ?? "",
+                    }
+
+                    try {
+                        chatSocket.current?.send(JSON.stringify({
+                            type: "message",
+                            payload: {
+                                room_id: id,
+                                content: newMessage.content,
+                                message_type: "audio",
+                                public_id: newMessage.public_id
+                            }
+                        }))
+                    } catch {
+                        const sent = await sendChat(newMessage)
+                        if (sent[0] != "200") {
+                            setImgLoading(false)
+                            setAudio("")
+                            toast("error sending message. resend")
+                            return
+                        }
+                    } finally {
+                        setAudio("")
+                    }
+
+                    setImgLoading(false)
+
+                    setAllMessages(prev => {
+                        const messages = [...prev, newMessage]
+                        return messages
+                    })
+
+                    Keyboard.dismiss()
+                    setMessage("")
+                }
             }
+
+
         }
 
     }
@@ -325,7 +448,11 @@ export default function SingleChat() {
 
                 <View style={[singleChatStyles.row, singleChatStyles.jCenter, singleChatStyles.gap, { paddingVertical: 16 }]}>
                     <View style={[globals.lightContainer, singleChatStyles.messageBox, singleChatStyles.row, singleChatStyles.jCenter, singleChatStyles.messageBoxHeight]}>
-                        <View style={[singleChatStyles.row, singleChatStyles.gap]}>
+                        {recorderState.isRecording ? <View style={[{flexDirection: 'row', width: '80%', justifyContent: 'flex-start'}]}>
+                            {
+                                [1, 2, 3, 4, 5].map((item, idx) => <Image key={idx} source={images.audio} style={{height: 44, resizeMode: 'contain', width: 44}} />)
+                            }
+                        </View> : <View style={[singleChatStyles.row, singleChatStyles.gap]}>
                             <Image source={images.emoji} style={singleChatStyles.smallImg} />
                             <TextInput
                                 ref={messageRef}
@@ -333,7 +460,7 @@ export default function SingleChat() {
                                 multiline
                                 value={message}
                                 onChangeText={(text) => { setMessage(text) }} />
-                        </View>
+                        </View>}
                         <TouchableOpacity disabled={imgLoading} onPress={async () => {
                             const media = await pickChatMedia()
                             if (media != null) {
@@ -344,8 +471,8 @@ export default function SingleChat() {
                             <Image source={images.camera} style={singleChatStyles.smallImg} />
                         </TouchableOpacity>
                     </View>
-                    <TouchableOpacity disabled={imgLoading} onPress={() => image ? sendMessage(message, "image") : message && sendMessage(message)} style={[singleChatStyles.sendView]}>
-                        <Image source={message ? images.send : images.mic} style={singleChatStyles.smallImg} />
+                    <TouchableOpacity disabled={imgLoading} onPress={() => image ? sendMessage(message, "image") : toRecord() ? record() : !toRecord() ? stopRecording() : message && sendMessage(message)} style={[singleChatStyles.sendView]}>
+                        <Image source={message ? images.send : recorderState.isRecording ? images.stop : images.mic} style={singleChatStyles.smallImg} />
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>

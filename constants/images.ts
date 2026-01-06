@@ -91,5 +91,8 @@ export const images = {
     greenCall: require("../assets/images/greenCall.png"),
     chat1: require("../assets/images/chat1.png"),
     greenTicks: require("../assets/images/greenTicks.png"),
-    play: require("../assets/images/play.png")
+    play: require("../assets/images/play.png"),
+    stop: require("../assets/images/stop.png"),
+    audioStatic: require("../assets/images/audioStatic.png"),
+    audio: require("../assets/images/audio.gif")
 }

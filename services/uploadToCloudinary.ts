@@ -58,8 +58,10 @@ export const uploadToCloudinary = async (data: uploadFilesType) => {
             form.append("crop", "limit")
         }
 
+        console.log("audio upload", form)
+
         const res = await axios.post(
-            `https://api.cloudinary.com/v1_1/${data.cloud_name}/auto/upload`,
+            file.type?.startsWith("audio") ? `https://api.cloudinary.com/v1_1/${data.cloud_name}/video/upload` : `https://api.cloudinary.com/v1_1/${data.cloud_name}/auto/upload`,
             form,
             {
                 baseURL: BASE_URL,
@@ -92,6 +94,8 @@ export const uploadToCloudinary = async (data: uploadFilesType) => {
 
         if (axios.isAxiosError(err)) {
 
+            console.log(err.response)
+
             result[0] = err.status?.toString()
             result[1] = err.response?.data["error"]
 
@@ -99,5 +103,7 @@ export const uploadToCloudinary = async (data: uploadFilesType) => {
         }
     }
 
+
+    console.log("audio upload result", result)
     return result
 }
