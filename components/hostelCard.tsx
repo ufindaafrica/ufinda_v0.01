@@ -6,19 +6,21 @@ import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { roboto } from "@/styles/globals";
 import { createNewChat } from "@/services/newChat";
-import { EnrichedHostel } from "@/types";
+import { EnrichedHostel, LocationObj } from "@/types";
 import { handleNewChat } from "@/deps/handleNewChat";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { removeSavedHostel, saveHostel } from "@/services/saveHostel";
 import { toast } from "@/deps/toast";
+import { getDistance } from "geolib";
 
 type HostelCardProps = {
     hostel: EnrichedHostel,
     isSaved: boolean,
-    reload?: () => void
+    reload?: () => void,
+    coords?: LocationObj
 }
 
-export default function HostelCard({ hostel, isSaved, reload }: HostelCardProps) {
+export default function HostelCard({ hostel, isSaved, reload, coords }: HostelCardProps) {
 
     const onSave = async (id: string, saved: boolean) => {
 
@@ -68,7 +70,7 @@ export default function HostelCard({ hostel, isSaved, reload }: HostelCardProps)
         <View style={hostelCardStyles.card}>
 
             <TouchableOpacity style={hostelCardStyles.thumbnailV} onPress={() => hostel?.id && router.push({ pathname: "/hostel/[id]", params: { id: String(hostel.id) } })}>
-                <Thumbnail bg={{uri: hostel.hostel_images?.[0]?.url}} available={hostel.total_hostel_rooms > 0 ? true : false} distance={3} />
+                <Thumbnail bg={{uri: hostel.hostel_images?.[0]?.url}} available={hostel.total_hostel_rooms > 0 ? true : false} distance={coords ? Math.floor(getDistance(coords, hostel?.geolocation ?? coords) / 1609.344) : 0} />
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => hostel?.id && router.push({ pathname: "/hostel/[id]", params: { id: String(hostel.id) } })} style={hostelCardStyles.mainPlusAmenities}>

@@ -42,7 +42,7 @@ export default function NewHostel() {
     const [totalPrice, setTotalPrice] = useState<number | null>()
     const [bulkPrice, setBulkPrice] = useState("")
     const [geoLocation, setGeoLocation] = useState("")
-    const [longLat, setLongLat] = useState("")
+    const [longLat, setLongLat] = useState<any>()
 
     const [descLength, setDescLength] = useState("0")
     const [adPrice, setAdPrice] = useState("2,999")
@@ -239,7 +239,7 @@ export default function NewHostel() {
                     "latitude": loc?.coords?.latitude ?? 0,
                     "longitude": loc?.coords?.longitude ?? 0
                 }
-                setLongLat(JSON.stringify(coords))
+                setLongLat(coords)
             }
         }
         getLocation()

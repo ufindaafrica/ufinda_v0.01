@@ -15,20 +15,46 @@ import { toast } from "@/deps/toast";
 import { text } from "@/constants/texts";
 import { router } from "expo-router";
 import { getRole } from "@/deps/getRole";
+import * as Location from 'expo-location';
+import { getDistance } from 'geolib'
 
 
 export default function Home() {
 
-    const [hostels, setHostels] = useState<Array<EnrichedHostel> | null>()
+    const [hostels, setHostels] = useState<Array<EnrichedHostel>>([])
 
     const [currentFilter, setCurrentFilter] = useState("New")
 
     const [searchFilters, setSearchFilters] = useState<searchParams | null>({})
 
+    const filterNearYou = async () => {
+        setHostels(prev => {
+            if (loc != null && loc != undefined) {
+                return [...prev].sort((a, b) => getDistance(loc, b?.geolocation ?? loc) - getDistance(loc, a?.geolocation ?? loc) )
+            } else {
+                return prev
+            }
+        })
+    }
+
     const setFilter = (text: string, type: "options" | "input" | "search") => {
         // for the first two filters for New and for Hostel Type
         // sets search filter and also current filter text
         if (type === "options") {
+            if (text == "Near You") {
+                setCurrentFilter("Near You")
+                filterNearYou()
+                return
+            }
+            if (text === city) {
+                setCurrentFilter(city)
+                setSearchFilters(prev => ({
+                    ...prev,
+                    q: city
+                }))
+                return
+            }
+
             if (text != "New" && text != "Near You" && text != "Your State" && text != "Recommended" && text != "Type") {
                 setSearchFilters(prev => ({
                     ...prev,
@@ -187,7 +213,7 @@ export default function Home() {
 
     const allHostels = async () => {
         const apiHostels = await getAllHostels()
-        // console.log(apiHostels)
+        console.log(apiHostels[1][0])
 
         if (apiHostels[0] == '200') {
             setHostels(apiHostels[1])
@@ -197,6 +223,34 @@ export default function Home() {
         }
         return
     }
+
+    const [city, setCity] = useState<any>("")
+    const [loc, setLoc] = useState<any>()
+
+    useEffect(() => {
+            const getLocation = async () => {
+                const { status } = await Location.requestForegroundPermissionsAsync()
+                if (status != "granted") {
+                    return
+                }
+    
+                const loc = await Location.getCurrentPositionAsync({})
+    
+                const address = await Location.reverseGeocodeAsync(loc.coords)
+    
+                if (address.length > 0) {
+                    const formatted = address[0].region
+                    setCity(formatted)
+    
+                    const coords = {
+                        "latitude": loc?.coords?.latitude ?? 0,
+                        "longitude": loc?.coords?.longitude ?? 0
+                    }
+                    setLoc(coords)
+                }
+            }
+            getLocation()
+        }, [])
 
     return (
         <SafeAreaView style={[globals.homeContainer]}>
@@ -210,7 +264,7 @@ export default function Home() {
 
             <View style={[{ marginBottom: 8 }, homeStyles.filterV]}>
                 <View style={[homeStyles.eachFilterV, { zIndex: 2, paddingRight: 8 }]}>
-                    <Filter filterType="options" options={["New", "Near You", "Your State", "Recommended"]} visible={filter1Vis} setVisible={setVisiblility1} setCurrentFilter={setFilter} active />
+                    <Filter filterType="options" options={["New", "Near You", `${city}`, "Recommended"]} visible={filter1Vis} setVisible={setVisiblility1} setCurrentFilter={setFilter} active />
                 </View>
                 <View style={[homeStyles.eachFilterV, { zIndex: 2 }]}>
                     <Filter filterType="options" options={["Type", ...text.hosteltypes]} visible={filter2Vis} setVisible={setVisiblility2} setCurrentFilter={setFilter} />
@@ -235,6 +289,7 @@ export default function Home() {
                                 hostel={item}
                                 isSaved={savedIds.includes(item.id)}
                                 reload={() => setReloadHome(!reloadHome)}
+                                coords={loc}
                             />
                         </View>
                     )) : null

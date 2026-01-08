@@ -27,7 +27,8 @@ export default function Dashboard() {
             const listings = await getAgentData()
             console.log(listings)
             if (listings[0] != "200") {
-                router.replace("/auth/login")
+                // router.replace("/auth/login")
+                return
             } else {
                 setVendorHostels(listings?.[1])
             }

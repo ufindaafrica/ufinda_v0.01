@@ -7,7 +7,7 @@ export type EnrichedHostel = {
     id: string,
     kitchen_access: 'personal' | 'public',
     landlord_resides: 'yes' | 'no',
-    location: 'string',
+    location: string,
     rent_per_year: number,
     room_type: string,
     roommates_allowed: 'yes' | 'no',
@@ -17,7 +17,9 @@ export type EnrichedHostel = {
     total_price: number,
     updated_at: string,
     vendor_id: string,
-    vendor_info?: VendorInfo
+    vendor_info?: VendorInfo,
+    available_hostels: number,
+    geolocation: LocationObj
 }
 
 type HostelMedia = {
@@ -40,4 +42,9 @@ type VendorKyc = {
 type VendorMetrics = {
     current_rating: number,
     total_rating: number
+}
+
+export type LocationObj = {
+    latitude: number,
+    longitude: number
 }
