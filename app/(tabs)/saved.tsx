@@ -2,7 +2,6 @@ import AppHeader from "@/components/appHeader";
 import Filter from "@/components/filter";
 import HostelCard from "@/components/hostelCard";
 import Search from "@/components/search";
-import { dummyHostels, DummyHostelsType } from "@/constants/dummy_data";
 import { text } from "@/constants/texts";
 import { toast } from "@/deps/toast";
 import { allSavedHostels } from "@/services/saveHostel";
@@ -11,9 +10,8 @@ import { globals } from "@/styles/globals";
 import { homeStyles } from "@/styles/home";
 import { EnrichedHostel } from "@/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -38,25 +36,6 @@ export default function Saved() {
 
     const handleSetCurrentFilter = async (filter: string) => {
         setCurrentFilter(filter)
-
-        if (filter == "Categories") {
-            const all = await getSavedHostels() ?? []
-            setSavedHostels(all)
-            return
-        }
-
-        const searchFilter = await searchHostels({type: filter})
-        if (searchFilter[0] != "200") {
-            toast("error searching saved hostels. try again.")
-            setCurrentFilter("Categories")
-            return
-        } 
-
-        const savedHostels: Array<string> = JSON.parse(await AsyncStorage.getItem("SAVED") || "[]")
-
-        const savedOptions: Array<EnrichedHostel> = searchFilter[1].filter((hostel: EnrichedHostel) => savedHostels.includes(hostel.id))
-
-        setSavedHostels(savedOptions)
     }
 
     const [savedHostels, setSavedHostels] = useState<Array<EnrichedHostel>>([])
@@ -87,14 +66,40 @@ export default function Saved() {
         hostels()
     }, [reloadSave])
 
-    useFocusEffect(useCallback(() => {
+    useEffect(() => {
         const hostels = async () => {
             const hostelData = await getSavedHostels() ?? []
             setSavedHostels(hostelData)
         }
-
+        
         hostels()
-    }, []))
+    }, [])
+
+    useEffect(() => {
+        const filterChanged = async () => {
+            if (currentFilter == "Categories") {
+                const all = await getSavedHostels() ?? []
+                setSavedHostels(all)
+                return
+            }
+
+            const searchFilter = await searchHostels({ type: currentFilter })
+            if (searchFilter[0] != "200") {
+                toast("error searching saved hostels. try again.")
+                setCurrentFilter("Categories")
+                return
+            }
+
+            const savedHostels: Array<string> = JSON.parse(await AsyncStorage.getItem("SAVED") || "[]")
+
+            const savedOptions: Array<EnrichedHostel> = searchFilter[1].filter((hostel: EnrichedHostel) => savedHostels.includes(hostel.id))
+
+            setSavedHostels(savedOptions)
+        }
+
+        filterChanged()
+
+    }, [currentFilter])
 
     return (
         <SafeAreaView style={globals.homeContainer}>

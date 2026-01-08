@@ -69,7 +69,7 @@ export default function MemberProfile() {
     return (
         <ScrollView style={{ flex: 1 }}>
             <View style={[singleChatStyles.row, singleChatStyles.jCenter, globals.authContainer]}>
-                <TouchableOpacity onPress={() => router.push("/pages/profileDetails")} style={[singleChatStyles.row, singleChatStyles.gap]}>
+                <TouchableOpacity style={[singleChatStyles.row, singleChatStyles.gap]}>
                     <Avatar img={profileImg ?? ""} />
                     <View>
                         <Text style={roboto.titleSmallBold}>{name}</Text>

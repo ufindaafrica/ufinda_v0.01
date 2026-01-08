@@ -105,7 +105,12 @@ export default function HostelCard({ hostel, isSaved, reload }: HostelCardProps)
             </TouchableOpacity>
 
             <View style={hostelCardStyles.agentInfo}>
-                <TouchableOpacity onPress={() => router.push("/pages/profileDetails")} style={hostelCardStyles.agentCard}>
+                <TouchableOpacity onPress={() => router.push({
+                    pathname: '/pages/profileDetails',
+                    params: {
+                        vendorId: hostel?.vendor_id
+                    }
+                })} style={hostelCardStyles.agentCard}>
                     <Image source={hostel.vendor_info?.vendor_kyc?.profile_img?.url ? {uri: hostel.vendor_info?.vendor_kyc?.profile_img?.url} : images.user0} style={hostelCardStyles.agentPic} />
                     <View>
                         <Text style={[roboto.bodyMediumBold, hostelCardStyles.agentMargin]}>{`${hostel.vendor_info?.first_name} ${hostel.vendor_info?.last_name}`}</Text>

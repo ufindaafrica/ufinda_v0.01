@@ -262,7 +262,12 @@ export default function HostelDetails() {
 
                     <View style={idStyles.outerAgentV}>
                         <View style={[hostelCardStyles.agentInfo, idStyles.innerAgentV]}>
-                            <TouchableOpacity onPress={() => router.push("/pages/profileDetails")} style={hostelCardStyles.agentCard}>
+                            <TouchableOpacity onPress={() => router.push({
+                                pathname: '/pages/profileDetails',
+                                params: {
+                                    vendorId: hostelDetails?.vendor_id
+                                }
+                            })} style={hostelCardStyles.agentCard}>
                                 <Image source={hostelDetails?.vendor_info?.vendor_kyc?.profile_img?.url ? { uri: hostelDetails.vendor_info?.vendor_kyc?.profile_img?.url } : images.user0} style={hostelCardStyles.agentPic} />
                                 <View>
                                     <Text style={[roboto.bodyMediumBold, hostelCardStyles.agentMargin]}>{`${hostelDetails?.vendor_info?.first_name ?? ""} ${hostelDetails?.vendor_info?.last_name ?? ""}`}</Text>

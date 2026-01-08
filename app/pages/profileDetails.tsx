@@ -1,24 +1,47 @@
 import BackArrow from "@/components/back";
 import Filter from "@/components/filter";
 import HostelCard from "@/components/hostelCard";
-import { dummyHostels, DummyHostelsType } from "@/constants/dummy_data";
 import { images } from "@/constants/images";
 import { text } from "@/constants/texts";
+import { handleNewChat } from "@/deps/handleNewChat";
 import { moderateScale, scale, verticalScale } from "@/deps/scale";
+import { toast } from "@/deps/toast";
+import { getAgentInfo } from "@/services/agentInfo";
 import { colors, globals, roboto } from "@/styles/globals";
-import { homeStyles } from "@/styles/home";
 import { ProfileDetailsStyles } from "@/styles/profileDetails";
 import { singleChatStyles } from "@/styles/singleChat";
-import { router, useFocusEffect } from "expo-router";
-import { getItemAsync } from "expo-secure-store";
+import { EnrichedHostel } from "@/types";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { SafeAreaView, useSafeAreaFrame } from "react-native-safe-area-context";
+import { Image, Linking, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 
 export default function ProfileDetails() {
 
-    const options = ["Categories", "Self con", "Single Room", "Bungalow"]
+    const { vendorId } = useLocalSearchParams()
+    const vendorIdString = Array.isArray(vendorId) ? vendorId[0] : vendorId
+
+    const [vendorDetails, setVendorDetails] = useState<any>()
+
+    const getVendorDetails = async () => {
+        const vendor = await getAgentInfo(vendorIdString)
+        if (vendor[0] != "200") {
+            toast("error getting agent info. try later.")
+            return
+        }
+        setVendorDetails(vendor?.[1]?.[0]?.vendor_info ?? {})
+        setHostels(vendor?.[1] ?? [])
+    }
+
+    useEffect(() => {
+        const vendorDets = async () => await getVendorDetails()
+
+        vendorDets()
+    }, [vendorIdString])
+
+    const options = ["Categories", ...text.hosteltypes]
     const sort = ["Sort", "Price - Highest to Lowest", "Price - Lowest to Highest", "Near Me"]
 
     const [catVisible, setCatVisible] = useState(false)
@@ -35,21 +58,18 @@ export default function ProfileDetails() {
     }
 
     const [savedIds, setSavedIds] = useState<Array<string>>([])
-    const [hostels, setHostels] = useState<DummyHostelsType[] | null>()
+    const [hostels, setHostels] = useState<EnrichedHostel[] | null>()
     const [reloadHome, setReloadHome] = useState(false)
 
-    useFocusEffect(useCallback(() => {
+    useEffect(() => {
         const savedHostels = async () => {
-            const favHostels = JSON.parse(await getItemAsync('SAVED') || "[]")
+            const favHostels = JSON.parse(await AsyncStorage.getItem('SAVED') || "[]")
             setSavedIds(favHostels)
         }
+
         savedHostels()
 
-    }, [reloadHome]))
-
-    useEffect(() => {
-        setHostels(dummyHostels)
-    }, [savedIds])
+    }, [])
 
     return (
         <SafeAreaView style={[globals.container, globals.lightContainer]}>
@@ -62,9 +82,11 @@ export default function ProfileDetails() {
 
             <View style={{ alignSelf: 'center' }}>
                 <View style={{ width: scale(144), height: scale(144), borderRadius: 144, borderWidth: 4, borderColor: '#8e8e93', justifyContent: 'center', alignItems: 'center' }}>
-                    <View style={{ width: scale(128), height: scale(128), borderRadius: 128, backgroundColor: '#d9d9d9' }}></View>
+                    {
+                        vendorDetails?.vendor_kyc?.profile_img?.url ? <Image source={{ uri: vendorDetails?.vendor_kyc?.profile_img?.url }} style={{width: scale(128), height: scale(128), borderRadius: 128, resizeMode: 'cover'}} /> : <View style={{ width: scale(128), height: scale(128), borderRadius: 128, backgroundColor: '#d9d9d9' }}></View>
+                    }
                 </View>
-                <Text style={[roboto.headlineSmallBold, { alignSelf: 'center', paddingTop: moderateScale(16) }]}>Timothy Okoli</Text>
+                <Text style={[roboto.headlineSmallBold, { alignSelf: 'center', paddingTop: moderateScale(16) }]}>{`${vendorDetails?.first_name ?? ""} ${vendorDetails?.last_name ?? ""}`}</Text>
             </View>
 
             <View style={[singleChatStyles.jCenter, singleChatStyles.row, globals.authContainer]}>
@@ -75,21 +97,21 @@ export default function ProfileDetails() {
 
                 <View style={[singleChatStyles.row, singleChatStyles.gap]}>
                     <Image source={images.darkOrangeStar} style={singleChatStyles.img} />
-                    <Text style={[roboto.bodyLarge, colors.darkBurntOrange]}>4.6/5</Text>
+                    <Text style={[roboto.bodyLarge, colors.darkBurntOrange]}>{`${vendorDetails?.vendor_metrics?.current_rating ?? 0} / 5 (${vendorDetails?.vendor_metrics?.total_ratings ?? 0})`}</Text>
                 </View>
 
                 <View style={[singleChatStyles.row, singleChatStyles.gap]}>
                     <Image source={images.like} style={singleChatStyles.img} />
-                    <Text style={[roboto.bodyLarge, colors.darkBurntOrange]}>81%</Text>
+                    <Text style={[roboto.bodyLarge, colors.darkBurntOrange]}>{`${vendorDetails?.vendor_metrics?.current_rating ?? 0 / 5 * 100}%`}</Text>
                 </View>
             </View>
 
             <View style={[globals.authContainer, singleChatStyles.row, singleChatStyles.jCenter, { paddingTop: 0 }]}>
-                <TouchableOpacity style={[{ width: scale(171), height: verticalScale(44), borderRadius: 8, borderWidth: 1, borderColor: '#c7c7cc', justifyContent: "center", alignItems: "center" }, singleChatStyles.row, singleChatStyles.gap]}>
+                <TouchableOpacity onPress={() => {Linking.openURL(`tel:${vendorDetails?.phone}`)}} style={[{ width: scale(171), height: verticalScale(44), borderRadius: 8, borderWidth: 1, borderColor: '#c7c7cc', justifyContent: "center", alignItems: "center" }, singleChatStyles.row, singleChatStyles.gap]}>
                     <Image source={images.greenCall} style={singleChatStyles.smallImg} />
                     <Text style={[roboto.mediumEmphasizedBold, colors.foundationWarningDark]}>Call</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[{ width: scale(171), height: verticalScale(44), borderRadius: 8, borderWidth: 1, borderColor: '#c7c7cc', justifyContent: "center", alignItems: "center" }, singleChatStyles.row, singleChatStyles.gap]}>
+                <TouchableOpacity onPress={() => {handleNewChat(vendorIdString)}} style={[{ width: scale(171), height: verticalScale(44), borderRadius: 8, borderWidth: 1, borderColor: '#c7c7cc', justifyContent: "center", alignItems: "center" }, singleChatStyles.row, singleChatStyles.gap]}>
                     <Text style={[roboto.mediumEmphasizedBold, colors.foundationWarningDark]}>Message</Text>
                 </TouchableOpacity>
             </View>
@@ -98,7 +120,7 @@ export default function ProfileDetails() {
 
                 <ScrollView contentContainerStyle={{ paddingBottom: verticalScale(50) }} style={[{ width: scale(358), height: verticalScale(179), borderRadius: 16, borderWidth: 1, borderColor: '#e5e5ea', marginTop: moderateScale(16), alignSelf: 'center' }, globals.lightContainer, globals.authContainer]}>
                     <Text style={[roboto.titleSmallBold, { paddingBottom: 8 }]}>About Me</Text>
-                    <Text style={[roboto.bodyLarge, colors.grays]}>{text.aboutme}</Text>
+                    <Text style={[roboto.bodyLarge, colors.grays]}></Text>
                 </ScrollView>
 
                 <View style={[globals.authContainer, singleChatStyles.row, singleChatStyles.jCenter, { paddingBottom: 0 }]}>
@@ -111,7 +133,7 @@ export default function ProfileDetails() {
                 </View>
 
                 {
-                    dummyHostels.slice(1, 3).map((hostel, index) =>
+                    hostels?.slice(1, 3).map((hostel, index) =>
                         <View style={globals.authContainer} key={index}>
                             <HostelCard
                                 hostel={hostel}
