@@ -17,7 +17,7 @@ export type EnrichedHostel = {
     total_price: number,
     updated_at: string,
     vendor_id: string,
-    vendor_info: VendorInfo
+    vendor_info?: VendorInfo
 }
 
 type HostelMedia = {

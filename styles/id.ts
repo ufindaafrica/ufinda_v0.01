@@ -65,6 +65,10 @@ export const idStyles = StyleSheet.create({
         paddingBottom: 0
     },
 
+    shortprelimV: {
+        height: verticalScale(100)
+    },
+
     topPrelimV: {
         padding: 8,
         backgroundColor: "#fcfcfc",

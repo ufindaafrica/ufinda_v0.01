@@ -2,19 +2,18 @@ import Announcement from "@/components/announcement";
 import LineBreak from "@/components/lineBreak";
 import Plus from "@/components/plus";
 import VendorAppHeader from "@/components/vendorAppHeader";
-import { AgentHostels } from "@/constants/dummy_data";
 import { images } from "@/constants/images";
 import { lastMessageSentTime } from "@/deps/chatTime";
-import { getAgentData, getAgentInfo } from "@/services/agentInfo";
+import { getAgentData } from "@/services/agentInfo";
 import { getVendorInfo } from "@/services/getStudentInfo";
 import { dashboardStyles } from "@/styles/dashboard";
 import {globals, roboto } from "@/styles/globals";
 import { router } from "expo-router";
 import { getItemAsync } from "expo-secure-store";
 import { useEffect, useState } from "react";
-import { Image, Text, View } from "react-native";
+import { Image, Text, TouchableOpacity, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
-import { SafeAreaView, useSafeAreaFrame } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Dashboard() {
 
@@ -66,9 +65,9 @@ export default function Dashboard() {
 
     const metrics = [
         ["Published Ads", images.published, vendorHostels?.length ?? 0],
-        // ["Sold Ads", images.sold, 2],
-        // ["Profile View", images.vendorUser, 14],
-        // ["Appointments", images.appointments, 6]
+        ["Sold Ads", images.sold, 0],
+        ["Profile View", images.vendorUser, 0],
+        ["Appointments", images.appointments, 0]
     ]
 
     return (
@@ -85,7 +84,7 @@ export default function Dashboard() {
                 </View> */}
 
                 <View style={[dashboardStyles.padding, { paddingTop: 0 }]}>
-                    <Text style={[roboto.titleSmallBold, { paddingVertical: 8 }]}>My Ads</Text>
+                    <Text style={[roboto.titleSmallBold, { paddingVertical: 16 }]}>My Ads</Text>
 
                     <View style={dashboardStyles.listingsV}>
 
@@ -94,9 +93,9 @@ export default function Dashboard() {
 
                                 const remaining = Math.floor((((item?.total_hostel_rooms ?? 0) - (item?.available_rooms ?? 0)) / (item.total_hostel_rooms ?? 0)) * 143)
 
-                                return (<View key={idx} style={[dashboardStyles.eachListing]}>
+                                return (<TouchableOpacity onPress={() => item?.id && router.push({ pathname: "/hostel/[id]", params: { id: String(item.id) } })} key={idx} style={[dashboardStyles.eachListing]}>
                                     <View>
-                                        <Text style={[roboto.bodyMediumBold]}>{item.name}</Text>
+                                        <Text style={[roboto.bodyMediumBold]}>{item?.title ?? ""}</Text>
                                         <Text style={[roboto.caption, dashboardStyles.postedT]}>{`posted: ${lastMessageSentTime(item?.created_at)}`}</Text>
                                     </View>
 
@@ -111,7 +110,7 @@ export default function Dashboard() {
                                         </View>
                                     </View>
 
-                                </View>)
+                                </TouchableOpacity>)
                             }
                             )
                         }

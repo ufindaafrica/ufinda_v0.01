@@ -20,6 +20,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { handleNewChat } from "@/deps/handleNewChat";
 import { getRelatedHostels } from "@/services/relatedHostels";
 import { toast } from "@/deps/toast";
+import { getItemAsync } from "expo-secure-store";
+import { getAgentData, getAgentInfo } from "@/services/agentInfo";
 
 
 export default function HostelDetails() {
@@ -28,24 +30,44 @@ export default function HostelDetails() {
     const idString = Array.isArray(id) ? id[0] : id
 
     const [hostelDetails, setHostelDetails] = useState<EnrichedHostel | null>()
+    const [myId, setMyId] = useState("")
 
     useEffect(() => {
-        const getDetails = async () => {
-            const details = await getHostelDetails(idString)
-            if (details[0] != '200') return
-            else setHostelDetails(details[1])
+        const setId = async () => {
+            const idString = await getItemAsync('ID') ?? ''
+            setMyId(idString)
         }
 
-        const getRHostels = async () => {
-            const related = await getRelatedHostels(idString)
-            if (related[0] === "200") {
-                setRelatedHostels(related[1])
-            }
-        }
-
-        getDetails()
-        getRHostels()
+        setId()
     }, [])
+
+    useEffect(() => {
+        if (myId) {
+            const getDetails = async () => {
+                const details = await getHostelDetails(idString)
+                if (details[0] != '200') return
+                else setHostelDetails(details[1])
+            }
+
+            const getRHostels = async () => {
+                const related = await getRelatedHostels(idString)
+                if (related[0] === "200") {
+                    setRelatedHostels(related[1])
+                }
+            }
+
+            const getVHostels = async () => {
+                const vHostels = await getAgentData()
+                if (vHostels[0] != "200") return
+                else setHostelDetails(vHostels?.[1]?.find((item: any) => item?.id === idString))
+            }
+
+            myId.startsWith("usr") && getDetails()
+            myId.startsWith("usr") && getRHostels()
+            myId.startsWith("vnd") && getVHostels()
+        }
+
+    }, [myId])
 
     const [relatedHostels, setRelatedHostels] = useState<Array<EnrichedHostel>>([])
 
@@ -148,7 +170,7 @@ export default function HostelDetails() {
         } else {
             const unsave = await removeSavedHostel(idString)
             if (unsave[0] == "200") {
-                await saveLocal(idString) 
+                await saveLocal(idString)
                 setSaved(false)
                 return
             } else {
@@ -211,28 +233,32 @@ export default function HostelDetails() {
                         </View>
                     </View>
 
-                    <View style={idStyles.prelimV}>
+                    <View style={[idStyles.prelimV, myId?.startsWith("vnd") && idStyles.shortprelimV]}>
                         <View style={idStyles.topPrelimV}>
                             <View style={idStyles.firstTopPrelimV}>
                                 <Text style={[idStyles.regTxt, roboto.bodyLarge]}>{hostelDetails?.room_type}</Text>
-                                <TouchableOpacity onPress={() => handleSaveHostel()}>
-                                    <Image source={saved ? images.savedIcon : images.archiveAdd} style={idStyles.archiveImg} />
-                                </TouchableOpacity>
+                                {
+                                    myId?.startsWith("usr") && <TouchableOpacity onPress={() => handleSaveHostel()}>
+                                        <Image source={saved ? images.savedIcon : images.archiveAdd} style={idStyles.archiveImg} />
+                                    </TouchableOpacity>
+                                }
                             </View>
                             <View style={idStyles.firstTopPrelimV}>
                                 <Text style={[idStyles.regTxt, roboto.titleMediumBold]}>₦ {hostelDetails?.rent_per_year} / year</Text>
                                 <Text style={[roboto.bodyLarge, idStyles.redTxt]}>{`${hostelDetails?.total_hostel_rooms ?? ""} rooms left`}</Text>
                             </View>
-                            <View style={[idStyles.firstTopPrelimV]}>
-                                <TouchableOpacity style={idStyles.thirdTopPrelimVOne}>
-                                    <Select text={call} icon={images.call} selected selectFun={placeCall} />
-                                </TouchableOpacity>
-                                <TouchableOpacity style={idStyles.thirdTopPrelimVTwo}>
-                                    <Select text="Book on uFinda" selected={false} selectFun={() => {
-                                        if (hostelDetails?.vendor_id) { handleNewChat(hostelDetails?.vendor_id, hostelDetails?.title) }
-                                    }} />
-                                </TouchableOpacity>
-                            </View>
+                            {
+                                myId?.startsWith("usr") && <View style={[idStyles.firstTopPrelimV]}>
+                                    <TouchableOpacity style={idStyles.thirdTopPrelimVOne}>
+                                        <Select text={call} icon={images.call} selected selectFun={placeCall} />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity style={idStyles.thirdTopPrelimVTwo}>
+                                        <Select text="Book on uFinda" selected={false} selectFun={() => {
+                                            if (hostelDetails?.vendor_id) { handleNewChat(hostelDetails?.vendor_id, hostelDetails?.title) }
+                                        }} />
+                                    </TouchableOpacity>
+                                </View>
+                            }
                         </View>
                     </View>
 
@@ -260,7 +286,7 @@ export default function HostelDetails() {
                         </View>
                     </View>
 
-                    <View style={idStyles.outerAgentV}>
+                    {myId?.startsWith("usr") && <View style={idStyles.outerAgentV}>
                         <View style={[hostelCardStyles.agentInfo, idStyles.innerAgentV]}>
                             <TouchableOpacity onPress={() => router.push({
                                 pathname: '/pages/profileDetails',
@@ -286,13 +312,13 @@ export default function HostelDetails() {
                                     </View> : null}
                                 </View>
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => Linking.openURL(`tel:${hostelDetails?.vendor_info.phone}`)} style={hostelCardStyles.phoneView}>
+                            <TouchableOpacity onPress={() => Linking.openURL(`tel:${hostelDetails?.vendor_info?.phone}`)} style={hostelCardStyles.phoneView}>
                                 <Image source={images.call} style={hostelCardStyles.phoneImg} />
                             </TouchableOpacity>
                         </View>
-                    </View>
+                    </View>}
 
-                    <View style={idStyles.outerAgentV}>
+                    {myId?.startsWith("usr") && <View style={idStyles.outerAgentV}>
                         <View style={[idStyles.innerAgentV, idStyles.innerFacilitiesV]}>
                             <Text style={roboto.bodyLarge}>Facilities</Text>
                             <View style={idStyles.facilitiesListV}>
@@ -301,13 +327,13 @@ export default function HostelDetails() {
                                 }
                             </View>
                         </View>
-                    </View>
+                    </View>}
 
-                    <View style={idStyles.outerAgentV}>
+                    {myId?.startsWith('usr') && <View style={idStyles.outerAgentV}>
                         <Text style={roboto.bodyLargeBold}>More like this</Text>
-                    </View>
+                    </View>}
 
-                    <View style={idStyles.outerAgentV}>
+                    {myId?.startsWith('usr') && <View style={idStyles.outerAgentV}>
                         {
                             relatedHostels?.map((item, idx) =>
                                 <View key={idx} style={idStyles.cardMargin}>
@@ -316,7 +342,7 @@ export default function HostelDetails() {
                                         isSaved={false} />
                                 </View>)
                         }
-                    </View>
+                    </View>}
 
 
                 </ScrollView>
