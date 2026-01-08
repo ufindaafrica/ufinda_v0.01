@@ -80,7 +80,7 @@ type Hostel struct {
     HostelImages     []UploadedFile  `json:"hostel_images"`
     HostelVideos     []UploadedFile  `json:"hostel_videos"`
 	Description      string    `json:"description"`
-	GeoLocation string `json:"geolocation,omitempty"`
+	GeoLocation *GeoLocationField `json:"geolocation,omitempty"`
 	CreatedAt        *time.Time `json:"created_at,omitempty"`
 	UpdatedAt        *time.Time `json:"updated_at,omitempty"`
 }
@@ -287,4 +287,9 @@ type VendorProfileInfo struct {
 		Address string `json:"address"`
 		AboutMe string `json:"about_me"`
 	} `json:"kyc_data"`
+}
+
+type GeoLocationField struct {
+	Latitude float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
 }

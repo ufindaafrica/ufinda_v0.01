@@ -30,5 +30,5 @@ type CreateHostelRequest struct {
 	ToiletAccess     string             `json:"toilet_access"`
 	Images           []db.UploadedFile `json:"images" binding:"required,min=1,max=3"`
 	Videos           []db.UploadedFile `json:"videos" binding:"max=1"`
-	GeoLocation string 					`json:"geolocation,omitempty"`
+	GeoLocation *db.GeoLocationField 	`json:"geolocation,omitempty"`
 }

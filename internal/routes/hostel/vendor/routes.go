@@ -62,6 +62,7 @@ func CreateHostelHandler() gin.HandlerFunc {
 			Title:            req.Title,
 			TotalPrice:       req.TotalPrice,
 			Location:         req.Location,
+			AvailableRooms: req.AvailableRooms,
 			Description:      req.Description,
 			RentPerYear:      req.RentPerYear,
 			TotalHostelRooms: req.TotalHostelRooms,
