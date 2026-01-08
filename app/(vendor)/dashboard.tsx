@@ -4,99 +4,106 @@ import Plus from "@/components/plus";
 import VendorAppHeader from "@/components/vendorAppHeader";
 import { AgentHostels } from "@/constants/dummy_data";
 import { images } from "@/constants/images";
-import { getAgentInfo } from "@/services/agentInfo";
+import { lastMessageSentTime } from "@/deps/chatTime";
+import { getAgentData, getAgentInfo } from "@/services/agentInfo";
+import { getVendorInfo } from "@/services/getStudentInfo";
 import { dashboardStyles } from "@/styles/dashboard";
 import {globals, roboto } from "@/styles/globals";
 import { router } from "expo-router";
 import { getItemAsync } from "expo-secure-store";
-import { useEffect } from "react";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Image, Text, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaFrame } from "react-native-safe-area-context";
 
 export default function Dashboard() {
+
+    const [vendor, setVendor] = useState<any>()
+    const [vendorHostels, setVendorHostels] = useState<any>()
+
+    useEffect(() => {
+        const loadVendor = async () => {
+            const id = await getItemAsync('ID') ?? ''
+            
+            const listings = await getAgentData()
+            console.log(listings)
+            if (listings[0] != "200") {
+                router.replace("/auth/login")
+            } else {
+                setVendorHostels(listings?.[1])
+            }
+
+            const vendor = await getVendorInfo()
+            console.log(vendor)
+            if (vendor[0] != "200") {
+                router.replace("/auth/login")
+            } else {
+                setVendor(vendor?.[1])
+            }
+        }
+
+        loadVendor()
+    }, [])
 
     const allAds = () => {
         return <View style={{ justifyContent: "space-between" }}>
             <Text style={[roboto.bodySmallBold]}>All Ads</Text>
             <View style={{ flexDirection: "row", alignItems: "flex-end" }}>
-                <Text style={[roboto.headlineLargeBold, { paddingRight: 8 }]}>12</Text>
+                <Text style={[roboto.headlineLargeBold, { paddingRight: 8 }]}>{vendorHostels?.length ?? 0}</Text>
                 <Text style={[{ color: "#546881", paddingBottom: 3 }, roboto.bodySmall]}>Published</Text>
             </View>
         </View>
     }
 
-    const appointments = () => {
-        return (
-            <View>
-                <Text style={[roboto.titleSmall, { color: "#fcfcfc", width: 255, paddingBottom: 16 }]}>You have an appointment tomorrow</Text>
-                <Text style={[roboto.bodyMedium, { color: "#e5e5ea" }]}>Set reminder</Text>
-            </View>
-        )
-    }
+    // const appointments = () => {
+    //     return (
+    //         <View>
+    //             <Text style={[roboto.titleSmall, { color: "#fcfcfc", width: 255, paddingBottom: 16 }]}>You have an appointment tomorrow</Text>
+    //             <Text style={[roboto.bodyMedium, { color: "#e5e5ea" }]}>Set reminder</Text>
+    //         </View>
+    //     )
+    // }
 
     const metrics = [
-        ["Published Ads", images.published, 4],
-        ["Sold Ads", images.sold, 2],
-        ["Profile View", images.vendorUser, 14],
-        ["Appointments", images.appointments, 6]
+        ["Published Ads", images.published, vendorHostels?.length ?? 0],
+        // ["Sold Ads", images.sold, 2],
+        // ["Profile View", images.vendorUser, 14],
+        // ["Appointments", images.appointments, 6]
     ]
-
-    const vendorInfo = async () => {
-        // const id = await getItemAsync("ID")
-        // if (!id) {
-        //     router.replace("/auth/login")
-        //     return
-        // }
-        
-        // const vendorData = await getAgentInfo(id)
-        // console.log(vendorData)
-        // if (vendorData[0] != "200") {
-        //     router.replace("/auth/login")
-        //     return
-        // }
-    }
-
-    useEffect(() => {
-        // const loadVendor = async () => {
-        //     await vendorInfo()
-        // }
-        // loadVendor()
-    }, [])
 
     return (
         <SafeAreaView style={[globals.vendorContainer]}>
             <Plus />
 
-            <VendorAppHeader />
+            <VendorAppHeader firstName={vendor?.first_name} profileImg={vendor?.kyc_data?.url} />
 
             <ScrollView contentContainerStyle={dashboardStyles.scrollV} showsVerticalScrollIndicator={false}>
                 <LineBreak />
 
-                <View style={[dashboardStyles.padding]}>
+                {/* <View style={[dashboardStyles.padding]}>
                     <Announcement view={appointments()} active />
-                </View>
+                </View> */}
 
                 <View style={[dashboardStyles.padding, { paddingTop: 0 }]}>
-                    <Text style={[roboto.titleSmallBold, { paddingBottom: 8 }]}>My Ads</Text>
+                    <Text style={[roboto.titleSmallBold, { paddingVertical: 8 }]}>My Ads</Text>
 
                     <View style={dashboardStyles.listingsV}>
 
                         {
-                            AgentHostels.slice(0, 4).map((item, idx) => {
+                            vendorHostels?.map((item: any, idx: number) => {
 
-                                const remaining = Math.floor(((item.totalrooms - item.rentedrooms) / item.totalrooms) * 143)
+                                const remaining = Math.floor((((item?.total_hostel_rooms ?? 0) - (item?.available_rooms ?? 0)) / (item.total_hostel_rooms ?? 0)) * 143)
 
                                 return (<View key={idx} style={[dashboardStyles.eachListing]}>
                                     <View>
                                         <Text style={[roboto.bodyMediumBold]}>{item.name}</Text>
-                                        <Text style={[roboto.caption, dashboardStyles.postedT]}>{`posted: ${item.posted} ${item.time}`}</Text>
+                                        <Text style={[roboto.caption, dashboardStyles.postedT]}>{`posted: ${lastMessageSentTime(item?.created_at)}`}</Text>
                                     </View>
 
                                     <View>
                                         <View style={dashboardStyles.remEntireV}>
-                                            <Text style={[roboto.headlineLargeBold]}>{`${item.totalrooms - item.rentedrooms} `}</Text>
-                                            <Text style={[roboto.bodyMedium, dashboardStyles.remT]}>{`/ ${item.totalrooms} Rooms Left`}</Text>
+                                            <Text style={[roboto.headlineLargeBold]}>{`${(item?.total_hostel_rooms ?? 0) - (item?.available_rooms ?? 0)} `}</Text>
+                                            <Text style={[roboto.bodyMedium, dashboardStyles.remT]}>{`/ ${item?.total_hostel_rooms ?? 0} Rooms Left`}</Text>
                                         </View>
 
                                         <View style={dashboardStyles.outerRemV}>
