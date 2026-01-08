@@ -4,7 +4,7 @@ import LineBreak from "@/components/lineBreak";
 import Select from "@/components/select";
 import { images } from "@/constants/images";
 import { pickMedia } from "@/deps/pickImage";
-import { moderateScale, scale, verticalScale } from "@/deps/scale";
+import { moderateScale, verticalScale } from "@/deps/scale";
 import { colors, globals, roboto } from "@/styles/globals";
 import { newHostelStyles } from "@/styles/newHostel";
 import { useEffect, useRef, useState } from "react";
@@ -31,6 +31,7 @@ export default function NewHostel() {
     const [address, setAddress] = useState("")
     const [hostelType, setHostelType] = useState("")
     const [numberOfRooms, setNumberOfRooms] = useState<number | null>()
+    const [totalRooms, setTotalRooms] = useState<number | null>()
     const [roomate, setRoomate] = useState("")
     const [power, setPower] = useState("")
     const [kitchen, setKitchen] = useState("")
@@ -40,6 +41,8 @@ export default function NewHostel() {
     const [yearlyrent, setYearlyRent] = useState<number | null>()
     const [totalPrice, setTotalPrice] = useState<number | null>()
     const [bulkPrice, setBulkPrice] = useState("")
+    const [geoLocation, setGeoLocation] = useState("")
+    const [longLat, setLongLat] = useState("")
 
     const [descLength, setDescLength] = useState("0")
     const [adPrice, setAdPrice] = useState("2,999")
@@ -148,7 +151,7 @@ export default function NewHostel() {
             const hostelData = {
                 title: title ?? "",
                 total_price: totalPrice ?? 0,
-                total_hostel_rooms: numberOfRooms ?? 0,
+                total_hostel_rooms: totalRooms ?? 0,
                 rent_per_year: yearlyrent ?? 0,
                 location: address ?? "",
                 ...(kitchen && { kitchen_access: kitchen }),
@@ -158,7 +161,9 @@ export default function NewHostel() {
                 ...(roomate && { roommates_allowed: roomate }),
                 ...(desc && { description: desc }),
                 images: imgs,
-                ...(vid.length > 0 && { videos: vid })
+                ...(vid.length > 0 && { videos: vid }),
+                available_rooms: numberOfRooms ?? 0,
+                ...(longLat && { geolocation: longLat})
             }
 
             console.log("hostelData:", hostelData)
@@ -211,29 +216,34 @@ export default function NewHostel() {
         }
     }, [correctText])
 
-    // useEffect(() => {
-    //     const getLocation = async () => {
-    //         const { status } = await Location.requestForegroundPermissionsAsync()
-    //         if (status != "granted") {
-    //             return
-    //         }
+    useEffect(() => {
+        const getLocation = async () => {
+            const { status } = await Location.requestForegroundPermissionsAsync()
+            if (status != "granted") {
+                return
+            }
 
-    //         const loc = await Location.getCurrentPositionAsync({})
-    //         console.log("got the first one")
-    //         const address = await Location.reverseGeocodeAsync(loc.coords)
+            const loc = await Location.getCurrentPositionAsync({})
 
-    //         console.log(loc)
-    //         console.log(address)
+            const address = await Location.reverseGeocodeAsync(loc.coords)
 
-    //         if (address.length > 0) {
-    //             console.log(address[0])
-    //             const formatted = address[0].formattedAddress + ""
-    //             setAddress(formatted)
-    //             // setFinalAddress(addr[0].city + ", " + addr[0].region)
-    //         }
-    //     }
-    //     getLocation()
-    // }, [])
+            console.log("cords => ", loc)
+            console.log(address)
+
+            if (address.length > 0) {
+                console.log(address[0])
+                const formatted = address[0].formattedAddress + ""
+                setGeoLocation(formatted)
+
+                const coords = {
+                    "latitude": loc?.coords?.latitude ?? 0,
+                    "longitude": loc?.coords?.longitude ?? 0
+                }
+                setLongLat(JSON.stringify(coords))
+            }
+        }
+        getLocation()
+    }, [])
 
     const [drawer, setDrawer] = useState(false)
     const [roomateDrawer, setRoomateDrawer] = useState(false)
@@ -391,6 +401,15 @@ export default function NewHostel() {
                     />
                 </View>
                 <View style={newHostelStyles.inputV}>
+                    <HostelLabel label="Map Location" />
+                    <Input
+                        hint="Gwani Street"
+                        value={geoLocation}
+                        onChangeText={(e) => setGeoLocation(e)}
+                        editable={false}
+                    />
+                </View>
+                <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Hostel type" />
                     <TouchableOpacity onPress={() => { Keyboard.dismiss(); setDrawer(true) }}>
                         <Input
@@ -412,22 +431,22 @@ export default function NewHostel() {
                         ref={availableRoomsRef}
                         onFocus={() => focusNext(availableRoomsRef)}
                         returnKeyType="next"
-                        onSubmitEditing={() => Keyboard.dismiss()}
+                        onSubmitEditing={() => focusNext(totalRoomsRef)}
                     />
                 </View>
-                {/* <View style={newHostelStyles.inputV}>
+                <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Total hostel rooms" />
                     <Input
                         hint="10"
                         keyboardType="numeric"
-                        value={totalRooms}
-                        onChangeText={(text) => setTotalRooms(text)}
+                        value={totalRooms?.toString() ?? ""}
+                        onChangeText={(text) => setTotalRooms(Number(text) ?? 0)}
                         ref={totalRoomsRef}
                         onFocus={() => focusNext(totalRoomsRef)}
                         returnKeyType="done"
                         onSubmitEditing={() => Keyboard.dismiss()}
                     />
-                </View> */}
+                </View>
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Roomates Allowed" />
                     <TouchableOpacity onPress={() => { Keyboard.dismiss(); setRoomateDrawer(true) }}>
