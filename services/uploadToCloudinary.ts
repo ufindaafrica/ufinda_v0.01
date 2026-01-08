@@ -103,7 +103,5 @@ export const uploadToCloudinary = async (data: uploadFilesType) => {
         }
     }
 
-
-    console.log("audio upload result", result)
     return result
 }

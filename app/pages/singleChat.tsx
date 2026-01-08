@@ -193,6 +193,7 @@ export default function SingleChat() {
                     }
                 }))
             } catch {
+                console.log("rest fallback")
                 const sent = await sendChat(newMessage)
                 if (sent[0] != "200") {
                     toast("error sending message. resend")
@@ -259,6 +260,7 @@ export default function SingleChat() {
                             }
                         }))
                     } catch {
+                        console.log("rest fallback")
                         const sent = await sendChat(newMessage)
                         if (sent[0] != "200") {
                             setImgLoading(false)
@@ -334,6 +336,7 @@ export default function SingleChat() {
                             }
                         }))
                     } catch {
+                        console.log("rest fallback")
                         const sent = await sendChat(newMessage)
                         if (sent[0] != "200") {
                             setImgLoading(false)
@@ -384,11 +387,6 @@ export default function SingleChat() {
         }
         setId()
     }, []))
-
-    const getAgentName = (id: string) => {
-        const hostel = dummyHostels.find(h => h.agent.id === id)
-        return hostel?.agent.name ?? ""
-    }
 
     useEffect(() => {
         const keyboardDidShow = Keyboard.addListener('keyboardDidShow', () => {
@@ -471,7 +469,7 @@ export default function SingleChat() {
                             <Image source={images.camera} style={singleChatStyles.smallImg} />
                         </TouchableOpacity>
                     </View>
-                    <TouchableOpacity disabled={imgLoading} onPress={() => image ? sendMessage(message, "image") : toRecord() ? record() : !toRecord() ? stopRecording() : message && sendMessage(message)} style={[singleChatStyles.sendView]}>
+                    <TouchableOpacity disabled={imgLoading} onPress={() => image ? sendMessage(message, "image") : toRecord() ? record() : message ? message && sendMessage(message) : stopRecording()} style={[singleChatStyles.sendView]}>
                         <Image source={message ? images.send : recorderState.isRecording ? images.stop : images.mic} style={singleChatStyles.smallImg} />
                     </TouchableOpacity>
                 </View>

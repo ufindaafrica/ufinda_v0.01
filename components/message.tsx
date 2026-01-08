@@ -2,7 +2,7 @@ import { images } from "@/constants/images";
 import { scale, verticalScale } from "@/deps/scale";
 import { colors, roboto } from "@/styles/globals";
 import { singleChatStyles } from "@/styles/singleChat";
-import { useEffect, useState } from "react";
+import { useDebugValue, useEffect, useState } from "react";
 import { Image, ImageBackground, Text, TouchableOpacity, View } from "react-native";
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
 
@@ -32,12 +32,27 @@ export default function Message({ message, time, last, status, personal, type, i
 
     useEffect(() => {
         if (playRequested && playerStatus?.isLoaded && !playerStatus.isBuffering) {
+            console.log("right here")
             setPlaying(true)
+            player.seekTo(0)
             player.play();
             setPlayRequested(false);
-            setPlaying(false)
         }
-    }, [status, playRequested]);
+    }, [playRequested, playerStatus]);
+
+    useEffect(() => {
+        const sub = player.addListener("playbackStatusUpdate", (status) => {
+            if (!status.isLoaded) return
+
+            if (status.didJustFinish || !status.playing) {
+                setPlaying(false)
+            }
+        })
+
+        return () => {
+            sub.remove()
+        }
+    }, [])
 
     return (
         <View>
@@ -58,7 +73,7 @@ export default function Message({ message, time, last, status, personal, type, i
                 {
                     last ? <Text style={[roboto.caption, colors.grays, personal ? singleChatStyles.timeText : singleChatStyles.reversedTime]}>{time}{status && personal ? "  Seen" : null}</Text> : null
                 }
-            </TouchableOpacity> : <TouchableOpacity onPress={() => handlePlay()} style={[{ width: scale(200), height: scale(50), borderRadius: 16, padding: 2, borderWidth: 1, borderColor: "#546881", marginTop: verticalScale(4) }, personal && { alignSelf: 'flex-end' }]}>
+            </TouchableOpacity> : <TouchableOpacity onPress={() => handlePlay()} style={[{ width: scale(150), height: scale(50), borderRadius: 16, padding: 2, borderWidth: 1, borderColor: "#546881", marginTop: verticalScale(4) }, personal && { alignSelf: 'flex-end' }]}>
                 <View style={{ width: '100%', height: '100%', justifyContent: 'space-around', alignItems: 'center', flexDirection: 'row' }}>
                     <Image source={playing ? images.audio : images.audioStatic} style={{ width: '85%', height: scale(40), resizeMode: 'contain'
                      }} />
