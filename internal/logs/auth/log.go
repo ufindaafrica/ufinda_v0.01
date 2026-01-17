@@ -26,7 +26,7 @@ var Logs = map[string]LogEntry{
 		Level:   "critical",
 	},
 	"4": {
-		Message: "invalid token",
+		Message: "token expired or invalid",
 		Level:   "critical",
 	},
 }

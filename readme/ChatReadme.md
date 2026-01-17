@@ -249,7 +249,8 @@ This endpoint provides the necessary security credentials for the client (fronte
   "cloud_name": "ufinda-cloud",
   "folder": "chat",
   "signature": "a5e8f230b8c7...8d2f",
-  "timestamp": 1735468200
+  "timestamp": 1735468200,
+  "resource_type": "auto"
 }
 
 ```
@@ -275,6 +276,7 @@ To perform the upload after receiving this signature, the client should send a `
 * `timestamp`: From the response above.
 * `signature`: From the response above.
 * `folder`: From the response above.
+* `resource_type`: "auto"
 
 ---
 
@@ -355,6 +357,8 @@ Sends a new message to the room.
 ```
 
 *(Use `message_type: "image"` and provide a `public_id` if sending an image).*
+*(Use `message_type: "audio"` and provide a `public_id` if sending an audio).*
+
 
 ---
 

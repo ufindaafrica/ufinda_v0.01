@@ -462,7 +462,7 @@ func RefreshTokenHandler(c *gin.Context) {
 		}
 
 		authlog.SecurityLog(newLog)
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "token expired"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "expired token"})
 		return
 	}
 
@@ -664,4 +664,50 @@ func ResetPwd(c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, gin.H{"message": "password updated successfully"})
+}
+
+func ChangePassword(c *gin.Context) {
+	userID:= c.GetString("id")
+
+	getUser, err := authdb.FindCreatedUserByID(userID)
+	if err != nil {
+		authlog.LogAuth(userID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		return
+	}
+
+	var req ChangePwd
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	if getUser.AuthProvider == "custom"{
+		err := bcrypt.CompareHashAndPassword([]byte(getUser.Password), []byte(req.NewPassword))
+		if err == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "new password must be different from your current password"})
+			return
+		}
+
+		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+		if err != nil {
+			authlog.LogAuth(getUser.ID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+			return
+		}
+
+		var updateData = make(map[string]interface{})
+		updateData["password"] = string(hashedPwd)
+
+		if err := authdb.UpdateCreatedUser(getUser.ID, updateData); err != nil {
+			authlog.LogAuth(getUser.ID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": "password updated successfully"})
+		return
+	}
+
+	c.JSON(http.StatusForbidden, gin.H{"error": "action not allowed"})
 }

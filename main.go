@@ -21,6 +21,7 @@ import (
 	"github.com/oladev/ufinda_v0.01/internal/sockets/chat"
 	"github.com/oladev/ufinda_v0.01/internal/routes/rating"
 	"github.com/oladev/ufinda_v0.01/internal/routes/product/vendor"
+	"github.com/oladev/ufinda_v0.01/internal/routes/notification"
 )
 
 var wsHub = hub.NewHub()
@@ -90,6 +91,7 @@ func main() {
 	vendorproduct.RegisterVendorProduct(r, asynqClient, cld)
 	rating.RegisterRating(r)
 	webhook.RegisterWebhooks(r, wsHub)
+	notif.RegisterNotif(r)
 	
 	// Pass the Cloudinary client and the Asynq client to the hostel registration
 	vendorhostel.RegisterHostel(r, cld)

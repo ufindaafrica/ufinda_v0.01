@@ -115,6 +115,7 @@ This endpoint allows verified vendors to create a new hostel listing. It uses a 
 | `location` | `string` | Physical address. | Yes |
 | `kitchen_access` | `string` | `personal` or `public`. | No |
 | `toilet_access` | `string` | `personal` or `public`. | No |
+| `power_supply` | `string` | `yes` or `no`. | No |
 | `landlord_resides` | `string` | `yes` or `no`. | No |
 | `room_type` | `string` | e.g., `self-contain`, `single room`. | No |
 | `roommates_allowed` | `string` | `yes` or `no`. | No |

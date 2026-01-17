@@ -9,12 +9,13 @@ import (
 	"strconv"
 	"sync"
 	"time"
-	"github.com/oladev/ufinda_v0.01/internal/logs/chat"
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/oladev/ufinda_v0.01/internal/db"
+	"github.com/oladev/ufinda_v0.01/internal/db/notification" // Imported as requested
+	chatlog "github.com/oladev/ufinda_v0.01/internal/logs/chat"
 )
 
 // WebSocket upgrader with origin check
@@ -50,27 +51,27 @@ type ChatRoom struct {
 }
 
 type Message struct {
-	ID          string     `json:"id"`
-	ChatRoomID  string     `json:"chat_room_id"`
-	SenderID    string     `json:"sender_id"`
-	Content     string     `json:"content"`
-	MessageType string     `json:"message_type"`
-	IsRead      bool       `json:"is_read"`
-	PublicID    *string    `json:"public_id,omitempty"`
-	CreatedAt   time.Time  `json:"created_at"`
-	DeliveredAt *time.Time `json:"delivered_at,omitempty"`
+	ID           string     `json:"id"`
+	ChatRoomID   string     `json:"chat_room_id"`
+	SenderID     string     `json:"sender_id"`
+	Content      string     `json:"content"`
+	MessageType  string     `json:"message_type"`
+	IsRead       bool       `json:"is_read"`
+	PublicID     *string    `json:"public_id,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
+	DeliveredAt  *time.Time `json:"delivered_at,omitempty"`
 }
 
 type ChatMessage struct {
-	ID          string     `json:"id"`
-	ChatRoomID  string     `json:"chat_room_id"`
-	SenderID    string     `json:"sender_id"`
-	Content     string     `json:"content"`
-	MessageType string     `json:"message_type"`
-	PublicID    *string    `json:"public_id,omitempty"`
-	CreatedAt   time.Time  `json:"created_at"`
-	SenderName  string     `json:"sender_name"`
-	DeliveredAt *time.Time `json:"delivered_at,omitempty"`
+	ID           string     `json:"id"`
+	ChatRoomID   string     `json:"chat_room_id"`
+	SenderID     string     `json:"sender_id"`
+	Content      string     `json:"content"`
+	MessageType  string     `json:"message_type"`
+	PublicID     *string    `json:"public_id,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
+	SenderName   string     `json:"sender_name"`
+	DeliveredAt  *time.Time `json:"delivered_at,omitempty"`
 }
 
 type WSMessage struct {
@@ -169,9 +170,9 @@ func (c *Client) ReadPump() {
 		err := c.Conn.ReadJSON(&rawMsg)
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("WebSocket unexpected close for user %s: %v", c.UserID, err)
+				log.Printf("[ERROR] WebSocket unexpected close for user %s: %v", c.UserID, err)
 			} else if err != io.EOF {
-				log.Printf("WebSocket read error for user %s: %v", c.UserID, err)
+				log.Printf("[ERROR] WebSocket read error for user %s: %v", c.UserID, err)
 			}
 			break
 		}
@@ -180,12 +181,12 @@ func (c *Client) ReadPump() {
 		case "join_room":
 			var payload JoinRoomPayload
 			if err := json.Unmarshal(rawMsg.Payload, &payload); err != nil {
-				log.Printf("Client %s: Failed to unmarshal join_room payload: %v", c.UserID, err)
+				log.Printf("[ERROR] Client %s: Failed to unmarshal join_room payload: %v", c.UserID, err)
 				c.SendError("Invalid join_room payload")
 				continue
 			}
 			if _, err := uuid.Parse(payload.RoomID); err != nil {
-				log.Printf("Client %s: Invalid room_id UUID: %s", c.UserID, payload.RoomID)
+				log.Printf("[ERROR] Client %s: Invalid room_id UUID: %s", c.UserID, payload.RoomID)
 				c.SendError("Invalid room_id format")
 				continue
 			}
@@ -194,12 +195,12 @@ func (c *Client) ReadPump() {
 		case "leave_room":
 			var payload LeaveRoomPayload
 			if err := json.Unmarshal(rawMsg.Payload, &payload); err != nil {
-				log.Printf("Client %s: Failed to unmarshal leave_room payload: %v", c.UserID, err)
+				log.Printf("[ERROR] Client %s: Failed to unmarshal leave_room payload: %v", c.UserID, err)
 				c.SendError("Invalid leave_room payload")
 				continue
 			}
 			if _, err := uuid.Parse(payload.RoomID); err != nil {
-				log.Printf("Client %s: Invalid room_id UUID: %s", c.UserID, payload.RoomID)
+				log.Printf("[ERROR] Client %s: Invalid room_id UUID: %s", c.UserID, payload.RoomID)
 				c.SendError("Invalid room_id format")
 				continue
 			}
@@ -207,14 +208,14 @@ func (c *Client) ReadPump() {
 
 		case "message":
 			if !c.Hub.RateLimiter.Allow(c.UserID) {
-				log.Printf("Client %s: Rate limit exceeded.", c.UserID)
+				log.Printf("[ERROR] Client %s: Rate limit exceeded.", c.UserID)
 				c.SendError("Rate limit exceeded. Please wait.")
 				continue
 			}
 
 			var payload SendMessagePayload
 			if err := json.Unmarshal(rawMsg.Payload, &payload); err != nil {
-				log.Printf("Client %s: Failed to unmarshal message payload: %v", c.UserID, err)
+				log.Printf("[ERROR] Client %s: Failed to unmarshal message payload: %v", c.UserID, err)
 				c.SendError("Invalid message payload")
 				continue
 			}
@@ -227,10 +228,10 @@ func (c *Client) ReadPump() {
 			maxContentLength := 1000
 			if msgType == "text" {
 				// Use maxContentLength = 1000
-			} else if msgType == "image" {
+			} else if msgType == "image" || msgType == "audio" {
 				maxContentLength = 500 // Max URL length
 				if payload.PublicID == nil {
-					c.SendError("Image message missing PublicID")
+					c.SendError("message missing PublicID")
 					continue
 				}
 			} else {
@@ -248,7 +249,7 @@ func (c *Client) ReadPump() {
 			}
 			_, err := c.Hub.ChatService.SendMessage(payload.ChatRoomID, c.UserID, payload.Content, msgType, payload.PublicID)
 			if err != nil {
-				log.Printf("Client %s: Failed to persist message: %v", c.UserID, err)
+				log.Printf("[CRITICAL] Client %s: Failed to persist message: %v", c.UserID, err)
 				c.SendError("Failed to save message")
 				continue
 			}
@@ -256,7 +257,7 @@ func (c *Client) ReadPump() {
 		case "pong":
 			// Handled by SetPongHandler
 		default:
-			log.Printf("Client %s: Unknown WS message type: %s", c.UserID, rawMsg.Type)
+			log.Printf("[ERROR] Client %s: Unknown WS message type: %s", c.UserID, rawMsg.Type)
 			c.SendError(fmt.Sprintf("Unknown message type: %s", rawMsg.Type))
 		}
 	}
@@ -273,7 +274,7 @@ func (c *Client) WritePump() {
 		select {
 		case msg, ok := <-c.Send:
 			if !ok {
-				log.Printf("Client %s: Send channel closed. Sending close message.", c.UserID)
+				log.Printf("[ERROR] Client %s: Send channel closed. Sending close message.", c.UserID)
 				c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
@@ -281,7 +282,7 @@ func (c *Client) WritePump() {
 			err := c.Conn.WriteJSON(msg)
 			c.mutex.Unlock()
 			if err != nil {
-				log.Printf("Client %s: WebSocket write error: %v", c.UserID, err)
+				log.Printf("[ERROR] Client %s: WebSocket write error: %v", c.UserID, err)
 				return
 			}
 		case <-ticker.C:
@@ -289,7 +290,7 @@ func (c *Client) WritePump() {
 			err := c.Conn.WriteMessage(websocket.PingMessage, nil)
 			c.mutex.Unlock()
 			if err != nil {
-				log.Printf("Client %s: WebSocket ping error: %v", c.UserID, err)
+				log.Printf("[ERROR] Client %s: WebSocket ping error: %v", c.UserID, err)
 				return
 			}
 		}
@@ -301,32 +302,34 @@ func (c *Client) SendError(message string) {
 	select {
 	case c.Send <- WSMessage{Type: "error", Payload: payloadBytes}:
 	default:
-		log.Printf("Client %s: Failed to send error message (channel blocked).", c.UserID)
+		log.Printf("[ERROR] Client %s: Failed to send error message (channel blocked).", c.UserID)
 		c.Hub.Unregister <- c
 	}
 }
 
 // --- Hub (Optimized for O(1) Client Lookup) ---
 type Hub struct {
-	Clients     map[string]*Client
-	Rooms       map[string]map[*Client]bool
-	Register    chan *Client
-	Unregister  chan *Client
-	Broadcast   chan WSMessage
-	RateLimiter *RateLimiter
-	ChatService *SupabaseChatService
-	mutex       sync.RWMutex
+	Clients          map[string]*Client
+	Rooms            map[string]map[*Client]bool
+	RoomParticipants map[string]ChatRoom
+	Register         chan *Client
+	Unregister       chan *Client
+	Broadcast        chan WSMessage
+	RateLimiter      *RateLimiter
+	ChatService      *SupabaseChatService
+	mutex            sync.RWMutex
 }
 
 func NewHub(chatService *SupabaseChatService) *Hub {
 	h := &Hub{
-		Clients:     make(map[string]*Client),
-		Rooms:       make(map[string]map[*Client]bool),
-		Register:    make(chan *Client),
-		Unregister:  make(chan *Client),
-		Broadcast:   make(chan WSMessage),
-		RateLimiter: NewRateLimiter(10, time.Minute),
-		ChatService: chatService,
+		Clients:          make(map[string]*Client),
+		Rooms:            make(map[string]map[*Client]bool),
+		RoomParticipants: make(map[string]ChatRoom),
+		Register:         make(chan *Client),
+		Unregister:       make(chan *Client),
+		Broadcast:        make(chan WSMessage),
+		RateLimiter:      NewRateLimiter(10, time.Minute),
+		ChatService:      chatService,
 	}
 	return h
 }
@@ -358,6 +361,7 @@ func (h *Hub) Run() {
 						delete(clientsInRoom, client)
 						if len(clientsInRoom) == 0 {
 							delete(h.Rooms, roomID)
+							delete(h.RoomParticipants, roomID) // Clean up cache
 							log.Printf("Chat room %s is now empty and removed.", roomID)
 						}
 					}
@@ -370,11 +374,11 @@ func (h *Hub) Run() {
 			if message.Type == "message" {
 				var payload NewMessagePayload
 				if err := json.Unmarshal(message.Payload, &payload); err != nil {
-					log.Printf("Hub: Failed to unmarshal broadcast message payload: %v", err)
+					log.Printf("[ERROR] Hub: Failed to unmarshal broadcast message payload: %v", err)
 					continue
 				}
 				if _, err := uuid.Parse(payload.ChatRoomID); err != nil {
-					log.Printf("Hub: Invalid chat_room_id UUID: %s", payload.ChatRoomID)
+					log.Printf("[ERROR] Hub: Invalid chat_room_id UUID: %s", payload.ChatRoomID)
 					continue
 				}
 				h.BroadcastToRoom(payload.ChatRoomID, message, payload.SenderID)
@@ -398,32 +402,45 @@ func (h *Hub) ConfirmSenderDelivery(payload MessageDeliveredPayload, senderID st
 	case client.Send <- WSMessage{Type: "message_delivered", Payload: payloadBytes}:
 		log.Printf("Delivery confirmed to sender %s for message %s.", senderID, payload.MessageID)
 	default:
-		log.Printf("Sender %s channel blocked. Failed to send delivery confirmation.", senderID)
+		log.Printf("[ERROR] Sender %s channel blocked. Failed to send delivery confirmation.", senderID)
 	}
 }
 
 func (h *Hub) JoinRoom(client *Client, roomID string) {
+	h.mutex.Lock()
 	if h.Rooms[roomID] == nil {
 		h.Rooms[roomID] = make(map[*Client]bool)
+
+		// Optimization: Cache room details when first person joins
+		room, err := h.ChatService.findExistingRoomByID(roomID)
+		if err == nil && room != nil {
+			h.RoomParticipants[roomID] = *room
+		}
 	}
 	h.Rooms[roomID][client] = true
+	h.mutex.Unlock()
+
 	log.Printf("Client %s joined room %s.", client.UserID, roomID)
 
 	payloadBytes, _ := json.Marshal(JoinRoomPayload{RoomID: roomID})
 	select {
 	case client.Send <- WSMessage{Type: "join_room", Payload: payloadBytes}:
 	default:
-		log.Printf("Client %s: Failed to send room_joined ack (channel blocked).", client.UserID)
+		log.Printf("[ERROR] Client %s: Failed to send room_joined ack (channel blocked).", client.UserID)
 		h.Unregister <- client
 	}
 }
 
 func (h *Hub) LeaveRoom(client *Client, roomID string) {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+
 	if clients, exists := h.Rooms[roomID]; exists {
 		if _, inRoom := clients[client]; inRoom {
 			delete(clients, client)
 			if len(clients) == 0 {
 				delete(h.Rooms, roomID)
+				delete(h.RoomParticipants, roomID) // Clean up cache
 				log.Printf("Chat room %s is now empty and removed.", roomID)
 			}
 			log.Printf("Client %s left room %s.", client.UserID, roomID)
@@ -432,27 +449,74 @@ func (h *Hub) LeaveRoom(client *Client, roomID string) {
 			select {
 			case client.Send <- WSMessage{Type: "leave_room", Payload: payloadBytes}:
 			default:
-				log.Printf("Client %s: Failed to send room_left ack (channel blocked).", client.UserID)
-				h.Unregister <- client
+				log.Printf("[ERROR] Client %s: Failed to send room_left ack (channel blocked).", client.UserID)
+				// We don't unregister here to avoid recursive locking
 			}
 		}
 	}
 }
 
+// Optimized BroadcastToRoom with Push Notification logic
 func (h *Hub) BroadcastToRoom(roomID string, message WSMessage, senderID string) {
-	if clients, exists := h.Rooms[roomID]; exists {
+	h.mutex.RLock()
+	clients, exists := h.Rooms[roomID]
+	roomInfo, roomCached := h.RoomParticipants[roomID]
+	h.mutex.RUnlock()
+
+	recipientOnline := false
+
+	if exists {
 		for client := range clients {
 			if client.UserID == senderID {
 				continue
 			}
 			select {
 			case client.Send <- message:
+				recipientOnline = true
 			default:
-				log.Printf("Client %s: Send channel blocked. Unregistering client.", client.UserID)
+				log.Printf("[ERROR] Client %s: Send channel blocked. Unregistering client.", client.UserID)
 				h.Unregister <- client
 			}
 		}
 	}
+
+	// If recipient not online via WebSocket, send Push Notification
+	if !recipientOnline && roomCached {
+		var recipientID string
+		if roomInfo.BuyerID == senderID {
+			recipientID = roomInfo.VendorID
+		} else {
+			recipientID = roomInfo.BuyerID
+		}
+
+		var payload NewMessagePayload
+		json.Unmarshal(message.Payload, &payload)
+
+		// Fire and forget push in a goroutine
+		go h.handleOfflinePush(recipientID, roomID, payload.Content)
+	}
+}
+
+// Helper for Push Notification
+func (h *Hub) handleOfflinePush(recipientID, roomID, content string) {
+    tokens, err := notifdb.GetPushTokens(recipientID)
+    if err != nil || len(tokens) == 0 {
+        return
+    }
+
+    title := "New Message on uFinda"
+
+    // 2. Loop through every device token found for this user
+    for _, tData := range tokens {
+        if tData.DeviceToken == "" {
+            continue
+        }
+
+        if err := notifdb.SendPushNotification(tData.DeviceToken, title, content, roomID); err != nil {
+            log.Printf("[PUSH ERROR] Failed to send to device %s for user %s: %v", tData.DeviceToken, recipientID, err)
+            chatlog.LogChat(recipientID, err)
+        }
+    }
 }
 
 type SupabaseChatService struct {
@@ -473,11 +537,9 @@ func (cs *SupabaseChatService) SetHub(hub *Hub) {
 func (cs *SupabaseChatService) CreateChatRoom(buyerID, vendorID string) (*ChatRoom, error) {
 	existingRoom, err := cs.findExistingRoom(buyerID, vendorID)
 	if err != nil {
-		log.Printf("Error checking for existing chat room: %v", err)
 		return nil, fmt.Errorf("failed to check for existing room: %v", err)
 	}
 	if existingRoom != nil {
-		log.Printf("Found existing chat room ID %s for buyer %s, vendor %s", existingRoom.ID, buyerID, vendorID)
 		return existingRoom, nil
 	}
 
@@ -508,7 +570,6 @@ func (cs *SupabaseChatService) CreateChatRoom(buyerID, vendorID string) (*ChatRo
 
 	var rooms []ChatRoom
 	if err := json.Unmarshal(body, &rooms); err != nil {
-		log.Printf("Error parsing create chat room response: %v, body: %s", err, string(body))
 		return nil, fmt.Errorf("failed to parse response: %v", err)
 	}
 
@@ -516,13 +577,23 @@ func (cs *SupabaseChatService) CreateChatRoom(buyerID, vendorID string) (*ChatRo
 		return nil, fmt.Errorf("no chat room returned after creation")
 	}
 
-	log.Printf("Successfully created chat room ID %s", rooms[0].ID)
+	log.Printf("Successfully created chat room ID %s", rooms[0].ID)	
+
 	return &rooms[0], nil
 }
 
 func (cs *SupabaseChatService) findExistingRoom(buyerID, vendorID string) (*ChatRoom, error) {
 	query := fmt.Sprintf("buyer_id=eq.%s&vendor_id=eq.%s", buyerID, vendorID)
+	return cs.queryOneRoom(query)
+}
 
+// Optimized Helper to fetch by ID
+func (cs *SupabaseChatService) findExistingRoomByID(roomID string) (*ChatRoom, error) {
+	query := fmt.Sprintf("id=eq.%s", roomID)
+	return cs.queryOneRoom(query)
+}
+
+func (cs *SupabaseChatService) queryOneRoom(query string) (*ChatRoom, error) {
 	endpoint := fmt.Sprintf("/rest/v1/chat_rooms?%s", query)
 	resp, err := db.MakeDBRequest("GET", endpoint, nil, nil)
 	if err != nil {
@@ -548,7 +619,6 @@ func (cs *SupabaseChatService) findExistingRoom(buyerID, vendorID string) (*Chat
 	if len(rooms) > 0 {
 		return &rooms[0], nil
 	}
-
 	return nil, nil
 }
 
@@ -569,7 +639,7 @@ func (cs *SupabaseChatService) SendMessage(chatRoomID, senderID, content string,
 		"is_read":      false,
 	}
 
-	if publicID != nil && messageType == "image" {
+	if publicID != nil && messageType == "image" || publicID != nil && messageType == "audio" {
 		messageData["public_id"] = *publicID
 	}
 
@@ -605,7 +675,7 @@ func (cs *SupabaseChatService) SendMessage(chatRoomID, senderID, content string,
 	message := &messages[0]
 	senderName, err := cs.getSenderName(senderID)
 	if err != nil {
-		log.Printf("Warning: Could not get sender name for user %s: %v. Using 'Unknown User'.", senderID, err)
+		log.Printf("[ERROR] Could not get sender name for user %s: %v. Using 'Unknown User'.", senderID, err)
 		senderName = "Unknown User"
 	}
 
@@ -623,7 +693,7 @@ func (cs *SupabaseChatService) SendMessage(chatRoomID, senderID, content string,
 
 	payloadBytes, err := json.Marshal(chatMsg)
 	if err != nil {
-		log.Printf("Error marshalling NewMessagePayload: %v", err)
+		log.Printf("[ERROR] Error marshalling NewMessagePayload: %v", err)
 		return message, nil
 	}
 
@@ -635,7 +705,7 @@ func (cs *SupabaseChatService) SendMessage(chatRoomID, senderID, content string,
 		}
 		cs.hub.ConfirmSenderDelivery(MessageDeliveredPayload{MessageID: message.ID}, senderID)
 	} else {
-		log.Println("Warning: Hub is nil in SupabaseChatService. Message cannot be broadcast.")
+		log.Println("[CRITICAL] Hub is nil in SupabaseChatService. Message cannot be broadcast.")
 	}
 
 	return message, nil
@@ -663,39 +733,15 @@ func (cs *SupabaseChatService) getSenderName(userID string) (string, error) {
 			}
 		}
 	} else {
-		log.Printf("Users table query failed with status %d for ID %s", resp.StatusCode, userID)
+		log.Printf("[ERROR] Users table query failed with status %d for ID %s", resp.StatusCode, userID)
 	}
 
-	vendorEndpoint := fmt.Sprintf("/rest/v1/vendors?id=eq.%s&select=first_name,email", userID)
-	vendorResp, err := db.MakeDBRequest("GET", vendorEndpoint, nil, nil)
-	if err != nil {
-		return "", fmt.Errorf("failed to get sender name: %w", err)
-	}
-	defer vendorResp.Body.Close()
-
-	if vendorResp.StatusCode == http.StatusOK {
-		body, err := io.ReadAll(vendorResp.Body)
-		if err == nil {
-			var vendors []map[string]interface{}
-			if err := json.Unmarshal(body, &vendors); err == nil && len(vendors) > 0 {
-				if first_name, ok := vendors[0]["first_name"].(string); ok && first_name != "" {
-					return first_name, nil
-				}
-				if last_name, ok := vendors[0]["last_name"].(string); ok && last_name != "" {
-					return last_name, nil
-				}
-			}
-		}
-	} else {
-		log.Printf("Vendors table query failed with status %d for ID %s", vendorResp.StatusCode, userID)
-	}
-
-	return "Unknown User", fmt.Errorf("sender not found or has no contact info in users or vendors for ID %s", userID)
+	return "Unknown User", fmt.Errorf("sender not found or has no contact info ID %s", userID)
 }
 
 func (cs *SupabaseChatService) GetChatHistory(chatRoomID string, limit int, offset int) ([]Message, error) {
 	if _, err := uuid.Parse(chatRoomID); err != nil {
-		return nil, fmt.Errorf("chat_room_id is not a valid UUID: %v", err)
+		return nil, fmt.Errorf("chat room id is not a valid UUID: %v", err)
 	}
 
 	query := fmt.Sprintf("chat_room_id=eq.%s", chatRoomID)
@@ -708,7 +754,6 @@ func (cs *SupabaseChatService) GetChatHistory(chatRoomID string, limit int, offs
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		log.Printf("Failed to get chat history, status: %d, response: %s", resp.StatusCode, string(bodyBytes))
 		return nil, fmt.Errorf("failed to get chat history: status %d, response: %s", resp.StatusCode, string(bodyBytes))
 	}
 
@@ -778,14 +823,16 @@ func (cs *SupabaseChatService) MarkMessagesAsRead(chatRoomID, userID string) err
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("failed to mark messages as read: status %d, response: %s", resp.StatusCode, string(bodyBytes))
 	}
+	
 	log.Printf("Marked messages in room %s as read for user %s.", chatRoomID, userID)
+
 	return nil
 }
 
 func (cs *SupabaseChatService) GetUnreadMessageCount(userID string) (int, error) {
 	chatRooms, err := cs.GetUserChatRooms(userID)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get unread message count: %w", err)
+		return 0, err
 	}
 
 	totalUnread := 0
@@ -825,7 +872,7 @@ func (cs *SupabaseChatService) GetUnreadMessageCount(userID string) (int, error)
 func (cs *SupabaseChatService) GetUserChatRoomsWithLastMessage(userID string) ([]map[string]interface{}, error) {
 	chatRooms, err := cs.GetUserChatRooms(userID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user chat rooms with last message: %w", err)
+		return nil, err
 	}
 
 	var result []map[string]interface{}
@@ -851,7 +898,7 @@ func (cs *SupabaseChatService) GetUserChatRoomsWithLastMessage(userID string) ([
 				"public_id":    lastMessage.PublicID,
 			}
 		} else if err != nil {
-			log.Printf("[CRITICAL] Could not get last message for room %s: %v", room.ID, err)
+			return nil, err
 		}
 
 		query := fmt.Sprintf("chat_room_id=eq.%s&sender_id=neq.%s&is_read=eq.false", room.ID, userID)
@@ -898,7 +945,7 @@ func (cs *SupabaseChatService) HandleWebSocket(c *gin.Context) {
 	validatedUserID, ok := userIDVal.(string)
 	if !ok {
 		log.Printf("[ERROR]: validatedUserID in context is not a string. Type: %T", userIDVal)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "MsgServerError"})
 		c.Abort()
 		return
 	}
@@ -927,7 +974,7 @@ func (cs *SupabaseChatService) GetCloudinarySignatureHandler(c *gin.Context) {
 	signature, err := GetCloudinarySignature(cs.CloudinaryClient)
 	if err != nil {
 		chatlog.LogChat(userID, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "MsgServerError"})
 		return
 	}
 
@@ -938,8 +985,8 @@ func (cs *SupabaseChatService) CreateChatRoomHandler(c *gin.Context) {
 	userID := c.GetString("id")
 
 	var req struct {
-		BuyerID   string  `json:"buyer_id"`
-		VendorID  string  `json:"vendor_id"`
+		BuyerID  string `json:"buyer_id"`
+		VendorID string `json:"vendor_id"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -950,7 +997,7 @@ func (cs *SupabaseChatService) CreateChatRoomHandler(c *gin.Context) {
 	room, err := cs.CreateChatRoom(req.BuyerID, req.VendorID)
 	if err != nil {
 		chatlog.LogChat(userID, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "MsgServerError"})
 		return
 	}
 
@@ -963,7 +1010,7 @@ func (cs *SupabaseChatService) GetUserChatRoomsHandler(c *gin.Context) {
 	rooms, err := cs.GetUserChatRooms(userID)
 	if err != nil {
 		chatlog.LogChat(userID, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "MsgServerError"})
 		return
 	}
 
@@ -976,7 +1023,7 @@ func (cs *SupabaseChatService) GetUserChatRoomsWithLastMessageHandler(c *gin.Con
 	rooms, err := cs.GetUserChatRoomsWithLastMessage(userID)
 	if err != nil {
 		chatlog.LogChat(userID, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "MsgServerError"})
 		return
 	}
 
@@ -996,7 +1043,7 @@ func (cs *SupabaseChatService) SendMessageHandler(c *gin.Context) {
 	message, err := cs.SendMessage(req.ChatRoomID, senderID, req.Content, req.MessageType, req.PublicID)
 	if err != nil {
 		chatlog.LogChat(senderID, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "MsgServerError"})
 		return
 	}
 
@@ -1009,13 +1056,15 @@ func (cs *SupabaseChatService) GetChatHistoryHandler(c *gin.Context) {
 	roomID := c.Query("room_id")
 	pageStr := c.DefaultQuery("page", "1")
 	page, _ := strconv.Atoi(pageStr)
-	if page < 1 { page = 1 }
-	offset := (page - 1) * DefaultPageSize
+	if page < 1 {
+		page = 1
+	}
+	offset := (page - 1) * 20 // Assuming DefaultPageSize is 20
 
-	messages, err := cs.GetChatHistory(roomID, DefaultPageSize, offset)
+	messages, err := cs.GetChatHistory(roomID, 20, offset)
 	if err != nil {
 		chatlog.LogChat(userID, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "MsgServerError"})
 		return
 	}
 
@@ -1028,7 +1077,7 @@ func (cs *SupabaseChatService) MarkMessagesAsReadHandler(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 
@@ -1036,7 +1085,7 @@ func (cs *SupabaseChatService) MarkMessagesAsReadHandler(c *gin.Context) {
 
 	if err := cs.MarkMessagesAsRead(req.ChatRoomID, userID); err != nil {
 		chatlog.LogChat(userID, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "MsgServerError"})
 		return
 	}
 
@@ -1049,7 +1098,7 @@ func (cs *SupabaseChatService) GetUnreadCountHandler(c *gin.Context) {
 	count, err := cs.GetUnreadMessageCount(userID)
 	if err != nil {
 		chatlog.LogChat(userID, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "MsgServerError"})
 		return
 	}
 

@@ -51,6 +51,10 @@ type ResetPwdData struct{
 	NewPassword string `json:"new_password" binding:"required"`
 }
 
+type ChangePwd struct {
+	NewPassword string `json:"new_password" binding:"required"`
+}
+
 // <-------------------------> End Data Type Tools <---------------------------->
 
 // <-------------------------------> Password Check Tools <-------------------------------------->

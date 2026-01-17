@@ -11,6 +11,7 @@ type UpdateHostelRequest struct {
     TotalHostelRooms *int    `json:"total_hostel_rooms" binding:"omitempty,gt=0"`
     LandlordResides  *string `json:"landlord_resides" binding:"omitempty"`
     RoommatesAllowed *string `json:"roommates_allowed" binding:"omitempty"`
+	PowerSupply		 *string `json:"power_supply"`
     Description      *string `json:"description" binding:"omitempty"`
     RoomType         *string `json:"room_type" binding:"omitempty"`
 }
@@ -24,6 +25,7 @@ type CreateHostelRequest struct {
 	Location         string             `json:"location" binding:"required"`
 	Description      string             `json:"description"`
 	LandlordResides  string             `json:"landlord_resides"`
+	PowerSupply		 string `json:"power_supply"`
 	RoomType         string             `json:"room_type"`
 	RoommatesAllowed string             `json:"roommates_allowed"`
 	KitchenAccess    string             `json:"kitchen_access"`

@@ -83,12 +83,19 @@ func UserAuthMiddleware() gin.HandlerFunc {
         tokenString := strings.TrimPrefix(authHeader, "Bearer ")
         claims, err := token.ValidateToken(tokenString)
         if err != nil {
+            errorMessage := "Invalid token"
+            
+            if err.Error() == "expired token" {
+                errorMessage = "expired token"
+            }
+
             logData := authlog.Logs["4"]
             logEntry := db.SecurityLog{
-                Log:   logData.Message,
+                Log:   fmt.Sprintf("%s: %v", logData.Message, err),
                 Level: logData.Level,
             }
-            handleAuthError(c, http.StatusUnauthorized, "Invalid token", logEntry)
+
+            handleAuthError(c, http.StatusUnauthorized, errorMessage, logEntry)
             return
         }
 

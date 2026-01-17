@@ -68,6 +68,7 @@ func CreateHostelHandler() gin.HandlerFunc {
 			TotalHostelRooms: req.TotalHostelRooms,
 			LandlordResides:  req.LandlordResides,
 			RoomType:         req.RoomType,
+			PowerSupply: req.PowerSupply,
 			RoommatesAllowed: req.RoommatesAllowed,
 			KitchenAccess:    req.KitchenAccess,
 			ToiletAccess:     req.ToiletAccess,
@@ -148,6 +149,7 @@ func UpdateHostelHandler() gin.HandlerFunc {
 		if req.LandlordResides != nil { updateFields["landlord_resides"] = *req.LandlordResides }
 		if req.RoommatesAllowed != nil { updateFields["roommates_allowed"] = *req.RoommatesAllowed }
 		if req.Description != nil { updateFields["description"] = *req.Description }
+		if req.PowerSupply != nil { updateFields["power_supply"] = *req.PowerSupply }
 		if req.RoomType != nil { updateFields["room_type"] = *req.RoomType }
 
 		// 5. Perform Atomic Update
@@ -317,3 +319,27 @@ func GetCloudinarySignatureHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 		})
 	}
 }
+
+// func GetHostelInfo(c *gin.Context) {
+// 	user, exists := c.Get("user")
+// 	if !exists {
+// 		c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not authenticated"})
+// 		return
+// 	}
+
+// 	getUser, ok := user.(*db.User)
+// 	if !ok {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user type"})
+// 		return
+// 	}	
+
+// 	hostelID := c.Param("id")
+// 	hostelInfo, err := hosteldb.FindHostelByID(hostelID)
+// 	if err != nil {
+// 		hostellog.LogHostel(getUser.ID, err)
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusOK, hostelInfo)
+// }

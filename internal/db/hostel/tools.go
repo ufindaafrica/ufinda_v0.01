@@ -423,3 +423,4 @@ func GetAllAgentHostels(vendorID string) ([]db.EnrichedHostel, error) {
 
 	return allHostels, nil
 }
+

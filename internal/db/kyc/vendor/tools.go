@@ -133,7 +133,7 @@ func FindVendorKYC(id string) (*db.VendorKYC, error) {
 }
 
 func GetVendorProfile(userID string) (*db.VendorProfileInfo, error) {
-	selectQuery := "first_name,last_name,email,phone,kyc_data:fk_vendor_kyc(profile_img,address,about_me)"
+	selectQuery := "first_name,last_name,email,phone,kyc_data:fk_vendor_kyc(profile_img,address,about_me, residence_lga, nationality, state_of_residence)"
 
 	params := url.Values{}
 	params.Set("id", "eq."+userID)

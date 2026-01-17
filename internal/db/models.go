@@ -73,6 +73,7 @@ type Hostel struct {
 	RentPerYear      int64    `json:"rent_per_year" binding:"required"`
 	LandlordResides  string      `json:"landlord_resides" binding:"required"`
 	TotalHostelRooms int       `json:"total_hostel_rooms"`
+	PowerSupply string `json:"power_supply"`
 	AvailableRooms int `json:"available_rooms" binding:"required,gte=1"`
 	RoommatesAllowed string      `json:"roommates_allowed" binding:"required"`
 	KitchenAccess    string    `json:"kitchen_access" binding:"required"`
@@ -166,6 +167,7 @@ type NINEntity struct {
 	BirthState      string `json:"birth_state"`
 	BirthCountry    string `json:"birth_country"`
 	ResidenceState  string `json:"residence_state"`
+	ResidenceLGA 	string `json:"residence_lga"`
 	Gender          string `json:"gender"`
 }
 
@@ -198,6 +200,7 @@ type VendorKYC struct {
 	DOB string `json:"dob"`
 	StateOfOrigin string `json:"state_of_origin"`
 	Nationality string `json:"nationality"`
+	ResidenceLGA string `json:"residence_lga"`
 	StateOfResidence string `json:"state_of_residence"`
 }
 
@@ -285,6 +288,9 @@ type VendorProfileInfo struct {
 	KYC *struct {
 		ProfileImg *UploadedFile `json:"profile_img"`
 		Address string `json:"address"`
+		ResidenceLGA string `json:"residence_lga"`
+		StateOfResidence string `json:"state_of_residence"`
+		Nationality string `json:"nationality"`
 		AboutMe string `json:"about_me"`
 	} `json:"kyc_data"`
 }
@@ -292,4 +298,12 @@ type VendorProfileInfo struct {
 type GeoLocationField struct {
 	Latitude float64 `json:"latitude"`
 	Longitude float64 `json:"longitude"`
+}
+
+type PushNotificationToken struct {
+	ID *uuid.UUID `json:"id,omitempty"`
+	UserID string `json:"user_id"`
+	DeviceToken string `json:"device_token"`
+	DeviceOS string `json:"device_os"`
+	CreatedAt *time.Time `json:"created_at"`
 }

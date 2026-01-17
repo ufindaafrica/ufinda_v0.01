@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"github.com/google/uuid"
 	"fmt"
+	"errors"
 	"time"
 	"os"
 	"math/big"
@@ -21,7 +22,7 @@ import (
 	mrand"math/rand"
 	"crypto/rand"
 	"strings"
-	"errors"
+	// "errors"
 )
 
 var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
@@ -63,7 +64,7 @@ func GenerateTokens(
 		Email:  email,
 		Role: role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(30 * time.Minute)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			Subject:   userID,
 			ID:        jwtID, // <-- Correctly using a unique ID
@@ -92,19 +93,23 @@ func GenerateTokens(
 
 // Validate JWT token
 func ValidateToken(tokenString string) (*Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		return jwtSecret, nil
-	})
+    token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+        return jwtSecret, nil
+    })
 
-	if err != nil {
-		return nil, err
-	}
+    if err != nil {
+        // Check if the error is due to expiration
+        if errors.Is(err, jwt.ErrTokenExpired) {
+            return nil, fmt.Errorf("expired token")
+        }
+        return nil, fmt.Errorf("invalid token")
+    }
 
-	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
-		return claims, nil
-	}
+    if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+        return claims, nil
+    }
 
-	return nil, fmt.Errorf("invalid token")
+    return nil, fmt.Errorf("invalid token")
 }
 
 func RevokeTokens(

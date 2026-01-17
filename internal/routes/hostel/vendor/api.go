@@ -14,6 +14,8 @@ func RegisterHostel(r *gin.Engine, cld *cloudinary.Cloudinary) {
 	{
 		// create hostel api
 		hostelApis.POST("/create", hostel.MaxBytesMiddleware(25<<20), CreateHostelHandler())
+
+		// hostelApis.GEt("/vendor/:id", GetHostelInfo)
 		
 		// update hostel api
 		hostelApis.PATCH("/:id", UpdateHostelHandler())

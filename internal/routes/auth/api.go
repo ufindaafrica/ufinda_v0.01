@@ -17,5 +17,6 @@ func RegisterAuth(r *gin.Engine, cld *cloudinary.Cloudinary) {
 		authRoutes.DELETE("/account/delete", AuthMiddleware(), DeleteCreatedUser(cld))
 		authRoutes.POST("/forget-pwd", ForgetPwd)
 		authRoutes.POST("/reset-pwd", ResetPwd)
+		authRoutes.PATCH("/change-pwd", AuthMiddleware(), ChangePassword)
 	}
 }

@@ -575,3 +575,64 @@ The request body must be a JSON object containing the secure token and the new p
 ```
 
 ------
+
+### Change Password API
+
+This endpoint allows an authenticated user to update their existing password. It includes security checks to prevent "no-op" updates (same password) and restricts access to users who manage their credentials locally.
+
+#### POST `[BASE_URL]/auth/change-pwd`
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `POST` | `[BASE_URL]/auth/change-pwd` | Updates the password for the currently logged-in local user. |
+
+#### Request Body
+
+The request body must be a JSON object containing the new password.
+
+```json
+{
+  "new_password": "YourStrongNewPassword123!"
+}
+
+```
+
+#### Workflow
+
+1. **Authentication Check**: Verifies that a valid user session exists in the request context.
+2. **Provider Validation**: Checks if the user's `Provider` is `local`. If the user signed up via OAuth (Google, Apple, etc.), the request is rejected as they do not have a local password to change.
+3. **Identity Match**: Retrieval of the current user's hashed password from the database.
+4. **Same-Password Check**: Uses `bcrypt.CompareHashAndPassword` to check if the `new_password` matches the current password. If they are identical, the request returns an error to enforce credential rotation.
+5. **Security Hashing**: The `new_password` is securely hashed using `bcrypt` with a default cost.
+6. **Database Update**: The user's record is updated with the new hash.
+7. **Audit Logging**: Any internal failures (hashing or DB errors) are logged for security auditing.
+
+#### Responses
+
+| Status Code | Description |
+| --- | --- |
+| `200 OK` | The password was successfully updated. |
+| `400 Bad Request` | Malformed JSON **OR** the new password is the same as the current password. |
+| `401 Unauthorized` | No authenticated user was found in the session. |
+| `403 Forbidden` | The user is an OAuth user (Google/Apple) and cannot change a password they don't have. |
+| `500 Internal Server Error` | An unexpected server error occurred during hashing or database operations. |
+
+**Success Body**
+
+```json
+{
+  "message": "password updated successfully"
+}
+
+```
+
+**Example Error (Same Password)**
+
+```json
+{
+  "error": "new password must be different from your current password"
+}
+
+```
+
+---

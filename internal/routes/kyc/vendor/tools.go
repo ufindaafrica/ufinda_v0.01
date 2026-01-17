@@ -26,6 +26,7 @@ type VerificationResult struct {
 	VerificationLink   string    `json:"verification_url"`
 	FirstName          string    `json:"first_name"`
 	LastName           string    `json:"last_name"`
+    ResidenceLGA       string     `json:"residence_lga"`
 	Gender             string    `json:"gender"`
 	DateOfBirth        string    `json:"date_of_birth"`
 	BirthState         string    `json:"birth_state"`
@@ -47,6 +48,7 @@ func handleVerificationUpdate(payload db.DojahWebhookPayload) VerificationResult
 		VerificationLink: payload.VerificationURL,
 		FirstName: entity.FirstName,
 		LastName: entity.LastName,
+        ResidenceLGA: entity.ResidenceLGA,
 		Gender: entity.Gender,
 		DateOfBirth: entity.DateOfBirth,
 		BirthState: entity.BirthState,
@@ -118,6 +120,7 @@ func HandleVerificationPayload(payload db.DojahWebhookPayload, h *hub.Hub) {
         Gender:           result.Gender,
         DOB:              result.DateOfBirth,
         StateOfOrigin:    result.BirthState,
+        ResidenceLGA:     result.ResidenceLGA,
         Nationality:      result.BirthCountry,
         StateOfResidence: result.ResidenceState,
     }
