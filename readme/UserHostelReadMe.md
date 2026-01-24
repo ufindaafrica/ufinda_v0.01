@@ -24,9 +24,9 @@ Most retrieval endpoints return an "Enriched" hostel object which includes neste
   "rent_per_year": 450000,
   "location": "Lagos Island",
   "room_type": "Self Contain",
+  "vendor_id": "123467...",
   "vendor_info": {
-    "first_name": "John",
-    "last_name": "Doe",
+    "username": "ola",
     "phone": "+2348012345678",
     "vendor_metrics": {
       "current_rating": 4.8,

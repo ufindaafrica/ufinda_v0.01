@@ -74,6 +74,7 @@ func EmailSignUpHandler(c *gin.Context) {
 		OTP: otp,
 		Role: req.Role,
 		FirstName: req.FirstName,
+		UserName: req.UserName,
 		LastName: req.LastName,
 		Phone: req.Phone,
 		ExpiresAt: time.Now().Add(15 * time.Minute),
@@ -116,15 +117,15 @@ func VerifyOtpHandler(c *gin.Context) {
 
 	// check if the user exists as a pending user
 	pendinguser, err := authdb.FindPendingUser(req.Email)
-	if err != nil && errors.Is(err, ErrGettingUser) {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err != nil {
+		if errors.Is(err, ErrUserNotFound) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		}
 		return
 	}
 
-	if errors.Is(err, ErrUserNotFound) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
 
 	if pendinguser.OTP != req.OTP {
 		c.JSON(http.StatusForbidden, gin.H{"error": "invalid otp"})
@@ -140,10 +141,13 @@ func VerifyOtpHandler(c *gin.Context) {
 	checkUniqueness := func(id string) (bool, error) {
 		return token.IsIDUnique(id, "/rest/v1/users")
 	}
+
 	var prefix string
+
 	if pendinguser.Role == "user" {
 		prefix = "user"
 	} else { prefix = "vendor" }
+
 	userID, err := token.GenerateRandomID(prefix, checkUniqueness)
 	if err != nil {
 		log.Printf("[CRITICAL] Failed to generate ID for user '%s': %w", req.Email, err)
@@ -156,6 +160,7 @@ func VerifyOtpHandler(c *gin.Context) {
 		Email: pendinguser.Email,
 		Password: pendinguser.Password,
 		Role: pendinguser.Role,
+		UserName: pendinguser.UserName,
 		FirstName: pendinguser.FirstName,
 		LastName: pendinguser.LastName,
 		Phone: pendinguser.Phone,

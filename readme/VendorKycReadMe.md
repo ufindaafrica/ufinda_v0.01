@@ -161,7 +161,7 @@ The request body uses pointers to allow for partial updates. If a field is omitt
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `address` | `string` | The physical address of the vendor/agent. |
+| `residence_address` | `string` | The physical address of the vendor/agent. |
 | `about_me` | `string` | A professional bio or description of the agency. |
 | `profile_img` | `object` | Cloudinary metadata object (URL and Public ID). |
 
@@ -305,7 +305,7 @@ Returns a unified object representing the vendor's public and private profile da
       "url": "https://res.cloudinary.com/.../vendor_01.jpg",
       "public_id": "kyc/vendor_sam_pic"
     },
-    "address": "45 Ikorodu Road, Lagos",
+    "residence_address": "45 Ikorodu Road, Lagos",
     "about_me": "Leading agent for off-campus housing near Unilag and Yabatech."
   }
 }
@@ -324,5 +324,95 @@ Returns a unified object representing the vendor's public and private profile da
 | `403 Forbidden` | **Role Mismatch**: The authenticated user does not have `vendor` or `agent` privileges. |
 | `404 Not Found` | **Not Found**: No vendor profile matches the provided authentication token. |
 | `500 Internal Server Error` | **Database Failure**: Internal error during record lookup. |
+
+---
+
+## PATCH: Update Vendor Profile
+
+**URL:** `[BASE_URL]/kyc/vendor`
+
+**Method:** `PATCH`
+
+**Auth:** Required (JWT Bearer Token)
+
+This endpoint allows vendors to partially update their profile information. It handles updates across two separate backend layers: the core identity (Username) and the KYC details (Address).
+
+---
+
+### Request Body
+
+The request accepts a JSON object. All fields are **optional**. Only the fields provided will be updated in the database.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `username` | `string` | The vendor's unique display name (Max 30 characters). |
+| `residence_address` | `string` | The vendor's physical or business address. |
+
+**Example Payload:**
+
+```json
+{
+  "username": "GreenGarden_01",
+  "address": "123 Tech Avenue, Lagos"
+}
+
+```
+
+---
+
+### Architecture & Caching Impact
+
+When this endpoint is successfully called, the backend updates the `updated_at` timestamp for the vendor. This change triggers the synchronization flow for all connected clients (Buyers):
+
+1. **WebSocket Sync:** The next message sent by this vendor will include a `new_changes` payload. The mobile client will use this to update the local chat header and cache.
+2. **REST Sync:** The next time a buyer calls `GET /chat/rooms` with a `last_sync` timestamp, this vendor’s updated info will be returned in the `new_changes` block.
+
+---
+
+### Responses
+
+#### 200 OK
+
+The profile was updated successfully.
+
+```json
+{
+  "message": "profile updated successfully"
+}
+
+```
+
+#### 400 Bad Request
+
+Occurs if the JSON is malformed or the username violates constraints (e.g., not unique or too long).
+
+```json
+{
+  "error": "invalid request"
+}
+
+```
+
+#### 401 Unauthorized
+
+Occurs if the `Authorization` header is missing or the token is expired.
+
+```json
+{
+  "error": "user not authenticated"
+}
+
+```
+
+#### 500 Internal Server Error
+
+Occurs if there is a database failure during the update process.
+
+```json
+{
+  "error": "Internal server error"
+}
+
+```
 
 ---

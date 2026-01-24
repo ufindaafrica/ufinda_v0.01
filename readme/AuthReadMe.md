@@ -31,6 +31,7 @@ The request body must be a JSON object containing the user's registration detail
   "password": "yourpassword123",
   "firstName": "John",
   "role": "user/vendor",
+  "username": "if the role is vendor else omit",
   "lastName": "Doe",
   "phone": "+15551234567"
 }

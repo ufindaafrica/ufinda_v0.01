@@ -10,6 +10,7 @@ import (
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/cloudinary/cloudinary-go/v2/api"
 	"strings"
+	"github.com/oladev/ufinda_v0.01/internal/db/auth"
 	"log"
     "github.com/oladev/ufinda_v0.01/internal/db/kyc/vendor"
 	"errors"
@@ -72,7 +73,7 @@ func CreateOnboardVendorKycHandler() gin.HandlerFunc {
         // 1. Authenticate user
         user, exists := c.Get("user")
         if !exists {
-            c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not authenticated"})
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
             return
         }
 
@@ -106,10 +107,10 @@ func CreateOnboardVendorKycHandler() gin.HandlerFunc {
             updateData := make(map[string]interface{})
             
             if req.Address != nil {
-                updateData["address"] = *req.Address
+                updateData["residence_address1"] = req.Address
             }
             if req.AboutMe != nil {
-                updateData["about_me"] = *req.AboutMe
+                updateData["about_me"] = req.AboutMe
             }
             if req.ProfileImg != nil {
                 updateData["profile_img"] = req.ProfileImg
@@ -125,7 +126,7 @@ func CreateOnboardVendorKycHandler() gin.HandlerFunc {
             
             // Dereference pointers if they exist
             if req.Address != nil {
-                kycData.Address = *req.Address
+                kycData.ResidenceAddress1 = *req.Address
             }
             if req.AboutMe != nil {
                 kycData.AboutMe = *req.AboutMe
@@ -155,7 +156,7 @@ func GetCloudinarySignatureHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		user, exists := c.Get("user")
         if !exists {
-            c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not authenticated"})
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
             return
         }
 
@@ -192,7 +193,7 @@ func GetCloudinarySignatureHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 }
 
 func GetVendorProfileHandler(c *gin.Context) {
-		user, exists := c.Get("user")
+	user, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
 		return
@@ -216,4 +217,54 @@ func GetVendorProfileHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, profile)
+}
+
+func UpdateVendorProfileHandler(c *gin.Context) {
+    user, exists := c.Get("user")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+        return
+    }
+
+    getUser, ok := user.(*db.User)
+    if !ok {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user type"})
+        return
+    }
+
+    var req updateVendorRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+        return
+    }
+
+    if req.UserName != nil {
+        updates := map[string]interface{}{
+            "username": *req.UserName,
+        }
+        if err := authdb.UpdateCreatedUser(getUser.ID, updates); err != nil {
+            kyclog.LogKYC(getUser.ID, err)
+            c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+            return
+        }
+    }
+
+	kycUpdates := make(map[string]interface{})
+    if req.Address != nil {
+        kycUpdates["residence_address1"] = req.Address
+    }
+
+	if req.ProfileImg != nil {
+		kycUpdates["profile_img"] = req.ProfileImg
+	}
+
+	if len(kycUpdates) > 0 {
+		if err := vendorkycdb.UpdateVendorKyc(getUser.ID, kycUpdates); err != nil {
+            kyclog.LogKYC(getUser.ID, err)
+            c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+            return
+        }
+	}
+
+    c.JSON(http.StatusOK, gin.H{"message": "profile updated successfully"})
 }

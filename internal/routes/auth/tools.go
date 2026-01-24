@@ -25,6 +25,7 @@ type SignupRequest struct {
 	Role string `json:"role" binding:"required`
 	LastName string `json:"last_name" binding:"required`
 	FirstName string `json:"first_name" binding:"required`
+	UserName *string  `json:"username,omitempty"`
 	Phone string `json:"phone" binding:"required`
 }
 

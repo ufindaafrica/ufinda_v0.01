@@ -7,7 +7,11 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"github.com/go-redis/redis/v8"
+	"context"
 	"sync"
+	"net/url"
+	"strings"
 	"time"
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/gin-gonic/gin"
@@ -42,12 +46,21 @@ var upgrader = websocket.Upgrader{
 
 // --- Core chat types ---
 
+type RecipientProfile struct {
+    UserID      string  `json:"user_id"`
+    DisplayName string  `json:"display_name"` // Username for Vendor, First+Last for Buyer
+    Phone       string  `json:"phone"`
+    ProfileImg  *string `json:"profile_img"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
 type ChatRoom struct {
 	ID        string    `json:"id"`
 	BuyerID   string    `json:"buyer_id"`
 	VendorID  string    `json:"vendor_id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	Recipient *RecipientProfile `json:"recipient_info,omitempty"`
 }
 
 type Message struct {
@@ -72,6 +85,7 @@ type ChatMessage struct {
 	CreatedAt    time.Time  `json:"created_at"`
 	SenderName   string     `json:"sender_name"`
 	DeliveredAt  *time.Time `json:"delivered_at,omitempty"`
+	NewChanges *map[string]interface{} `json:"new_changes"`
 }
 
 type WSMessage struct {
@@ -450,7 +464,6 @@ func (h *Hub) LeaveRoom(client *Client, roomID string) {
 			case client.Send <- WSMessage{Type: "leave_room", Payload: payloadBytes}:
 			default:
 				log.Printf("[ERROR] Client %s: Failed to send room_left ack (channel blocked).", client.UserID)
-				// We don't unregister here to avoid recursive locking
 			}
 		}
 	}
@@ -458,43 +471,62 @@ func (h *Hub) LeaveRoom(client *Client, roomID string) {
 
 // Optimized BroadcastToRoom with Push Notification logic
 func (h *Hub) BroadcastToRoom(roomID string, message WSMessage, senderID string) {
-	h.mutex.RLock()
-	clients, exists := h.Rooms[roomID]
-	roomInfo, roomCached := h.RoomParticipants[roomID]
-	h.mutex.RUnlock()
+    h.mutex.RLock()
+    roomInfo, roomCached := h.RoomParticipants[roomID]
+    clientsInRoom := h.Rooms[roomID]
+    h.mutex.RUnlock()
 
-	recipientOnline := false
+    if !roomCached {
+        room, err := h.ChatService.findExistingRoomByID(roomID)
+        if err == nil && room != nil {
+            h.mutex.Lock()
+            h.RoomParticipants[roomID] = *room
+            roomInfo = *room
+            h.mutex.Unlock()
+        } else { return }
+    }
 
-	if exists {
-		for client := range clients {
-			if client.UserID == senderID {
-				continue
-			}
-			select {
-			case client.Send <- message:
-				recipientOnline = true
-			default:
-				log.Printf("[ERROR] Client %s: Send channel blocked. Unregistering client.", client.UserID)
-				h.Unregister <- client
-			}
-		}
-	}
+    recipientID := roomInfo.VendorID
+    if senderID == roomInfo.VendorID {
+        recipientID = roomInfo.BuyerID
+    }
 
-	// If recipient not online via WebSocket, send Push Notification
-	if !recipientOnline && roomCached {
-		var recipientID string
-		if roomInfo.BuyerID == senderID {
-			recipientID = roomInfo.VendorID
-		} else {
-			recipientID = roomInfo.BuyerID
-		}
+    recipientReceived := false
 
-		var payload NewMessagePayload
-		json.Unmarshal(message.Payload, &payload)
+    // 1. Send to Active Room Participants
+    for client := range clientsInRoom {
+        if client.UserID != senderID {
+            select {
+            case client.Send <- message:
+                recipientReceived = true
+            default:
+                h.Unregister <- client
+            }
+        }
+    }
 
-		// Fire and forget push in a goroutine
-		go h.handleOfflinePush(recipientID, roomID, payload.Content)
-	}
+    // 2. Send to Recipient's Global Connection (if they are in another screen)
+    if !recipientReceived {
+        h.mutex.RLock()
+        globalClient, isOnline := h.Clients[recipientID]
+        h.mutex.RUnlock()
+
+        if isOnline {
+            select {
+            case globalClient.Send <- message:
+                recipientReceived = true
+            default:
+                h.Unregister <- globalClient
+            }
+        }
+    }
+
+    // 3. Push Notification fallback
+    if !recipientReceived {
+        var payload NewMessagePayload
+        json.Unmarshal(message.Payload, &payload)
+        go h.handleOfflinePush(recipientID, roomID, payload.Content)
+    }
 }
 
 // Helper for Push Notification
@@ -522,12 +554,17 @@ func (h *Hub) handleOfflinePush(recipientID, roomID, content string) {
 type SupabaseChatService struct {
 	hub              *Hub
 	CloudinaryClient *cloudinary.Cloudinary
+	RedisClient *redis.Client
 }
 
-func NewSupabaseChatService(cld *cloudinary.Cloudinary) *SupabaseChatService {
-	return &SupabaseChatService{
-		CloudinaryClient: cld,
-	}
+func NewSupabaseChatService(cld *cloudinary.Cloudinary, rdb *redis.Client) *SupabaseChatService {
+	if rdb == nil {
+        log.Println("[ERROR] NewSupabaseChatService received a nil Redis client!")
+    }
+    return &SupabaseChatService{
+        CloudinaryClient: cld,
+        RedisClient:      rdb,
+    }
 }
 
 func (cs *SupabaseChatService) SetHub(hub *Hub) {
@@ -535,51 +572,126 @@ func (cs *SupabaseChatService) SetHub(hub *Hub) {
 }
 
 func (cs *SupabaseChatService) CreateChatRoom(buyerID, vendorID string) (*ChatRoom, error) {
-	existingRoom, err := cs.findExistingRoom(buyerID, vendorID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to check for existing room: %v", err)
-	}
-	if existingRoom != nil {
-		return existingRoom, nil
-	}
+    // 1. Check existing room
+    existingRoom, _ := cs.findExistingRoom(buyerID, vendorID)
+    
+    var room *ChatRoom
+    if existingRoom != nil {
+        room = existingRoom
+    } else {
+        roomData := map[string]interface{}{"buyer_id": buyerID, "vendor_id": vendorID}
+        headers := map[string]string{"Prefer": "return=representation"}
+        resp, err := db.MakeDBRequest("POST", "/rest/v1/chat_rooms", roomData, headers)
+        if err != nil { return nil, err }
+        defer resp.Body.Close()
+        
+        var rooms []ChatRoom
+        json.NewDecoder(resp.Body).Decode(&rooms)
+        room = &rooms[0]
+    }
 
-	roomData := map[string]interface{}{
-		"buyer_id":  buyerID,
-		"vendor_id": vendorID,
-	}
+    // 3. Attach Recipient Info (The Vendor)
+    recipient, err := cs.GetRecipientProfile(vendorID)
+	
+    if err == nil {
+        room.Recipient = recipient
+    }
 
-	headers := map[string]string{
-		"Prefer": "return=representation",
-	}
+    return room, nil
+}
 
-	resp, err := db.MakeDBRequest("POST", "/rest/v1/chat_rooms", roomData, headers)
-	if err != nil {
-		return nil, fmt.Errorf("failed to make chat room: %v", err)
-	}
-	defer resp.Body.Close()
+func (cs *SupabaseChatService) GetRecipientProfile(userID string) (*RecipientProfile, error) {
+    selectQuery := "id,role,username,first_name,last_name,phone,updated_at," +
+        "vendor_kyc!left(profile_img, updated_at)," + 
+        "user_kyc!left(profile_img, updated_at)"
 
-	if resp.StatusCode != http.StatusCreated {
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("failed to create chat room: status %d, response: %s", resp.StatusCode, string(bodyBytes))
-	}
+    params := url.Values{}
+    params.Set("id", "eq."+userID)
+    params.Set("select", selectQuery)
+    params.Set("limit", "1")
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to chat room: %v", err)
-	}
+    finalURL := fmt.Sprintf("/rest/v1/users?%s", params.Encode())
+    resp, err := db.MakeDBRequest("GET", finalURL, nil, nil)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
 
-	var rooms []ChatRoom
-	if err := json.Unmarshal(body, &rooms); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %v", err)
-	}
+    // 2. Read the body once for debugging if needed
+    body, _ := io.ReadAll(resp.Body)
+    
+    var results []struct {
+        ID        string    `json:"id"`
+        Role      string    `json:"role"`
+        Username  *string   `json:"username"`
+        FirstName string    `json:"first_name"`
+        LastName  string    `json:"last_name"`
+        Phone     string    `json:"phone"`
+        UpdatedAt time.Time `json:"updated_at"`
+        VendorKYC *struct {
+            ProfileImg *db.UploadedFile `json:"profile_img"`
+            UpdatedAt  time.Time        `json:"updated_at"`
+        } `json:"vendor_kyc"`
+        UserKYC *struct {
+            ProfileImg *db.UploadedFile `json:"profile_img"`
+            UpdatedAt  time.Time        `json:"updated_at"`
+        } `json:"user_kyc"`
+    }
 
-	if len(rooms) == 0 {
-		return nil, fmt.Errorf("no chat room returned after creation")
-	}
+    if err := json.Unmarshal(body, &results); err != nil {
+        return nil, fmt.Errorf("failed to decode response: %v", err)
+    }
 
-	log.Printf("Successfully created chat room ID %s", rooms[0].ID)	
+    if len(results) == 0 {
+        return nil, fmt.Errorf("recipient with ID %s not found in users table", userID)
+    }
 
-	return &rooms[0], nil
+	res := results[0]
+    profile := &RecipientProfile{
+        UserID:    res.ID,
+        Phone:     res.Phone,
+        UpdatedAt: res.UpdatedAt,
+    }
+
+    if res.Role == "vendor" {
+        if res.Username != nil {
+            profile.DisplayName = *res.Username
+        } else {
+            profile.DisplayName = "Vendor"
+        }
+        
+        // Access the first element of the slice
+        if res.VendorKYC != nil {
+            kyc := res.VendorKYC
+            if kyc.ProfileImg != nil {
+                imgURL := kyc.ProfileImg.URL
+                profile.ProfileImg = &imgURL
+            }
+            if kyc.UpdatedAt.After(profile.UpdatedAt) {
+                profile.UpdatedAt = kyc.UpdatedAt
+            }
+        }
+    } else {
+		if res.FirstName != "" {
+			profile.DisplayName = res.FirstName
+		}else if res.LastName != "" {
+			profile.DisplayName = res.LastName
+		}else { profile.DisplayName = "User" }
+        
+        // Access the first element of the slice
+        if res.UserKYC != nil {
+            kyc := res.UserKYC
+            if kyc.ProfileImg != nil {
+                imgURL := kyc.ProfileImg.URL
+                profile.ProfileImg = &imgURL
+            }
+            if kyc.UpdatedAt.After(profile.UpdatedAt) {
+                profile.UpdatedAt = kyc.UpdatedAt
+            }
+        }
+    }
+
+    return profile, nil
 }
 
 func (cs *SupabaseChatService) findExistingRoom(buyerID, vendorID string) (*ChatRoom, error) {
@@ -623,92 +735,106 @@ func (cs *SupabaseChatService) queryOneRoom(query string) (*ChatRoom, error) {
 }
 
 func (cs *SupabaseChatService) SendMessage(chatRoomID, senderID, content string, messageType string, publicID *string) (*Message, error) {
-	if _, err := uuid.Parse(chatRoomID); err != nil {
-		return nil, fmt.Errorf("chat_room_id is not a valid UUID: %w", err)
-	}
+    if _, err := uuid.Parse(chatRoomID); err != nil {
+        return nil, fmt.Errorf("chat_room_id is not a valid UUID: %w", err)
+    }
 
-	if len(content) == 0 || len(content) > 1000 {
-		return nil, fmt.Errorf("message content must be between 1 and 1000 characters")
-	}
+    // 2. Prepare Database Payload
+    messageData := map[string]interface{}{
+        "chat_room_id": chatRoomID,
+        "sender_id":    senderID,
+        "content":      content,
+        "message_type": messageType,
+        "is_read":      false,
+    }
 
-	messageData := map[string]interface{}{
-		"chat_room_id": chatRoomID,
-		"sender_id":    senderID,
-		"content":      content,
-		"message_type": messageType,
-		"is_read":      false,
-	}
+    if publicID != nil && (messageType == "image" || messageType == "audio") {
+        messageData["public_id"] = *publicID
+    }
 
-	if publicID != nil && messageType == "image" || publicID != nil && messageType == "audio" {
-		messageData["public_id"] = *publicID
-	}
+    // 3. Save to Database
+    resp, err := db.MakeDBRequest(
+        "POST", "/rest/v1/messages", messageData,
+        map[string]string{"Prefer": "return=representation"},
+    )
+    if err != nil { return nil, err }
+    defer resp.Body.Close()
 
-	resp, err := db.MakeDBRequest(
-		"POST", "/rest/v1/messages", messageData,
-		map[string]string{"Prefer": "return=representation"},
-	)
+    body, _ := io.ReadAll(resp.Body)
+    var messages []Message
+    if err := json.Unmarshal(body, &messages); err != nil || len(messages) == 0 {
+        return nil, fmt.Errorf("no message returned or failed to decode")
+    }
 
-	if err != nil {
-		return nil, fmt.Errorf("failed to send message: %w", err)
-	}
-	defer resp.Body.Close()
+    message := &messages[0]
 
-	if resp.StatusCode != http.StatusCreated {
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("failed to send message: status %d, response: %s", resp.StatusCode, string(bodyBytes))
-	}
+    // 4. Handle Profile Sync (Global User-to-User)
+    var newChangesPtr *map[string]interface{}
+    senderProfile, err := cs.GetRecipientProfile(senderID)
+    
+    // Fetch room to find the recipient (the viewer)
+    room, roomErr := cs.findExistingRoomByID(chatRoomID)
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send response: %w", err)
-	}
+    if err == nil && senderProfile != nil && roomErr == nil && cs.RedisClient != nil {
+        ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+        defer cancel()
 
-	var messages []Message
-	if err := json.Unmarshal(body, &messages); err != nil {
-		return nil, fmt.Errorf("failed to send message: %w", err)
-	}
+        // Identify the receiver (Viewer)
+        recipientID := room.VendorID
+        if senderID == room.VendorID {
+            recipientID = room.BuyerID
+        }
 
-	if len(messages) == 0 {
-		return nil, fmt.Errorf("no message returned after sending")
-	}
+        // GLOBAL KEY: Tracks if this specific recipient has seen this specific sender's latest profile
+        redisKey := cs.getProfileSyncKey(recipientID, senderID)
+        
+        lastSeenStr, redisErr := cs.RedisClient.Get(ctx, redisKey).Result()
+        dbTimeStr := senderProfile.UpdatedAt.Format(time.RFC3339)
 
-	message := &messages[0]
-	senderName, err := cs.getSenderName(senderID)
-	if err != nil {
-		log.Printf("[ERROR] Could not get sender name for user %s: %v. Using 'Unknown User'.", senderID, err)
-		senderName = "Unknown User"
-	}
+        if redisErr == redis.Nil || lastSeenStr != dbTimeStr {
+            changes := map[string]interface{}{
+                "display_name": senderProfile.DisplayName,
+                "profile_img":  senderProfile.ProfileImg,
+                "phone":        senderProfile.Phone,
+            }
+            newChangesPtr = &changes
+            
+            cs.RedisClient.Set(ctx, redisKey, dbTimeStr, 7*24*time.Hour)
+            log.Printf("[SYNC] Global: Populating new_changes for %s -> recipient %s", senderID, recipientID)
+        }
+    }
 
-	chatMsg := NewMessagePayload{
-		ID:          message.ID,
-		ChatRoomID:  message.ChatRoomID,
-		SenderID:    message.SenderID,
-		Content:     message.Content,
-		MessageType: message.MessageType,
-		CreatedAt:   message.CreatedAt,
-		SenderName:  senderName,
-		PublicID:    message.PublicID,
-		DeliveredAt: message.DeliveredAt,
-	}
+    // 5. Build WebSocket Payload
+    displayName := "User"
+    if senderProfile != nil {
+        displayName = senderProfile.DisplayName
+    }
 
-	payloadBytes, err := json.Marshal(chatMsg)
-	if err != nil {
-		log.Printf("[ERROR] Error marshalling NewMessagePayload: %v", err)
-		return message, nil
-	}
+    chatMsg := NewMessagePayload{
+        ID:          message.ID,
+        ChatRoomID:  message.ChatRoomID,
+        SenderID:    message.SenderID,
+        Content:     message.Content,
+        MessageType: message.MessageType,
+        CreatedAt:   message.CreatedAt,
+        SenderName:  displayName,
+        PublicID:    message.PublicID,
+        DeliveredAt: message.DeliveredAt,
+        NewChanges:  newChangesPtr, 
+    }
 
-	if cs.hub != nil {
-		cs.hub.Broadcast <- WSMessage{
-			Type:      "message",
-			Payload:   payloadBytes,
-			MessageID: message.ID,
-		}
-		cs.hub.ConfirmSenderDelivery(MessageDeliveredPayload{MessageID: message.ID}, senderID)
-	} else {
-		log.Println("[CRITICAL] Hub is nil in SupabaseChatService. Message cannot be broadcast.")
-	}
+    payloadBytes, _ := json.Marshal(chatMsg)
 
-	return message, nil
+    // 6. Broadcast
+    if cs.hub != nil {
+        cs.hub.BroadcastToRoom(chatRoomID, WSMessage{
+            Type:    "new_message",
+            Payload: payloadBytes,
+        }, senderID)
+        cs.hub.ConfirmSenderDelivery(MessageDeliveredPayload{MessageID: message.ID}, senderID)
+    }
+
+    return message, nil
 }
 
 func (cs *SupabaseChatService) getSenderName(userID string) (string, error) {
@@ -772,6 +898,10 @@ func (cs *SupabaseChatService) GetChatHistory(chatRoomID string, limit int, offs
 	}
 
 	return messages, nil
+}
+
+func (cs *SupabaseChatService) getProfileSyncKey(viewerID, targetID string) string {
+    return fmt.Sprintf("sync:viewer:%s:target:%s", viewerID, targetID)
 }
 
 func (cs *SupabaseChatService) GetUserChatRooms(userID string) ([]ChatRoom, error) {
@@ -869,65 +999,120 @@ func (cs *SupabaseChatService) GetUnreadMessageCount(userID string) (int, error)
 	return totalUnread, nil
 }
 
+func (cs *SupabaseChatService) GetRoomUnreadMessageCount(roomID string, userID string) (int, error) {
+    // 1. Build the query
+    // Filter: messages in this room, NOT sent by the current user, where is_read is false
+    params := url.Values{}
+    params.Set("chat_room_id", "eq."+roomID)
+    params.Set("sender_id", "neq."+userID)
+    params.Set("is_read", "eq.false")
+    params.Set("select", "id") // We only need the count, but PostgREST requires a select
+
+    endpoint := fmt.Sprintf("/rest/v1/messages?%s", params.Encode())
+
+    // 2. Set headers for counting
+    headers := map[string]string{
+        "Prefer": "count=exact",
+    }
+
+    // 3. Make the request
+    resp, err := db.MakeDBRequest("GET", endpoint, nil, headers)
+    if err != nil {
+        return 0, fmt.Errorf("failed to request unread count: %v", err)
+    }
+    defer resp.Body.Close()
+
+    if resp.StatusCode != http.StatusOK {
+        return 0, fmt.Errorf("failed to get unread count, status: %d", resp.StatusCode)
+    }
+
+    // 4. Extract the count from the Content-Range header
+    // Header format: "0-0/5" where 5 is the total count
+    contentRange := resp.Header.Get("Content-Range")
+    if contentRange != "" {
+        parts := strings.Split(contentRange, "/")
+        if len(parts) > 1 {
+            count, err := strconv.Atoi(parts[1])
+            if err == nil {
+                return count, nil
+            }
+        }
+    }
+
+    // Fallback: If header is missing, decode the body length
+    body, _ := io.ReadAll(resp.Body)
+    var messages []interface{}
+    if err := json.Unmarshal(body, &messages); err != nil {
+        return 0, err
+    }
+
+    return len(messages), nil
+}
+
 func (cs *SupabaseChatService) GetUserChatRoomsWithLastMessage(userID string) ([]map[string]interface{}, error) {
-	chatRooms, err := cs.GetUserChatRooms(userID)
-	if err != nil {
-		return nil, err
-	}
+    chatRooms, err := cs.GetUserChatRooms(userID)
+    if err != nil {
+        return nil, err
+    }
 
-	var result []map[string]interface{}
-	for _, room := range chatRooms {
-		roomData := map[string]interface{}{
-			"id":         room.ID,
-			"buyer_id":   room.BuyerID,
-			"vendor_id":  room.VendorID,
-			"created_at": room.CreatedAt,
-			"updated_at": room.UpdatedAt,
-		}
+    var result []map[string]interface{}
+    ctx := context.Background()
 
-		messages, err := cs.GetChatHistory(room.ID, 1, 0)
-		if err == nil && len(messages) > 0 {
-			lastMessage := messages[0]
-			roomData["last_message"] = map[string]interface{}{
-				"id":           lastMessage.ID,
-				"content":      lastMessage.Content,
-				"created_at":   lastMessage.CreatedAt,
-				"sender_id":    lastMessage.SenderID,
-				"is_read":      lastMessage.IsRead,
-				"message_type": lastMessage.MessageType,
-				"public_id":    lastMessage.PublicID,
-			}
-		} else if err != nil {
-			return nil, err
-		}
+    for _, room := range chatRooms {
+        // 1. Identify Recipient
+        recipientID := room.VendorID
+        if userID == room.VendorID {
+            recipientID = room.BuyerID
+        }
 
-		query := fmt.Sprintf("chat_room_id=eq.%s&sender_id=neq.%s&is_read=eq.false", room.ID, userID)
-		endpoint := fmt.Sprintf("/rest/v1/messages?%s&select=id", query)
-		resp, err := db.MakeDBRequest("GET", endpoint, nil, nil)
-		if err == nil {
-			if resp.StatusCode == http.StatusOK {
-				body, _ := io.ReadAll(resp.Body)
-				var unreadMessages []map[string]interface{}
-				if json.Unmarshal(body, &unreadMessages) == nil {
-					roomData["unread_count"] = len(unreadMessages)
-				} else {
-					log.Printf("[CRITICAL] Could not get unread message count for room %s: %v", room.ID, err)
-					roomData["unread_count"] = 0
-				}
-			} else {
-				log.Printf("[CRITICAL] Could not get unread message count for room %s, status: %d", room.ID, resp.StatusCode)
-				roomData["unread_count"] = 0
-			}
-			resp.Body.Close()
-		} else {
-			log.Printf("[CRITICAL] Could not get unread message count for room %s: %v", room.ID, err)
-			roomData["unread_count"] = 0
-		}
+        roomData := map[string]interface{}{
+            "id": room.ID,
+            "buyer_id": room.BuyerID,
+            "vendor_id": room.VendorID,
+        }
 
-		result = append(result, roomData)
-	}
+        // 2. Fetch Current Recipient Profile (The "Fresh" data)
+        recipient, err := cs.GetRecipientProfile(recipientID)
+        if err == nil && recipient != nil {
+            // 3. Check Redis for the "Last Seen" timestamp
+            redisKey := cs.getProfileSyncKey(userID, recipientID)
+            lastSeenStr, _ := cs.RedisClient.Get(ctx, redisKey).Result()
 
-	return result, nil
+            // 4. Comparison Logic
+            isUpdated := false
+            dbTimeStr := recipient.UpdatedAt.Format(time.RFC3339)
+
+            if lastSeenStr == "" || lastSeenStr != dbTimeStr {
+                // New user or the timestamp in DB is different from Cache
+                isUpdated = true
+            }
+
+            if isUpdated {
+                roomData["new_changes"] = map[string]interface{}{
+                    "display_name": recipient.DisplayName,
+                    "profile_img":  recipient.ProfileImg,
+                    "phone":        recipient.Phone,
+                }
+                // Update Redis to mark this new version as "Seen"
+                cs.RedisClient.Set(ctx, redisKey, dbTimeStr, 7*24*time.Hour)
+            } else {
+                roomData["new_changes"] = nil
+            }
+        }
+
+        // 5. Last Message Logic
+        messages, err := cs.GetChatHistory(room.ID, 1, 0)
+        if err == nil && len(messages) > 0 {
+            roomData["last_message"] = messages[0]
+        }
+
+        // 6. Unread Count Logic
+        roomData["unread_count"], _ = cs.GetRoomUnreadMessageCount(room.ID, userID)
+
+        result = append(result, roomData)
+    }
+
+    return result, nil
 }
 
 // -------------------------------------------------------------
@@ -985,7 +1170,6 @@ func (cs *SupabaseChatService) CreateChatRoomHandler(c *gin.Context) {
 	userID := c.GetString("id")
 
 	var req struct {
-		BuyerID  string `json:"buyer_id"`
 		VendorID string `json:"vendor_id"`
 	}
 
@@ -994,7 +1178,7 @@ func (cs *SupabaseChatService) CreateChatRoomHandler(c *gin.Context) {
 		return
 	}
 
-	room, err := cs.CreateChatRoom(req.BuyerID, req.VendorID)
+	room, err := cs.CreateChatRoom(userID, req.VendorID)
 	if err != nil {
 		chatlog.LogChat(userID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "MsgServerError"})

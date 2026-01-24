@@ -12,8 +12,14 @@ import (
 
 const MsgServerError = "An unexpected error occurred. Please try again."
 
+type updateVendorRequest struct {
+    UserName *string   `json:"username"`
+    Address *string     `json:"residence_address"`
+    ProfileImg *db.UploadedFile   `json:"profile_img"`
+}
+
 type VendorKYCRequest struct {
-    Address    *string          `json:"address"`
+    Address    *string          `json:"residence_address"`
     AboutMe    *string          `json:"about_me"`
     ProfileImg *db.UploadedFile `json:"profile_img"`
 }
@@ -26,6 +32,7 @@ type VerificationResult struct {
 	VerificationLink   string    `json:"verification_url"`
 	FirstName          string    `json:"first_name"`
 	LastName           string    `json:"last_name"`
+    ResidenceAddress   string  `json:"residence_AddressLine1"`
     ResidenceLGA       string     `json:"residence_lga"`
 	Gender             string    `json:"gender"`
 	DateOfBirth        string    `json:"date_of_birth"`
@@ -53,6 +60,7 @@ func handleVerificationUpdate(payload db.DojahWebhookPayload) VerificationResult
 		DateOfBirth: entity.DateOfBirth,
 		BirthState: entity.BirthState,
 		BirthCountry: entity.BirthCountry,
+        ResidenceAddress: entity.ResidenceAddress,
 		ResidenceState: entity.ResidenceState,
 		StateOfCall: payload.Metadata.IpInfo.StateOfCall,
 		CountryOfCall: payload.Metadata.IpInfo.CountryOfCall,
@@ -121,6 +129,7 @@ func HandleVerificationPayload(payload db.DojahWebhookPayload, h *hub.Hub) {
         DOB:              result.DateOfBirth,
         StateOfOrigin:    result.BirthState,
         ResidenceLGA:     result.ResidenceLGA,
+        ResidenceAddress2: result.ResidenceAddress,
         Nationality:      result.BirthCountry,
         StateOfResidence: result.ResidenceState,
     }

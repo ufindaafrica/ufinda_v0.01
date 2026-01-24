@@ -22,7 +22,7 @@ func GetAvailableHostelHandler(c *gin.Context) {
 	if page < 1 { page = 1 }
 	offset := (page - 1) * DefaultPageSize
 
-    selectQuery := "*,vendor_info:fk_hostel_agent(first_name,last_name,phone,vendor_metrics(current_rating,total_ratings),vendor_kyc:fk_vendor_kyc(profile_img))"
+    selectQuery := "*,vendor_info:fk_hostel_agent(username,phone,vendor_metrics(current_rating,total_ratings),vendor_kyc:fk_vendor_kyc(profile_img))"
     
     params := url.Values{}
     params.Set("select", selectQuery)

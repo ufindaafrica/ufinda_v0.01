@@ -103,7 +103,7 @@ func main() {
 	})
 
 	// Initialize chat service
-	chatService := chat.NewSupabaseChatService(cld)
+	chatService := chat.NewSupabaseChatService(cld, db.RedisClient)
 	hub := chat.NewHub(chatService)
 
 	chatService.SetHub(hub)

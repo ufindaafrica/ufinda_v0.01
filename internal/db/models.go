@@ -3,6 +3,7 @@ package db
 import (
 	"time"
 	"github.com/google/uuid"
+	"encoding/json"
 )
 
 type User struct {
@@ -12,6 +13,7 @@ type User struct {
 	LastName     string    `json:"last_name" binding:"required"`
 	Email        string    `json:"email" binding:"required"`
 	Password     string    `json:"password" binding:"required"`
+	UserName 	 *string	`json:"username,omitempty"`
 	Role string `json:"role" binding:"required"`
 	Phone        string    `json:"phone" binding:"required"`
 	IsVerified bool `json:"is_verified"`
@@ -26,6 +28,7 @@ type PendingUser struct {
 	Email     string    `json:"email" binding:"required"`
 	Password  string    `json:"password" binding:"required"`
 	FirstName string    `json:"first_name" binding:"required"`
+	UserName *string	`json:"username,omitempty"`
 	LastName  string    `json:"last_name" binding:"required"`
 	Role string         `json:"role" binding: required`
 	Phone     string    `json:"phone" binding:"required"`
@@ -167,6 +170,7 @@ type NINEntity struct {
 	BirthState      string `json:"birth_state"`
 	BirthCountry    string `json:"birth_country"`
 	ResidenceState  string `json:"residence_state"`
+	ResidenceAddress string `json:"residence_AddressLine1"`
 	ResidenceLGA 	string `json:"residence_lga"`
 	Gender          string `json:"gender"`
 }
@@ -192,7 +196,6 @@ type VendorKYC struct {
 	IsVerified bool `json:"is_verified"`
 	AboutMe string `json:"about_me"`
 	ProfileImg *UploadedFile `json:"profile_img"`
-	Address string `json:"address"`
 	Status string `json:"status"`
 	VerificationMode string `json:"verification_mode"`
 	VerificationLink string `json:"verification_link"`
@@ -201,6 +204,8 @@ type VendorKYC struct {
 	StateOfOrigin string `json:"state_of_origin"`
 	Nationality string `json:"nationality"`
 	ResidenceLGA string `json:"residence_lga"`
+	ResidenceAddress1 string `json:"residence_address1"`
+	ResidenceAddress2 string `json:"residence_address2"`
 	StateOfResidence string `json:"state_of_residence"`
 }
 
@@ -243,8 +248,7 @@ type VendorKycInfo struct {
 
 // UserAgentInfo is the main structure for the agent's data joined through 'users'
 type UserAgentInfo struct {
-    FirstName    string          `json:"first_name"`
-    LastName     string          `json:"last_name"`
+	UserName string 	`json:"username"`
     Phone        string          `json:"phone"`
     VendorMetrics *VendorMetrics `json:"vendor_metrics"`
     
@@ -282,17 +286,52 @@ type UserProfileInfo struct {
 
 type VendorProfileInfo struct {
 	FirstName string `json:"first_name"`
-	LastName string `json:"last_name"`
-	Email string `json:"email"`
-	Phone string `json:"phone"`
-	KYC *struct {
-		ProfileImg *UploadedFile `json:"profile_img"`
-		Address string `json:"address"`
-		ResidenceLGA string `json:"residence_lga"`
-		StateOfResidence string `json:"state_of_residence"`
-		Nationality string `json:"nationality"`
-		AboutMe string `json:"about_me"`
-	} `json:"kyc_data"`
+	LastName  string `json:"last_name"`
+	Email     string `json:"email"`
+	Phone     string `json:"phone"`
+	KYC *VendorKYCExtra `json:"kyc_data"`
+}
+
+type VendorKYCExtra struct {
+	ProfileImg *UploadedFile `json:"profile_img"`
+	AboutMe    string        `json:"about_me"`
+
+	Address1 *string `json:"-"`
+	Address2 *string `json:"-"`
+
+	ResidenceAddress string `json:"residence_address"`
+}
+
+func (k *VendorKYCExtra) UnmarshalJSON(data []byte) error {
+    // 1. Define a shadow struct that HAS the tags Supabase uses
+    type Shadow struct {
+        ProfileImg *UploadedFile `json:"profile_img"`
+        AboutMe    string        `json:"about_me"`
+        Addr1      *string       `json:"residence_address1"` // Explicitly map DB name
+        Addr2      *string       `json:"residence_address2"` // Explicitly map DB name
+    }
+
+    var s Shadow
+    if err := json.Unmarshal(data, &s); err != nil {
+        return err
+    }
+
+    // 2. Transfer values to your real struct
+    k.ProfileImg = s.ProfileImg
+    k.AboutMe = s.AboutMe
+    k.Address1 = s.Addr1
+    k.Address2 = s.Addr2
+
+    // 3. The Logic: Pick the best address
+    if s.Addr1 != nil && *s.Addr1 != "" {
+        k.ResidenceAddress = *s.Addr1
+    } else if s.Addr2 != nil && *s.Addr2 != "" {
+        k.ResidenceAddress = *s.Addr2
+    } else {
+        k.ResidenceAddress = "" // Fallback if both are nil/empty
+    }
+
+    return nil
 }
 
 type GeoLocationField struct {
