@@ -1,22 +1,19 @@
 import axios from "axios"
-import { BASE_URL, getAccessToken, timeout } from "./apiConstants"
+import { getAccessToken } from "./apiConstants"
+import { api } from "./apiClient"
+
+const allChats = async () => {
+    return await api.get(
+        "/chat/rooms/with-last-message"
+    )
+}
 
 export const getAllChats = async () => {
 
-    const token = await getAccessToken()
     const result: Array<any> = []
 
     try {
-        const res = await axios.get(
-            "/chat/rooms/with-last-message",
-            {
-                baseURL: BASE_URL,
-                timeout: timeout,
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            }
-        )
+        const res = await allChats()
 
         result[0] = "200"
         result[1] = res.data
@@ -24,14 +21,14 @@ export const getAllChats = async () => {
     } catch (err: unknown) {
 
         if (axios.isAxiosError(err)) {
-
-            result[0] = err.status?.toString()
+            result[0] = err.response?.status?.toString()
             result[1] = err.response?.data["error"]
 
             if (result[1] == undefined) result[1] = ("Server Down. Try Again Later.")
+
         }
 
     }
-    // console.log(result)
+
     return result
 }

@@ -1,23 +1,16 @@
 import axios from "axios"
 import { BASE_URL, getAccessToken, timeout } from "./apiConstants"
+import { api } from "./apiClient"
 
 
 
 export const getHostelDetails = async (id: string) => {
 
     const result: Array<any> = []
-    const token = await getAccessToken()
 
     try {
-        const res = await axios.get(
-            `/hostels/${id}`,
-            {
-                timeout: timeout,
-                baseURL: BASE_URL,
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }
+        const res = await api.get(
+            `/hostels/${id}`
         )
 
         result[0] = '200',

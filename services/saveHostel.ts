@@ -1,22 +1,15 @@
 import axios from "axios"
 import { BASE_URL, getAccessToken, timeout } from "./apiConstants"
+import { api } from "./apiClient"
 
 
 export const saveHostel = async (id: string) => {
     const result: Array<any> = []
-    const token = await getAccessToken()
 
     try {
-        const res = await axios.post(
+        const res = await api.post(
             `/hostels/fav/${id}`,
-            {},
-            {
-                timeout: timeout,
-                baseURL: BASE_URL,
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }
+            {}
         )
 
         result[0] = "200"
@@ -37,18 +30,10 @@ export const saveHostel = async (id: string) => {
 
 export const removeSavedHostel = async (id: string) => {
     const result: Array<any> = []
-    const token = await getAccessToken()
 
     try {
-        const res = await axios.delete(
-            `/hostels/fav/${id}`,
-            {
-                timeout: timeout,
-                baseURL: BASE_URL,
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }
+        const res = await api.delete(
+            `/hostels/fav/${id}`
         )
 
         result[0] = "200"
@@ -69,18 +54,10 @@ export const removeSavedHostel = async (id: string) => {
 
 export const allSavedHostels = async () => {
     const result: Array<any> = []
-    const token = await getAccessToken()
 
     try {
-        const res = await axios.get(
-            `/hostels/fav`,
-            {
-                timeout: timeout,
-                baseURL: BASE_URL,
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }
+        const res = await api.get(
+            `/hostels/fav`
         )
 
         result[0] = "200"

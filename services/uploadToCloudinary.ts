@@ -1,5 +1,4 @@
 import axios from "axios"
-import { BASE_URL, getAccessToken, timeout } from "./apiConstants"
 import * as FileSystem from "expo-file-system/legacy"
 
 export type uploadFilesType = {
@@ -20,7 +19,6 @@ export const uploadToCloudinary = async (data: uploadFilesType) => {
     }
 
     const result: Array<any> = []
-    const token = await getAccessToken()
 
     let uploadedBytes = 0
 
@@ -64,9 +62,7 @@ export const uploadToCloudinary = async (data: uploadFilesType) => {
             file.type?.startsWith("audio") ? `https://api.cloudinary.com/v1_1/${data.cloud_name}/video/upload` : `https://api.cloudinary.com/v1_1/${data.cloud_name}/auto/upload`,
             form,
             {
-                baseURL: BASE_URL,
                 headers: {
-                    "Authorization": `Bearer ${token}`,
                     "Content-Type": "multipart/form-data",
                 },
                 onUploadProgress: (progressEvent) => {

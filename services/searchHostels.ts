@@ -1,5 +1,6 @@
 import axios from "axios"
 import { BASE_URL, getAccessToken, timeout } from "./apiConstants"
+import { api } from "./apiClient"
 
 
 export type searchParams = {
@@ -13,22 +14,16 @@ export type searchParams = {
 
 export const searchHostels = async (data: searchParams) => {
     const result: Array<any> = []
-    const token = await getAccessToken()
 
     try {
-        const res = await axios.get(
+        const res = await api.get(
             `/hostels/search`,
             {
-                baseURL: BASE_URL,
-                timeout: timeout,
                 params: {
                     q: data.q,
                     price_min: data.price_min,
                     price_max: data.price_max,
                     type: data.type,
-                },
-                headers: {
-                    Authorization: `Bearer ${token}`
                 }
             }
         )

@@ -1,20 +1,17 @@
 import axios from "axios"
 import { BASE_URL, getAccessToken, timeout } from "./apiConstants"
+import { api } from "./apiClient"
 
 export const sendChat = async (data: any) => {
 
     const result: Array<any> = []
-    const token = await getAccessToken()
 
     try {
-        const res = await axios.post(
+        const res = await api.post(
             "/chat/messages",
             data,
             {
-                baseURL: BASE_URL,
-                timeout: timeout,
                 headers: {
-                    "Authorization": `Bearer ${token}`,
                     "Content-Type": 'application/json'
                 }
             }
@@ -34,6 +31,6 @@ export const sendChat = async (data: any) => {
         }
 
     }
-    console.log(result)
+    
     return result
 }

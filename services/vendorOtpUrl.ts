@@ -1,21 +1,18 @@
 import axios from "axios";
 import { BASE_URL, getAccessToken, timeout } from "./apiConstants";
+import { api } from "./apiClient";
 
 
 export const getVendorOtpUrl = async () => {
     
-    const token = await getAccessToken()
     const result: Array<any> = []
 
     try {
-        const res = await axios.get(
+        const res = await api.get(
             "/kyc/vendor",
             {
-                baseURL: BASE_URL,
-                timeout: timeout,
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
                 }
             }
         )

@@ -1,20 +1,15 @@
 import axios from "axios"
 import { BASE_URL, getAccessToken, timeout } from "./apiConstants"
+import { api } from "./apiClient"
 
 export const getChatMessages = async (data : any) => {
 
     const result: Array<any> = []
-    const token = await getAccessToken()
 
     try {
-        const res = await axios.get(
+        const res = await api.get(
             "/chat/messages",
             {
-                baseURL: BASE_URL,
-                timeout: timeout,
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                },
                 params: data
             }
         )

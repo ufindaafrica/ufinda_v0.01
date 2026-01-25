@@ -1,22 +1,17 @@
 import axios from "axios"
-import { BASE_URL, getAccessToken, timeout } from "./apiConstants"
+import { api } from "./apiClient"
+
+const agentInfo = async (vendorId: string) => {
+    return await api.get(
+        `/hostels/vendor/${vendorId}`
+    )
+}
 
 export const getAgentInfo = async (vendorId: string) => {
-
-    const token = await getAccessToken()
     const result: Array<any> = []
 
     try {
-        const res = await axios.get(
-            `/hostels/vendor/${vendorId}`,
-            {
-                baseURL: BASE_URL,
-                timeout: timeout,
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            }
-        )
+        const res = await agentInfo(vendorId)
 
         result[0] = "200"
         result[1] = res.data
@@ -24,11 +19,11 @@ export const getAgentInfo = async (vendorId: string) => {
     } catch (err: unknown) {
 
         if (axios.isAxiosError(err)) {
-
-            result[0] = err.status?.toString()
+            result[0] = err.response?.status?.toString()
             result[1] = err.response?.data["error"]
 
             if (result[1] == undefined) result[1] = ("Server Down. Try Again Later.")
+
         }
 
     }
@@ -36,23 +31,17 @@ export const getAgentInfo = async (vendorId: string) => {
     return result
 }
 
+const agentData = async () => {
+    return await api.get(
+        `/hostels/agents`
+    )
+}
 
 export const getAgentData = async () => {
-
-    const token = await getAccessToken()
     const result: Array<any> = []
 
     try {
-        const res = await axios.get(
-            `/hostels/agents`,
-            {
-                baseURL: BASE_URL,
-                timeout: timeout,
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            }
-        )
+        const res = await agentData()
 
         result[0] = "200"
         result[1] = res.data
@@ -60,14 +49,14 @@ export const getAgentData = async () => {
     } catch (err: unknown) {
 
         if (axios.isAxiosError(err)) {
-
-            result[0] = err.status?.toString()
+            result[0] = err.response?.status?.toString()
             result[1] = err.response?.data["error"]
 
             if (result[1] == undefined) result[1] = ("Server Down. Try Again Later.")
+
         }
 
     }
-    // console.log(result[1].vendor_info)
+
     return result
 }

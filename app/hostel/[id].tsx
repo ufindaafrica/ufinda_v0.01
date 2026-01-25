@@ -45,10 +45,6 @@ export default function HostelDetails() {
     useEffect(() => {
         if (myId) {
             const getDetails = async () => {
-                // const details = await getHostelDetails(idString)
-                // if (details[0] != '200') return
-                // else setHostelDetails(details[1])
-                console.log(hostelDets)
                 setHostelDetails(await JSON.parse(hostelDets))
             }
 

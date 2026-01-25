@@ -1,21 +1,17 @@
 import axios from "axios"
-import { BASE_URL, getAccessToken, timeout } from "./apiConstants"
+import { api } from "./apiClient"
 
 export const studentKyc = async (data : any) => {
 
-    const token = await getAccessToken()
     const result: Array<any> = []
 
     try {
-        const res = await axios.post(
+        const res = await api.post(
             "/kyc/user",
             data,
             {
-                baseURL: BASE_URL,
-                timeout: timeout,
                 headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
+                    "Content-Type": "application/json"
                 }
             }
         )
@@ -41,19 +37,15 @@ export const studentKyc = async (data : any) => {
 
 export const vendorKyc = async (data : any) => {
 
-    const token = await getAccessToken()
     const result: Array<any> = []
 
     try {
-        const res = await axios.post(
+        const res = await api.post(
             "/kyc/vendor",
             data,
             {
-                baseURL: BASE_URL,
-                timeout: timeout,
                 headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
+                    "Content-Type": "application/json"
                 }
             }
         )

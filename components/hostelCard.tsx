@@ -115,7 +115,7 @@ export default function HostelCard({ hostel, isSaved, reload, coords }: HostelCa
                 })} style={hostelCardStyles.agentCard}>
                     <Image source={hostel.vendor_info?.vendor_kyc?.profile_img?.url ? {uri: hostel.vendor_info?.vendor_kyc?.profile_img?.url} : images.user0} style={hostelCardStyles.agentPic} />
                     <View>
-                        <Text style={[roboto.bodyMediumBold, hostelCardStyles.agentMargin]}>{`${hostel.vendor_info?.first_name} ${hostel.vendor_info?.last_name}`}</Text>
+                        <Text style={[roboto.bodyMediumBold, hostelCardStyles.agentMargin]}>{`${hostel.vendor_info?.username}`}</Text>
                         <View style={[hostelCardStyles.stars, hostelCardStyles.agentMargin]}>
                             {
                                 [...Array(stars).fill("star"), ...Array(unstars).fill("unstar")].map((type, idx) => (

@@ -1,21 +1,18 @@
 import axios from "axios"
 import { BASE_URL, getAccessToken, timeout } from "./apiConstants"
+import { api } from "./apiClient"
 
 export const createNewChat = async (data : any) => {
 
     const result: Array<any> = []
-    const token = await getAccessToken()
 
     try {
-        const res = await axios.post(
+        const res = await api.post(
             "/chat/rooms",
             data,
             {
-                baseURL: BASE_URL,
-                timeout: timeout,
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
                 }
             }
         )

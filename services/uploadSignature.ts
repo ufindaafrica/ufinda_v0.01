@@ -1,21 +1,14 @@
 import axios from "axios"
 import { BASE_URL, getAccessToken, timeout } from "./apiConstants"
+import { api } from "./apiClient"
 
 export const getUploadSignature = async () => {
 
     const result: Array<any> = []
-    const token = await getAccessToken()
 
     try {
-        const res = await axios.get(
-            "/hostels/signature",
-            {
-                baseURL: BASE_URL,
-                timeout: timeout,
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            }
+        const res = await api.get(
+            "/hostels/signature"
         )
 
         result[0] = "200"
@@ -40,18 +33,10 @@ export const getUploadSignature = async () => {
 export const vendorUploadSignature = async () => {
 
     const result: Array<any> = []
-    const token = await getAccessToken()
 
     try {
-        const res = await axios.get(
-            "/kyc/vendor/signature",
-            {
-                baseURL: BASE_URL,
-                timeout: timeout,
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            }
+        const res = await api.get(
+            "/kyc/vendor/signature"
         )
 
         result[0] = "200"
@@ -68,26 +53,17 @@ export const vendorUploadSignature = async () => {
         }
 
     }
-    
-    console.log(result)
+
     return result
 }
 
 export const userUploadSignature = async () => {
 
     const result: Array<any> = []
-    const token = await getAccessToken()
 
     try {
-        const res = await axios.get(
-            "/kyc/user/signature",
-            {
-                baseURL: BASE_URL,
-                timeout: timeout,
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            }
+        const res = await api.get(
+            "/kyc/user/signature"
         )
 
         result[0] = "200"
@@ -105,7 +81,6 @@ export const userUploadSignature = async () => {
 
     }
 
-    console.log(result)
     return result
 }
 
@@ -113,18 +88,10 @@ export const userUploadSignature = async () => {
 export const chatUploadSignature = async () => {
 
     const result: Array<any> = []
-    const token = await getAccessToken()
 
     try {
-        const res = await axios.get(
-            "/chat/signature",
-            {
-                baseURL: BASE_URL,
-                timeout: timeout,
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            }
+        const res = await api.get(
+            "/chat/signature"
         )
 
         result[0] = "200"
@@ -142,6 +109,5 @@ export const chatUploadSignature = async () => {
 
     }
 
-    console.log(result)
     return result
 }

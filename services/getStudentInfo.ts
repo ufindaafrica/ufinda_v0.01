@@ -1,21 +1,14 @@
 import axios from "axios"
 import { BASE_URL, getAccessToken, timeout } from "./apiConstants"
+import { api } from "./apiClient"
 
 export const getStudentInfo = async () => {
 
     const result: Array<any> = []
-    const token = await getAccessToken()
 
     try {
-        const res = await axios.get(
-            "/kyc/user/profile",
-            {
-                baseURL: BASE_URL,
-                timeout: timeout,
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }
+        const res = await api.get(
+            "/kyc/user/profile"
         )
 
         result[0] = "200"
@@ -39,18 +32,10 @@ export const getStudentInfo = async () => {
 export const getVendorInfo = async () => {
 
     const result: Array<any> = []
-    const token = await getAccessToken()
 
     try {
-        const res = await axios.get(
-            "/kyc/vendor/profile",
-            {
-                baseURL: BASE_URL,
-                timeout: timeout,
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }
+        const res = await api.get(
+            "/kyc/vendor/profile"
         )
 
         result[0] = "200"

@@ -1,21 +1,18 @@
 import axios from "axios"
 import { BASE_URL, getAccessToken, getRefreshToken, timeout } from "./apiConstants"
 import { deleteItemAsync } from "expo-secure-store"
+import { api } from "./apiClient"
 
 export const logOut = async () => {
 
     const result: Array<any> = []
-    const token = await getAccessToken()
     const refresh_token = await getRefreshToken()
 
     try {
-        const res = await axios.get(
+        const res = await api.get(
             "/auth/logout",
             {
-                baseURL: BASE_URL,
-                timeout: timeout,
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     "X-Refresh-Token": `Refresh ${refresh_token}`
                 }
             }
