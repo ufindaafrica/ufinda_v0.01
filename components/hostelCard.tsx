@@ -69,11 +69,11 @@ export default function HostelCard({ hostel, isSaved, reload, coords }: HostelCa
     return (
         <View style={hostelCardStyles.card}>
 
-            <TouchableOpacity style={hostelCardStyles.thumbnailV} onPress={() => hostel?.id && router.push({ pathname: "/hostel/[id]", params: { id: String(hostel.id) } })}>
+            <TouchableOpacity style={hostelCardStyles.thumbnailV} onPress={() => hostel?.id && router.push({ pathname: "/hostel/[id]", params: { id: String(hostel.id), hostel: JSON.stringify(hostel) } })}>
                 <Thumbnail bg={{uri: hostel.hostel_images?.[0]?.url}} available={hostel.total_hostel_rooms > 0 ? true : false} distance={coords ? Math.floor(getDistance(coords, hostel?.geolocation ?? coords) / 1609.344) : 0} />
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => hostel?.id && router.push({ pathname: "/hostel/[id]", params: { id: String(hostel.id) } })} style={hostelCardStyles.mainPlusAmenities}>
+            <TouchableOpacity onPress={() => hostel?.id && router.push({ pathname: "/hostel/[id]", params: { id: String(hostel.id), hostel: JSON.stringify(hostel) } })} style={hostelCardStyles.mainPlusAmenities}>
 
                 <View style={hostelCardStyles.main}>
                     <View>

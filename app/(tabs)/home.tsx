@@ -6,8 +6,8 @@ import { getAllHostels } from "@/services/getAllHostels";
 import { globals, roboto } from "@/styles/globals";
 import { homeStyles } from "@/styles/home";
 import { EnrichedHostel } from "@/types";
-import { useEffect, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { AppState, AppStateStatus, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { searchHostels, searchParams } from "@/services/searchHostels";
@@ -17,11 +17,39 @@ import { router } from "expo-router";
 import { getRole } from "@/deps/getRole";
 import * as Location from 'expo-location';
 import { getDistance } from 'geolib'
+import { cacheHostels } from "@/deps/cacheServices";
+
+
+/// start and stop foreground service to schedule cache calls
+
+let timer: ReturnType<typeof setInterval> | null = null
+
+// start foreground service function
+const startForegroundScheduler = (setHostels: Dispatch<SetStateAction<EnrichedHostel[]>>) => {
+    // return if a timer is already running
+    if (timer) return
+
+    // continue to create new timer
+    timer = setInterval(() => {
+        cacheHostels(false, setHostels)
+    }, 30 * 60 * 1000)
+
+}
+
+// stop foreground service function
+const stopForegroundScheduler = () => {
+    // stop only if timer is not null
+    if (timer) {
+        clearInterval(timer)
+        timer = null
+    }
+}
 
 
 export default function Home() {
 
     const [hostels, setHostels] = useState<Array<EnrichedHostel>>([])
+    const [searchedHostels, setSearchedHostels] = useState<Array<EnrichedHostel>>([])
 
     const [currentFilter, setCurrentFilter] = useState("New")
 
@@ -55,7 +83,7 @@ export default function Home() {
                 return
             }
 
-            if (text != "New" && text != "Near You" && text != "Your State" && text != "Recommended" && text != "Type") {
+            if (text != "New" && text != "Near You" && text != "Recommended" && text != "Type") {
                 setSearchFilters(prev => ({
                     ...prev,
                     type: text
@@ -155,7 +183,7 @@ export default function Home() {
                     // setCurrentFilter(prev => {
                     //     return Object.entries(searchFilters).map(([key, value]) => `${key}: ${value}`).join(" ; ")
                     // })
-                    setHostels(filteredHostels[1])
+                    setSearchedHostels(filteredHostels[1])
                 } else {
                     toast("error. try searching again.")
                 }
@@ -167,10 +195,8 @@ export default function Home() {
     }, [searchFilters])
 
     useEffect(() => {
-        if (currentFilter === "New") {
-            allHostels()
-        }
-    }, [currentFilter])
+        console.log("hostels reloaded")
+    }, [hostels])
 
     const [filter1Vis, setFilter1Vis] = useState(false)
     const [filter2Vis, setFilter2Vis] = useState(false)
@@ -201,7 +227,7 @@ export default function Home() {
         const savedHostels = async () => {
             const favHostels = JSON.parse(await AsyncStorage.getItem('SAVED') || "[]")
             setSavedIds(favHostels)
-            console.log(await getRole())
+            // console.log(await getRole())
         }
         savedHostelData()
         savedHostels()
@@ -209,11 +235,11 @@ export default function Home() {
 
     useEffect(() => {
         allHostels()
-    }, [savedIds])
+    }, [])
 
     const allHostels = async () => {
         const apiHostels = await getAllHostels()
-        console.log(apiHostels[1][0])
+        // console.log(apiHostels[1][0])
 
         if (apiHostels[0] == '200') {
             setHostels(apiHostels[1])
@@ -227,30 +253,47 @@ export default function Home() {
     const [city, setCity] = useState<any>("")
     const [loc, setLoc] = useState<any>()
 
+    // useEffect(() => {
+    //         const getLocation = async () => {
+    //             const { status } = await Location.requestForegroundPermissionsAsync()
+    //             if (status != "granted") {
+    //                 return
+    //             }
+    
+    //             const loc = await Location.getCurrentPositionAsync({})
+    
+    //             const address = await Location.reverseGeocodeAsync(loc.coords)
+    
+    //             if (address.length > 0) {
+    //                 const formatted = address[0].region
+    //                 setCity(formatted)
+    
+    //                 const coords = {
+    //                     "latitude": loc?.coords?.latitude ?? 0,
+    //                     "longitude": loc?.coords?.longitude ?? 0
+    //                 }
+    //                 setLoc(coords)
+    //             }
+    //         }
+    //         getLocation()
+    //     }, [])
+
     useEffect(() => {
-            const getLocation = async () => {
-                const { status } = await Location.requestForegroundPermissionsAsync()
-                if (status != "granted") {
-                    return
-                }
-    
-                const loc = await Location.getCurrentPositionAsync({})
-    
-                const address = await Location.reverseGeocodeAsync(loc.coords)
-    
-                if (address.length > 0) {
-                    const formatted = address[0].region
-                    setCity(formatted)
-    
-                    const coords = {
-                        "latitude": loc?.coords?.latitude ?? 0,
-                        "longitude": loc?.coords?.longitude ?? 0
-                    }
-                    setLoc(coords)
-                }
+        const handleState = (state: AppStateStatus) => {
+            if (state === "active") {
+                console.log("first run")
+                startForegroundScheduler(setHostels)
+            } else {
+                stopForegroundScheduler()
             }
-            getLocation()
-        }, [])
+        }
+
+        handleState(AppState.currentState)
+
+        const sub = AppState.addEventListener("change", handleState)
+
+        return () => sub.remove()
+    }, [])
 
     return (
         <SafeAreaView style={[globals.homeContainer]}>
@@ -283,7 +326,7 @@ export default function Home() {
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={homeStyles.scrollV}>
                 {
-                    hostels ? hostels.map((item, idx) => (
+                    hostels ? (currentFilter === "New" ? hostels : searchedHostels).map((item, idx) => (
                         <View style={homeStyles.layoutMargin} key={idx}>
                             <HostelCard
                                 hostel={item}

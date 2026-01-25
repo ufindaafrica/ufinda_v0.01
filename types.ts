@@ -32,7 +32,8 @@ type VendorInfo = {
     last_name: string,
     phone: string,
     vendor_kyc: VendorKyc,
-    vendor_metrics: VendorMetrics
+    vendor_metrics: VendorMetrics,
+    username: string
 }
 
 type VendorKyc = {

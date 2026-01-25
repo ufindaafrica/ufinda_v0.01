@@ -26,8 +26,9 @@ import { getAgentData, getAgentInfo } from "@/services/agentInfo";
 
 export default function HostelDetails() {
 
-    const { id } = useLocalSearchParams()
+    const { id, hostel } = useLocalSearchParams()
     const idString = Array.isArray(id) ? id[0] : id
+    const hostelDets = Array.isArray(hostel) ? hostel[0] : hostel
 
     const [hostelDetails, setHostelDetails] = useState<EnrichedHostel | null>()
     const [myId, setMyId] = useState("")
@@ -44,9 +45,11 @@ export default function HostelDetails() {
     useEffect(() => {
         if (myId) {
             const getDetails = async () => {
-                const details = await getHostelDetails(idString)
-                if (details[0] != '200') return
-                else setHostelDetails(details[1])
+                // const details = await getHostelDetails(idString)
+                // if (details[0] != '200') return
+                // else setHostelDetails(details[1])
+                console.log(hostelDets)
+                setHostelDetails(await JSON.parse(hostelDets))
             }
 
             const getRHostels = async () => {
@@ -296,7 +299,7 @@ export default function HostelDetails() {
                             })} style={hostelCardStyles.agentCard}>
                                 <Image source={hostelDetails?.vendor_info?.vendor_kyc?.profile_img?.url ? { uri: hostelDetails.vendor_info?.vendor_kyc?.profile_img?.url } : images.user0} style={hostelCardStyles.agentPic} />
                                 <View>
-                                    <Text style={[roboto.bodyMediumBold, hostelCardStyles.agentMargin]}>{`${hostelDetails?.vendor_info?.first_name ?? ""} ${hostelDetails?.vendor_info?.last_name ?? ""}`}</Text>
+                                    <Text style={[roboto.bodyMediumBold, hostelCardStyles.agentMargin]}>{`${hostelDetails?.vendor_info?.username ?? ""}`}</Text>
                                     <View style={[hostelCardStyles.stars, hostelCardStyles.agentMargin]}>
                                         {
                                             [...Array(stars).fill("star"), ...Array(unstars).fill("unstar")].map((type, idx) => (
