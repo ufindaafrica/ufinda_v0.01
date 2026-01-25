@@ -64,7 +64,7 @@ func GenerateTokens(
 		Email:  email,
 		Role: role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(30 * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(30 * time.Second)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			Subject:   userID,
 			ID:        jwtID, // <-- Correctly using a unique ID
