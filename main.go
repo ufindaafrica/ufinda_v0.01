@@ -19,7 +19,7 @@ import (
 	"github.com/oladev/ufinda_v0.01/internal/webhooks"
 	"github.com/oladev/ufinda_v0.01/internal/sockets/kyc"
 	"github.com/oladev/ufinda_v0.01/internal/sockets/chat"
-	"github.com/oladev/ufinda_v0.01/internal/routes/rating"
+	"github.com/oladev/ufinda_v0.01/internal/routes/metrics"
 	"github.com/oladev/ufinda_v0.01/internal/routes/product/vendor"
 	"github.com/oladev/ufinda_v0.01/internal/routes/notification"
 )
@@ -89,7 +89,7 @@ func main() {
 	userkyc.RegisterKYC(r, cld)
 	vendorkyc.RegisterKYC(r, cld)
 	vendorproduct.RegisterVendorProduct(r, asynqClient, cld)
-	rating.RegisterRating(r)
+	metrics.RegisterMetrics(r)
 	webhook.RegisterWebhooks(r, wsHub)
 	notif.RegisterNotif(r)
 	

@@ -163,10 +163,8 @@ func GetHostelImagesPublicIDAndUrl(id string) ([]db.UploadedFile, error) {
         bodyBytes, readErr := io.ReadAll(resp.Body)
         if readErr != nil {
             log.Printf("DB API Error: Failed to read error response body (Status: %d)", resp.StatusCode)
-        } else {
-            log.Printf("DB API Error: Status %d for URL %s. Response: %s", resp.StatusCode, url, string(bodyBytes))
-        }
-        return nil, fmt.Errorf("failed to get media")
+        } 
+        return nil, fmt.Errorf("failed to get media %w", string(bodyBytes))
     }
 
 	var rows []hostelImageResponse

@@ -1,10 +1,10 @@
 package authlog
 
 import (
+	"log"
 	"fmt"
-	"os"
 	"github.com/oladev/ufinda_v0.01/internal/db"
-	"github.com/oladev/ufinda_v0.01/internal/logs"
+	doLog"github.com/oladev/ufinda_v0.01/internal/logs"
 )
 
 type LogEntry struct {
@@ -34,8 +34,8 @@ var Logs = map[string]LogEntry{
 func SecurityLog(securitylog db.SecurityLog) {
 	url := fmt.Sprintf("/rest/v1/security_log")
 
-	if err := log.CreateLog(securitylog, url); err != nil {
-		fmt.Fprintf(os.Stderr, "CRITICAL: Failed to create Security failure log: %v.", err)
+	if err := doLog.CreateLog(securitylog, url); err != nil {
+		log.Printf("[CRITICAL]: Failed to create Security failure log: %v.", err)
 	}
 }
 
@@ -47,7 +47,7 @@ func LogAuth(userID string, reason error) {
 	}
 
 	
-	if err := log.CreateLog(newLog, url); err != nil {
-		fmt.Fprintf(os.Stderr, "[CRITICAL] Failed to create Auth failure log for user %s: %v. Original reason: %s\n", userID, err, reason.Error())
+	if err := doLog.CreateLog(newLog, url); err != nil {
+		log.Printf("[CRITICAL] Failed to create Auth failure log for user %s: %v. Original reason: %s\n", userID, err, reason.Error())
 	}
 }

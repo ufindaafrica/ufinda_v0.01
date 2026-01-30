@@ -1,10 +1,9 @@
 package hostellog
 
 import (
-	"fmt"
-	"os"
+	"log"
 	"github.com/oladev/ufinda_v0.01/internal/db"
-	"github.com/oladev/ufinda_v0.01/internal/logs"
+	doLog"github.com/oladev/ufinda_v0.01/internal/logs"
 )
 
 
@@ -13,9 +12,9 @@ func LogHostel(userID string, reason error) {
 		VendorID: userID,
 		Reason: reason.Error(),
 	}
-	if err := log.CreateLog(newLog, "/rest/v1/hostel_log"); err != nil {
+	if err := doLog.CreateLog(newLog, "/rest/v1/hostel_log"); err != nil {
         // In a real application, you'd log this logging failure to a different system (e.g., stdout/stderr, an external log aggregator)
-        fmt.Fprintf(os.Stderr, "CRITICAL: Failed to create hostel log for user %s: %v. Original reason: %s\n", userID, err, reason.Error())
+        log.Printf("[CRITICAL]: Failed to create hostel log for user %s: %v. Original reason: %s\n", userID, err, reason.Error())
     }
 	return
 }

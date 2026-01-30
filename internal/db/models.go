@@ -346,3 +346,18 @@ type PushNotificationToken struct {
 	DeviceOS string `json:"device_os"`
 	CreatedAt *time.Time `json:"created_at"`
 }
+
+type ProfileView struct {
+	ID *uuid.UUID `json:"id,omitempty"`
+	UserID string `json:"user_id"`
+	VendorID string `json:"vendor_id"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+}
+
+type MetricLog struct {
+	ID *uuid.UUID `json:"id,omitempty"`
+	UserID string `json:"user_id"`
+	Reason string `json:"reason"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
+}
