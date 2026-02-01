@@ -6,8 +6,8 @@ import { getAllHostels } from "@/services/getAllHostels";
 import { globals, roboto } from "@/styles/globals";
 import { homeStyles } from "@/styles/home";
 import { EnrichedHostel } from "@/types";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
-import { AppState, AppStateStatus, ScrollView, Text, View } from "react-native";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
+import { Animated, AppState, AppStateStatus, FlatList, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { searchHostels, searchParams } from "@/services/searchHostels";
@@ -58,7 +58,7 @@ export default function Home() {
     const filterNearYou = async () => {
         setHostels(prev => {
             if (loc != null && loc != undefined) {
-                return [...prev].sort((a, b) => getDistance(loc, b?.geolocation ?? loc) - getDistance(loc, a?.geolocation ?? loc) )
+                return [...prev].sort((a, b) => getDistance(loc, b?.geolocation ?? loc) - getDistance(loc, a?.geolocation ?? loc))
             } else {
                 return prev
             }
@@ -253,30 +253,30 @@ export default function Home() {
     const [city, setCity] = useState<any>("")
     const [loc, setLoc] = useState<any>()
 
-    // useEffect(() => {
-    //         const getLocation = async () => {
-    //             const { status } = await Location.requestForegroundPermissionsAsync()
-    //             if (status != "granted") {
-    //                 return
-    //             }
-    
-    //             const loc = await Location.getCurrentPositionAsync({})
-    
-    //             const address = await Location.reverseGeocodeAsync(loc.coords)
-    
-    //             if (address.length > 0) {
-    //                 const formatted = address[0].region
-    //                 setCity(formatted)
-    
-    //                 const coords = {
-    //                     "latitude": loc?.coords?.latitude ?? 0,
-    //                     "longitude": loc?.coords?.longitude ?? 0
-    //                 }
-    //                 setLoc(coords)
-    //             }
-    //         }
-    //         getLocation()
-    //     }, [])
+    useEffect(() => {
+        const getLocation = async () => {
+            const { status } = await Location.requestForegroundPermissionsAsync()
+            if (status != "granted") {
+                return
+            }
+
+            const loc = await Location.getCurrentPositionAsync({})
+
+            const address = await Location.reverseGeocodeAsync(loc.coords)
+
+            if (address.length > 0) {
+                const formatted = address[0].region
+                setCity(formatted)
+
+                const coords = {
+                    "latitude": loc?.coords?.latitude ?? 0,
+                    "longitude": loc?.coords?.longitude ?? 0
+                }
+                setLoc(coords)
+            }
+        }
+        getLocation()
+    }, [])
 
     useEffect(() => {
         const handleState = (state: AppStateStatus) => {
@@ -294,6 +294,23 @@ export default function Home() {
 
         return () => sub.remove()
     }, [])
+
+    const [refreshing, setRefreshing] = useState(false)
+    const pullOffset = useRef(new Animated.Value(0)).current
+
+    const onRefresh = async () => {
+        setRefreshing(true)
+        await allHostels()
+        setRefreshing(false)
+    }
+
+    useEffect(() => {
+        Animated.timing(pullOffset, {
+            toValue: refreshing ? 50 : 0,
+            duration: 300,
+            useNativeDriver: true
+        }).start()
+    }, [refreshing])
 
     return (
         <SafeAreaView style={[globals.homeContainer]}>
@@ -324,21 +341,40 @@ export default function Home() {
                 <Text style={roboto.bodyLargeBold}>{currentFilter}</Text>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={homeStyles.scrollV}>
-                {
-                    hostels ? (currentFilter === "New" ? hostels : searchedHostels).map((item, idx) => (
-                        <View style={homeStyles.layoutMargin} key={idx}>
-                            <HostelCard
-                                hostel={item}
-                                isSaved={savedIds.includes(item.id)}
-                                reload={() => setReloadHome(!reloadHome)}
-                                coords={loc}
-                            />
-                        </View>
-                    )) : null
-                }
-            </ScrollView>
+            <Animated.View style={{
+                transform: [{ translateY: pullOffset }],
+                // flex: 1
+            }}>
+                <FlatList
+                    data={hostels ? currentFilter === "New" ? hostels : searchedHostels : []}
+                    renderItem={({ item }) => <View style={[homeStyles.layoutMargin, { marginVertical: 8 }]} key={item.id ?? ""}>
+                        <HostelCard hostel={item ?? {}} isSaved={savedIds.includes(item.id ?? "")} reload={() => setReloadHome(!reloadHome)} coords={loc} />
+                    </View>}
+                    keyExtractor={item => item.id}
+                    contentContainerStyle={homeStyles.scrollV}
+                    showsVerticalScrollIndicator={false}
+                    refreshing={refreshing}
+                    onRefresh={onRefresh} />
+            </Animated.View>
+
         </SafeAreaView>
     )
 }
 
+
+// old -- will remove later
+
+{/* <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={homeStyles.scrollV}>
+                {
+                    // hostels ? (currentFilter === "New" ? hostels : searchedHostels).map((item, idx) => (
+                    //     <View style={homeStyles.layoutMargin} key={idx}>
+                    //         <HostelCard
+                    //             hostel={item}
+                    //             isSaved={savedIds.includes(item.id)}
+                    //             reload={() => setReloadHome(!reloadHome)}
+                    //             coords={loc}
+                    //         />
+                    //     </View>
+                    // )) : null
+                } */}
+{/* </ScrollView> */ }

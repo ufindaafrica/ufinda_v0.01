@@ -41,9 +41,10 @@ export default function Index() {
   useEffect(() => {
     const navigate = async () => {
       if (!splashScreen && firstOpen === false) {
-        const auth = await SecureStore.getItemAsync('AUTH')
-        const mode = await SecureStore.getItemAsync('MODE')
+        const auth = await SecureStore.getItemAsync('ACCESS_TOKEN')
+        const mode = await SecureStore.getItemAsync('ROLE')
         if (auth == null) {
+          console.log("auth null")
           router.replace("/auth/login")
           // router.replace("/(tabs)/profile")
           // router.replace("/(vendor)/profile")

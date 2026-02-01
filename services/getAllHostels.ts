@@ -6,7 +6,7 @@ const fetchHostels = async () => {
         '/hostels/all',
         {
             params: {
-                limit: 20
+                // limit: 20
             }
         }
     )
@@ -30,6 +30,7 @@ export const getAllHostels = async () => {
 
         }
     } finally {
+        console.log(result[1].length)
         return result
     }
 }
