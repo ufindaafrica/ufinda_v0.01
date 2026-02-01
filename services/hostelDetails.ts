@@ -1,5 +1,4 @@
 import axios from "axios"
-import { BASE_URL, getAccessToken, timeout } from "./apiConstants"
 import { api } from "./apiClient"
 
 

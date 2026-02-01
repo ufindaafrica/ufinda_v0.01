@@ -111,7 +111,7 @@ export default function MemberProfile() {
                 <Setting setting="Personal information" icon settingFun={() => router.push("/pages/userInfo")} />
                 <Setting setting="Language" value="English" />
                 <Setting setting="About uFinda" icon settingFun={() => router.push("/pages/faqs")} />
-                <Setting setting="Change password" icon settingFun={() => toast("Coming Soon")} />
+                <Setting setting="Change password" icon settingFun={() => router.push("/pages/changePassword")} />
                 <Setting setting="Theme" icon value="Device theme" />
                 <TouchableOpacity onPress={signOut}>
                     <Text style={[roboto.bodyMedium, { color: 'red' }, singleChatStyles.settings]}>Sign out</Text>
