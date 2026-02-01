@@ -102,7 +102,7 @@ export default function HostelDetails() {
         "Kitchen": hostelDetails?.kitchen_access ?? "",
         "Toilet": hostelDetails?.toilet_access ?? "",
         "Landlord resides": hostelDetails?.landlord_resides ?? "",
-        "Roomates allowed": hostelDetails?.roommates_allowed ?? ""
+        "Roommates allowed": hostelDetails?.roommates_allowed ?? ""
     }
 
     const onSwipeLeft = () => {

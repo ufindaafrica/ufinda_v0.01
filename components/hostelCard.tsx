@@ -68,7 +68,7 @@ export default function HostelCard({ hostel, isSaved, reload, coords }: HostelCa
 
     const [archiveImg, setArchiveImg] = useState(saved ? images.savedIcon : images.archiveAdd)
 
-    console.log(hostel.hostel_images)
+    // console.log(hostel.hostel_images)
 
     return (
         <View style={hostelCardStyles.card}>

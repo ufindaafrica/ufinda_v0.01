@@ -448,7 +448,7 @@ export default function NewHostel() {
                     />
                 </View>
                 <View style={newHostelStyles.inputV}>
-                    <HostelLabel label="Roomates Allowed" />
+                    <HostelLabel label="Roommates Allowed" />
                     <TouchableOpacity onPress={() => { Keyboard.dismiss(); setRoomateDrawer(true) }}>
                         <Input
                             hint="yes/no"
@@ -608,7 +608,7 @@ export default function NewHostel() {
             }
 
             {
-                roomateDrawer ? <Drawer title="Roomate" options={["yes", "no"]} onCloseDrawer={setRoomateDrawer} onSelectOption={setRoomate} selectedOption={roomate} /> : null
+                roomateDrawer ? <Drawer title="Roommate" options={["yes", "no"]} onCloseDrawer={setRoomateDrawer} onSelectOption={setRoomate} selectedOption={roomate} /> : null
             }
 
             {

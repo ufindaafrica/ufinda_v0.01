@@ -58,7 +58,9 @@ export default function Home() {
     const filterNearYou = async () => {
         setHostels(prev => {
             if (loc != null && loc != undefined) {
-                return [...prev].sort((a, b) => getDistance(loc, b?.geolocation ?? loc) - getDistance(loc, a?.geolocation ?? loc))
+                const sorted = [...prev].sort((a, b) => getDistance(loc, a?.geolocation ?? loc) - getDistance(loc, b?.geolocation ?? loc))
+                console.log("lennn", sorted.length)
+                return sorted
             } else {
                 return prev
             }
@@ -70,6 +72,7 @@ export default function Home() {
         // sets search filter and also current filter text
         if (type === "options") {
             if (text == "Near You") {
+                console.log("in near you")
                 setCurrentFilter("Near You")
                 filterNearYou()
                 return
@@ -347,7 +350,7 @@ export default function Home() {
                 // flex: 1
             }}>
                 <FlatList
-                    data={hostels ? currentFilter === "New" ? hostels : searchedHostels : []}
+                    data={hostels ? currentFilter === "New" || currentFilter === "Near You" ? hostels : searchedHostels : []}
                     renderItem={({ item }) => <View style={[homeStyles.layoutMargin, { marginVertical: 8 }]} key={item.id ?? ""}>
                         <HostelCard hostel={item ?? {}} isSaved={savedIds.includes(item.id ?? "")} reload={() => setReloadHome(!reloadHome)} coords={loc} />
                     </View>}
