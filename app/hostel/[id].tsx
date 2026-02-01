@@ -97,7 +97,7 @@ export default function HostelDetails() {
     const importantDetails = {
         "Property Address": hostelDetails?.location ?? "",
         "Number of Available Rooms": hostelDetails?.total_hostel_rooms ?? "",
-        "Electricity": "24 hours",
+        "Total Package": hostelDetails?.total_price ?? "",
         "Property ID": hostelDetails?.id ?? "",
         "Kitchen": hostelDetails?.kitchen_access ?? "",
         "Toilet": hostelDetails?.toilet_access ?? "",

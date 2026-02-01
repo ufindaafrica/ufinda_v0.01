@@ -13,6 +13,7 @@ import Loader from "./loader";
 import { toast } from "@/deps/toast";
 import { getRole } from "@/deps/getRole";
 import { getStudentInfo, getVendorInfo } from "@/services/getStudentInfo";
+import { getItemAsync, setItemAsync } from "expo-secure-store";
 
 
 export default function MemberProfile() {
@@ -50,11 +51,28 @@ export default function MemberProfile() {
 
     useEffect(() => {
         const getOtherInfo = async () => {
-            
+
+            const existingInfoRaw = await getItemAsync('PROFILE')
+            if (!existingInfoRaw) return
+
+            const existingInfo = JSON.parse(existingInfoRaw)
+            if (existingInfo) {
+                setName(`${existingInfo?.first_name ?? ""} ${existingInfo?.last_name ?? ""}`)
+                setProfileImg(`${existingInfo?.kyc_data?.profile_img?.url ?? ""}`)
+                return
+            }
+
             const info = (role === "user") ? await getStudentInfo() : await getVendorInfo()
 
             if (info[0] != "200") {
                 return
+            } else {
+                const profile = {
+                    first_name: info[1]?.first_name ?? "",
+                    last_name: info[1]?.last_name ?? "",
+                    img_url: info[1]?.kyc_data?.profile_img?.url ?? ""
+                }
+                await setItemAsync("PROFILE", JSON.stringify(profile))
             }
 
             const user = info[1]
@@ -96,7 +114,7 @@ export default function MemberProfile() {
                 <Setting setting="Change password" icon settingFun={() => toast("Coming Soon")} />
                 <Setting setting="Theme" icon value="Device theme" />
                 <TouchableOpacity onPress={signOut}>
-                    <Text style={[roboto.bodyMedium, colors.foundationWarningDark, singleChatStyles.settings]}>Sign out</Text>
+                    <Text style={[roboto.bodyMedium, { color: 'red' }, singleChatStyles.settings]}>Sign out</Text>
                 </TouchableOpacity>
             </View>
 
