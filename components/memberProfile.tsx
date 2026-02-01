@@ -53,15 +53,15 @@ export default function MemberProfile() {
         const getOtherInfo = async () => {
 
             const existingInfoRaw = await getItemAsync('PROFILE')
-            if (!existingInfoRaw) return
-
-            const existingInfo = JSON.parse(existingInfoRaw)
-            if (existingInfo) {
-                setName(`${existingInfo?.first_name ?? ""} ${existingInfo?.last_name ?? ""}`)
-                setProfileImg(`${existingInfo?.kyc_data?.profile_img?.url ?? ""}`)
-                return
+            if (existingInfoRaw) {
+                const existingInfo = JSON.parse(existingInfoRaw)
+                if (existingInfo) {
+                    setName(`${existingInfo?.first_name ?? ""} ${existingInfo?.last_name ?? ""}`)
+                    setProfileImg(`${existingInfo?.kyc_data?.profile_img?.url ?? ""}`)
+                    return
+                }
             }
-
+            
             const info = (role === "user") ? await getStudentInfo() : await getVendorInfo()
 
             if (info[0] != "200") {

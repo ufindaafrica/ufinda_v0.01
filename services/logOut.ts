@@ -25,6 +25,7 @@ export const logOut = async () => {
         await deleteItemAsync("REFRESH_TOKEN")
         await deleteItemAsync('ID')
         await deleteItemAsync('ROLE')
+        await deleteItemAsync('PROFILE')
     } catch (err: unknown) {
 
         if (axios.isAxiosError(err)) {
