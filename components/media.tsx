@@ -1,10 +1,11 @@
-import { View, Image, TouchableOpacity } from "react-native";
+import { View, TouchableOpacity } from "react-native";
 import { idStyles } from "@/styles/id";
 import { images } from "@/constants/images";
 import { VideoView, useVideoPlayer } from "expo-video"
 import { useState } from "react";
 import Loader from "./loader";
 import { scale } from "@/deps/scale";
+import { Image } from "expo-image"
 
 type MediaProps = {
     media: any,
@@ -40,7 +41,8 @@ export default function Media({ media, video, close, left, right, idx, imgLen }:
                     style={{ width: "100%", height: "100%" }} /> : <Loader />
                     : <Image
                         source={{ uri: media }}
-                        resizeMode="contain"
+                        contentFit="contain"
+                        cachePolicy="disk"
                         style={{ width: "100%", height: "100%" }} />
             }
             <TouchableOpacity onPress={left} disabled={idx <= 0} style={[{ position: 'absolute', left: 10, top: '50%', padding: 5 }, idx <= 0 && idStyles.disabledArrow]}>

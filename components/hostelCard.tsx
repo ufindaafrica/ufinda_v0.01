@@ -12,6 +12,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { removeSavedHostel, saveHostel } from "@/services/saveHostel";
 import { toast } from "@/deps/toast";
 import { getDistance } from "geolib";
+import { cdnImage } from "@/deps/getOptimizedImages";
+import { Image as ExpoImage } from "expo-image"
 
 type HostelCardProps = {
     hostel: EnrichedHostel,
@@ -66,11 +68,13 @@ export default function HostelCard({ hostel, isSaved, reload, coords }: HostelCa
 
     const [archiveImg, setArchiveImg] = useState(saved ? images.savedIcon : images.archiveAdd)
 
+    console.log(hostel.hostel_images)
+
     return (
         <View style={hostelCardStyles.card}>
 
             <TouchableOpacity style={hostelCardStyles.thumbnailV} onPress={() => hostel?.id && router.push({ pathname: "/hostel/[id]", params: { id: String(hostel.id), hostel: JSON.stringify(hostel) } })}>
-                <Thumbnail bg={{uri: hostel.hostel_images?.[0]?.url}} available={hostel.total_hostel_rooms > 0 ? true : false} distance={coords ? Math.floor(getDistance(coords, hostel?.geolocation ?? coords) / 1609.344) : 0} />
+                <Thumbnail bg={{uri: cdnImage(hostel.hostel_images?.[0]?.url ?? "", 400) ?? ""}} available={hostel.total_hostel_rooms > 0 ? true : false} distance={coords ? Math.floor(getDistance(coords, hostel?.geolocation ?? coords) / 1609.344) : 0} />
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => hostel?.id && router.push({ pathname: "/hostel/[id]", params: { id: String(hostel.id), hostel: JSON.stringify(hostel) } })} style={hostelCardStyles.mainPlusAmenities}>
@@ -113,7 +117,7 @@ export default function HostelCard({ hostel, isSaved, reload, coords }: HostelCa
                         vendorId: hostel?.vendor_id
                     }
                 })} style={hostelCardStyles.agentCard}>
-                    <Image source={hostel.vendor_info?.vendor_kyc?.profile_img?.url ? {uri: hostel.vendor_info?.vendor_kyc?.profile_img?.url} : images.user0} style={hostelCardStyles.agentPic} />
+                    <ExpoImage source={hostel.vendor_info?.vendor_kyc?.profile_img?.url ? {uri: hostel.vendor_info?.vendor_kyc?.profile_img?.url} : images.user0} style={hostelCardStyles.agentPic} cachePolicy={"disk"} />
                     <View>
                         <Text style={[roboto.bodyMediumBold, hostelCardStyles.agentMargin]}>{`${hostel.vendor_info?.username}`}</Text>
                         <View style={[hostelCardStyles.stars, hostelCardStyles.agentMargin]}>

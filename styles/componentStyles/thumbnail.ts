@@ -25,7 +25,10 @@ export const thumbnailStyles = StyleSheet.create({
 
     txtV: {
         flexDirection: "row",
-        justifyContent: "space-between"
+        justifyContent: "space-between",
+        position: 'absolute',
+        width: '100%',
+        padding: moderateScale(8)
     },
 
     bgStyle: {

@@ -215,7 +215,7 @@ export default function HostelDetails() {
                     <View style={idStyles.swipeV}>
                         <View style={idStyles.picV}>
                             <TouchableOpacity onPress={() => setMediaOpen(true)}>
-                                <ExpoImage key={currentImage} source={currentImage} style={idStyles.hostelImg} contentFit="cover" transition={0} />
+                                <ExpoImage key={currentImage} source={currentImage} style={idStyles.hostelImg} contentFit="cover" transition={0} cachePolicy="disk" />
                             </TouchableOpacity>
                             <View style={idStyles.galleryV}>
                                 <Text style={[idStyles.galleryTxt, roboto.caption]}>{idx + 1}/{imgLen}</Text>
@@ -317,7 +317,7 @@ export default function HostelDetails() {
                         </View>
                     </View>}
 
-                    {myId?.startsWith("usr") && <View style={idStyles.outerAgentV}>
+                    {/* {myId?.startsWith("usr") && <View style={idStyles.outerAgentV}>
                         <View style={[idStyles.innerAgentV, idStyles.innerFacilitiesV]}>
                             <Text style={roboto.bodyLarge}>Facilities</Text>
                             <View style={idStyles.facilitiesListV}>
@@ -326,7 +326,7 @@ export default function HostelDetails() {
                                 }
                             </View>
                         </View>
-                    </View>}
+                    </View>} */}
 
                     {myId?.startsWith('usr') && <View style={idStyles.outerAgentV}>
                         <Text style={roboto.bodyLargeBold}>More like this</Text>

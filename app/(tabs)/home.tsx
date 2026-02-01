@@ -343,6 +343,7 @@ export default function Home() {
 
             <Animated.View style={{
                 transform: [{ translateY: pullOffset }],
+                paddingBottom: 200
                 // flex: 1
             }}>
                 <FlatList
