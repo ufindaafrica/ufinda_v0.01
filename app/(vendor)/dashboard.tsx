@@ -7,7 +7,8 @@ import { lastMessageSentTime } from "@/deps/chatTime";
 import { getAgentData } from "@/services/agentInfo";
 import { getVendorInfo } from "@/services/getStudentInfo";
 import { dashboardStyles } from "@/styles/dashboard";
-import {globals, roboto } from "@/styles/globals";
+import { globals, roboto } from "@/styles/globals";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { getItemAsync } from "expo-secure-store";
 import { useEffect, useState } from "react";
@@ -22,23 +23,49 @@ export default function Dashboard() {
 
     useEffect(() => {
         const loadVendor = async () => {
-            const id = await getItemAsync('ID') ?? ''
-            
-            const listings = await getAgentData()
-            console.log(listings)
-            if (listings[0] != "200") {
-                // router.replace("/auth/login")
-                return
+            // get vendor's hostel listings
+            let listings: Array<any>
+
+            const existing_listings_raw = await AsyncStorage.getItem('LISTINGS') ?? "[]"
+            const existing_listings = JSON.parse(existing_listings_raw)
+
+            if (existing_listings.length === 0) {
+
+                console.log('refetching listings')
+
+                listings = await getAgentData()
+
+                if (listings[0] != "200") {
+                    return
+                } else {
+                    setVendorHostels(listings?.[1])
+                    await AsyncStorage.setItem('LISTINGS', JSON.stringify(listings?.[1]))
+                }
             } else {
-                setVendorHostels(listings?.[1])
+                setVendorHostels(existing_listings)
             }
 
-            const vendor = await getVendorInfo()
-            console.log(vendor)
-            if (vendor[0] != "200") {
-                router.replace("/auth/login")
+
+            // now get vendor"s info
+            let vendor: any
+
+            const vendor_raw = await AsyncStorage.getItem('VENDOR_INFO') ?? '{}'
+            vendor = JSON.parse(vendor_raw)
+
+            if (Object.keys(vendor).length === 0) {
+                console.log("refetching vendor")
+
+                vendor = await getVendorInfo()
+                console.log(vendor)
+
+                if (vendor[0] != "200") {
+                    return
+                } else {
+                    setVendor(vendor?.[1])
+                    AsyncStorage.setItem('VENDOR_INFO', JSON.stringify(vendor?.[1]))
+                }
             } else {
-                setVendor(vendor?.[1])
+                setVendor(vendor)
             }
         }
 
@@ -125,14 +152,14 @@ export default function Dashboard() {
 
                 <LineBreak />
 
-                <View style={[dashboardStyles.padding, {paddingBottom: 0}]}>
+                <View style={[dashboardStyles.padding, { paddingBottom: 0 }]}>
                     <Text style={roboto.titleSmallBold}>Metrics</Text>
                 </View>
 
-                <View style={[dashboardStyles.listingsV, {padding: 16}]}>
+                <View style={[dashboardStyles.listingsV, { padding: 16 }]}>
                     {
                         metrics.map((item, idx) => <View key={idx} style={dashboardStyles.eachListing}>
-                            <Text style={[roboto.bodyMediumBold, { color: "#546881"}]}>{item[0]}</Text>
+                            <Text style={[roboto.bodyMediumBold, { color: "#546881" }]}>{item[0]}</Text>
                             <Image source={item[1]} style={dashboardStyles.metricImg} />
                             <Text style={[roboto.headingLargeBold, dashboardStyles.metricT]}>{item[2]}</Text>
                         </View>)

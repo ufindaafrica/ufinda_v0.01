@@ -2,6 +2,7 @@ import axios from "axios"
 import { BASE_URL, getAccessToken, getRefreshToken, timeout } from "./apiConstants"
 import { deleteItemAsync } from "expo-secure-store"
 import { api } from "./apiClient"
+import AsyncStorage from "@react-native-async-storage/async-storage"
 
 export const logOut = async () => {
 
@@ -26,6 +27,8 @@ export const logOut = async () => {
         await deleteItemAsync('ID')
         await deleteItemAsync('ROLE')
         await deleteItemAsync('PROFILE')
+        await AsyncStorage.removeItem('LISTINGS')
+        await AsyncStorage.removeItem('VENDOR_INFO')
     } catch (err: unknown) {
 
         if (axios.isAxiosError(err)) {
