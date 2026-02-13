@@ -25,7 +25,7 @@ export default function VendorAppHeader ({ firstName, profileImg } : VendorAppHe
                 <TouchableOpacity style={[vendorAppHeader.bellButton, vendorAppHeader.roundV]}>
                     <Image source={images.bell} style={vendorAppHeader.bellImg} />
                 </TouchableOpacity>
-                <TouchableOpacity style={[vendorAppHeader.roundV]}>
+                <TouchableOpacity onPress={() => router.push("/(vendor)/profile")} style={[vendorAppHeader.roundV]}>
                     <Image source={profileImg ? {uri: profileImg} : images.user0} style={vendorAppHeader.roundV} />
                 </TouchableOpacity>
             </View>
