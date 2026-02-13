@@ -13,7 +13,7 @@ import { studentKyc, vendorKyc } from "@/services/studentKyc";
 import { colors, globals, roboto } from "@/styles/globals";
 import { idStyles } from "@/styles/id";
 import { router } from "expo-router";
-import { getItemAsync } from "expo-secure-store";
+import { getItemAsync, setItemAsync } from "expo-secure-store";
 import { useEffect, useRef, useState } from "react";
 import { Keyboard, KeyboardAvoidingView, Platform, Text, TextInput } from "react-native";
 import { View } from "react-native";
@@ -35,6 +35,23 @@ export default function ChangePassword() {
     const onSubmit = async () => {
         setLoaderVisible(true)
 
+        const now = new Date().toUTCString()
+        const before = await getItemAsync('PASSWORD_CHANGE') ?? ""
+
+        if (before != '') {
+            const nowDate = new Date(now)
+            const beforeDate = new Date(before)
+
+            const diff = Math.abs(nowDate.getTime() - beforeDate.getTime())
+            const diffDays = Math.ceil(diff/(1000 * 60 * 60 * 24))
+
+            if (diffDays < 3) {
+                setLoaderVisible(false)
+                toast("it has been less than 3 days since you changed your password.")
+                return
+            }
+        }
+
         if (oldPassword == newPassword) {
             toast("new password cannot be the same as old password")
             setLoaderVisible(false)
@@ -49,14 +66,19 @@ export default function ChangePassword() {
 
         const update = await changePassword(oldPassword, newPassword)
 
+        console.log(new Date().toUTCString())
+
+        // console.log(update)
+
         if (update[0] != '200') {
             setLoaderVisible(false)
             seterrorModal(true)
             setErrorText(update[1])
         } else {
+            await setItemAsync('PASSWORD_CHANGE', new Date().toDateString())
             setLoaderVisible(false)
             setCorrectModal(true)
-            setCorrectText(update[1])
+            setCorrectText(update[1]["message"])
         }
     }
 

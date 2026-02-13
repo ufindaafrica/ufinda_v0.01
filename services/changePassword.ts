@@ -6,7 +6,7 @@ export const changePassword = async (oldPassword: string, newPassword: string) =
     const result: Array<any> = []
 
     try {
-        const res = await api.post(
+        const res = await api.patch(
             `/auth/change-pwd`,
             {
                 old_password: oldPassword,
@@ -20,7 +20,7 @@ export const changePassword = async (oldPassword: string, newPassword: string) =
         )
 
         result[0] = '200',
-            result[1] = res.data
+        result[1] = res.data
     } catch (err) {
         if (axios.isAxiosError(err)) {
 
