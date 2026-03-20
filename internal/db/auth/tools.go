@@ -3,6 +3,7 @@ package authdb
 import (
 	"fmt"
 	"errors"
+	"strings"
 	"net/http"
 	"io"
 	"log"
@@ -10,6 +11,14 @@ import (
 	"net/url"
 	"encoding/json"
 )
+
+type PostgrestError struct {
+    Message string `json:"message"`
+    Code    string `json:"code"`
+    Details string `json:"details"`
+    Hint    string `json:"hint"`
+}
+
 // <-------------------------> Begin Error Tools <---------------------------->
 var (
 	ErrGettingUser = errors.New("Failed to get user")
@@ -23,23 +32,54 @@ var (
 // <-------------------------------> Begin User Creation, Search, Update and Delete Tools <-------------------------------------->
 
 func InsertPendingUser(pendinguser *db.PendingUser) error {
-	endpoint := fmt.Sprintf("/rest/v1/pending_users")
+    // 1. PRE-CHECK: Is the username already taken in the main 'users' table?
+    if pendinguser.UserName != nil && *pendinguser.UserName != "" {
+        // Query the main users table for this specific username
+        // PostgREST syntax: /users?username=eq.the_name&select=id
+        checkEndpoint := fmt.Sprintf("/rest/v1/users?username=eq.%s&select=id", *pendinguser.UserName)
+        
+        checkResp, err := db.MakeDBRequest("GET", checkEndpoint, nil, nil)
+        if err != nil {
+            log.Printf("[ERROR] Failed to check username existence: %v", err)
+            return errors.New("service temporarily unavailable")
+        }
+        defer checkResp.Body.Close()
 
-	resp, err := db.MakeDBRequest("POST", endpoint, pendinguser, nil)
-	if err != nil {
-		log.Printf("[CRITICAL] DB Error: %v", err)
-		return ErrUserCreateFailed
-	}
-	defer resp.Body.Close()
+        // PostgREST returns an array. If the array is not empty (length > 2), it exists.
+        bodyBytes, _ := io.ReadAll(checkResp.Body)
+        if string(bodyBytes) != "[]" {
+            return errors.New("this username is already taken by a verified user")
+        }
+    }
 
-	if resp.StatusCode != http.StatusCreated {
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		bodyString := string(bodyBytes)
-		log.Printf("[CRITICAL] failed to create pending user. Status: %d, Response Body: %s", resp.StatusCode, bodyString)	
-		return ErrUserCreateFailed
-	}
+    // 2. INSERT: If check passes, proceed to save in pending_users
+    endpoint := "/rest/v1/pending_users"
+    resp, err := db.MakeDBRequest("POST", endpoint, pendinguser, nil)
+    if err != nil {
+        log.Printf("[CRITICAL] DB Connection Error: %v", err)
+        return errors.New("could not connect to database")
+    }
+    defer resp.Body.Close()
 
-	return nil
+    if resp.StatusCode != http.StatusCreated {
+        var pgErr PostgrestError // Use the struct we defined earlier
+        bodyBytes, _ := io.ReadAll(resp.Body)
+        json.Unmarshal(bodyBytes, &pgErr)
+
+        // Handle Database Constraint Errors (like the Vendor Username rule)
+        if strings.Contains(pgErr.Message, "pending_username_role_check") {
+            return errors.New("vendors must provide a valid username")
+        }
+
+        // Handle Duplicate Email in pending_users
+        if pgErr.Code == "23505" {
+            return errors.New("this email is already registered")
+        }
+
+        return errors.New("registration failed, please try again")
+    }
+
+    return nil
 }
 
 // update pending user record

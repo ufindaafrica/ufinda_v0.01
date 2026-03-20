@@ -68,13 +68,20 @@ func EmailSignUpHandler(c *gin.Context) {
 		return
 	}
 
+	var pendingUserName *string
+	if req.UserName != nil && strings.TrimSpace(*req.UserName) != "" {
+    cleanName := strings.ToLower(strings.TrimSpace(*req.UserName))
+    pendingUserName = &cleanName
+	} else {
+		pendingUserName = nil
+	}
 	pendinguser := db.PendingUser {
 		Email: req.Email,
 		Password: string(hashedPwd),
 		OTP: otp,
 		Role: req.Role,
 		FirstName: req.FirstName,
-		UserName: req.UserName,
+		UserName: pendingUserName,
 		LastName: req.LastName,
 		Phone: req.Phone,
 		ExpiresAt: time.Now().Add(15 * time.Minute),
@@ -82,7 +89,22 @@ func EmailSignUpHandler(c *gin.Context) {
 
 	// create a pending user
 	if err := authdb.InsertPendingUser(&pendinguser); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		// List of friendly errors we defined above
+		userFriendlyErrors := []string{
+			"vendors must provide a valid username",
+			"this email is already registered",
+			"this username is already taken",
+		}
+
+		for _, msg := range userFriendlyErrors {
+			if strings.Contains(err.Error(), msg) {
+				c.JSON(http.StatusBadRequest, gin.H{"error": msg})
+				return
+			}
+		}
+
+		// If it's not a known user error, send a 500
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "An unexpected error occurred"})
 		return
 	}
 
