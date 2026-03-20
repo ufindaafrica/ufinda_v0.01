@@ -39,5 +39,7 @@ export const verifyOtp = async (data : any) => {
 
     }
 
+    console.log(result)
+
     return result
 }

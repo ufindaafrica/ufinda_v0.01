@@ -34,6 +34,7 @@ export default function SignUp() {
     const phoneRef = useRef<TextInput | null>(null)
     const passwordRef = useRef<TextInput | null>(null)
     const confirmPasswordRef = useRef<TextInput | null>(null)
+    const usernameRef = useRef<TextInput | null>(null)
 
     const scrollRef = useRef<KeyboardAwareScrollView | null>(null)
 
@@ -50,6 +51,7 @@ export default function SignUp() {
     const [phone, setPhone] = useState("")
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
+    const [username, setUsername] = useState("")
 
     const [passwordStrength, setPasswordStrength] = useState("low")
     const [specialChar, setSpecialChar] = useState(false)
@@ -151,7 +153,8 @@ export default function SignUp() {
             email: email.trim().toLowerCase(),
             phone: "+234" + phone.trim().slice(),
             password: password.trim(),
-            role: role ? role : "user"
+            role: role ? role : "user",
+            username: username.trim()
         }
 
         console.log(newUser)
@@ -162,7 +165,7 @@ export default function SignUp() {
 
         setLoaderVisible(false)
 
-        if (result[0] === "201") {
+        if (result[0] === "201" || result[0] == "400") {
             router.push('/auth/otp')
         } else {
 
@@ -266,11 +269,23 @@ export default function SignUp() {
                             label="Phone (eg. 08000000000)"
                             hint="08000000000"
                             returnKeyType="next"
-                            onSubmitEditing={() => focusNext(passwordRef)}
+                            onSubmitEditing={() => role === "user" ? focusNext(passwordRef) : focusNext(usernameRef)}
                             keyboardType="numeric"
                             onChangeText={(text) => { setPhone(text); validatePhone(text) }}
                             invalid={invalidPhone} />
                     </View>
+
+                    {
+                        role === "vendor" ? <View style={signupStyles.formPadding}>
+                            <Input
+                                ref={usernameRef}
+                                label="Username"
+                                hint="topnotch_vendor"
+                                returnKeyType="next"
+                                onSubmitEditing={() => focusNext(passwordRef)}
+                                onChangeText={(text) => { setUsername(text) }} />
+                        </View> : null
+                    }
 
                     <View style={signupStyles.formPadding}>
                         <Input

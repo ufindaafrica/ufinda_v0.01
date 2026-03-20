@@ -1,14 +1,13 @@
 import CircleProgress from "@/components/circleProgress";
 import Plus from "@/components/plus";
 import Search from "@/components/search";
-import { AgentHostels } from "@/constants/dummy_data";
 import { images } from "@/constants/images";
 import { lastMessageSentTime } from "@/deps/chatTime";
 import { getAgentData } from "@/services/agentInfo";
 import { adsStyles } from "@/styles/componentStyles/ads";
 import { colors, globals, roboto } from "@/styles/globals";
 import { homeStyles } from "@/styles/home";
-import { router } from "expo-router";
+import { EnrichedHostel } from "@/types";
 import { useEffect, useState } from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
@@ -16,12 +15,26 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Ads() {
 
-    const [current, setCurrent] = useState("all")
 
-    const [vendorHostels, setVendorHostels] = useState<any>()
+    type CurrentFilter = "all" | "open" | "closed"
+
+    const [current, setCurrent] = useState<CurrentFilter>("all")
+
+    const [vendorHostels, setVendorHostels] = useState<Array<EnrichedHostel> | null>()
     const [allHostels, setAllHostels] = useState(0)
     const [openHostels, setOpenHostels] = useState(0)
     const [closedHostels, setClosedHostels] = useState(0)
+
+    const [openHostelsList, setOpenHostelsList] = useState<Array<EnrichedHostel> | null>()
+    const [closedHostelsList, setClosedHostelsList] = useState<Array<EnrichedHostel> | null>()
+
+    const currentMap = {
+        all: vendorHostels,
+        open: openHostelsList,
+        closed: closedHostelsList
+    }
+
+    const activeCurrent = currentMap[current] ?? []
 
     useEffect(() => {
         const loadVendor = async () => {
@@ -41,8 +54,21 @@ export default function Ads() {
 
     useEffect(() => {
         setAllHostels(vendorHostels?.length ?? 0)
-        setOpenHostels((vendorHostels?.filter((item: any) => (item?.available_rooms ?? 0) < (item?.total_hostel_rooms ?? 0)))?.length ?? 0)
-        setClosedHostels((vendorHostels?.filter((item: any) => (item?.available_rooms ?? 0) >= (item?.total_hostel_rooms ?? 0)))?.length ?? 0)
+        setOpenHostels((vendorHostels?.filter((item: any) => (item?.available_rooms ?? 0) > 0))?.length ?? 0)
+        setClosedHostels((vendorHostels?.filter((item: any) => (item?.available_rooms ?? 0) <= 0))?.length ?? 0)
+
+        let openHostelsL: Array<EnrichedHostel> = []
+        let closedHostelsL: Array<EnrichedHostel> = []
+
+        vendorHostels?.forEach((item: EnrichedHostel) => {
+            if ((item?.available_rooms ?? 0) > 0) openHostelsL.push(item)
+            else closedHostelsL.push(item)
+
+            console.log(item?.available_rooms)
+        })
+
+        setOpenHostelsList(openHostelsL)
+        setClosedHostelsList(closedHostelsL)
     }, [vendorHostels])
 
     return (
@@ -81,7 +107,7 @@ export default function Ads() {
                 </TouchableOpacity>
 
                 {
-                    vendorHostels?.map((item:any, idx:number) => <TouchableOpacity onPress={() => item?.id && router.push({ pathname: "/hostel/[id]", params: { id: String(item.id) } })} key={idx} style={[adsStyles.headerV, adsStyles.eachAd, adsStyles.layoutMarginSmall]}>
+                    activeCurrent.map((item:any, idx:number) => <TouchableOpacity key={idx} style={[adsStyles.headerV, adsStyles.eachAd, adsStyles.layoutMarginSmall]}>
                         <View style={adsStyles.leftV}>
                             <View>
                                 <Text style={[roboto.titleSmallBold, adsStyles.blackText]}>{item?.title ?? ""}</Text>

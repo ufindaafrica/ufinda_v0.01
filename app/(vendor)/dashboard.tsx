@@ -121,7 +121,7 @@ export default function Dashboard() {
 
                                 const remaining = Math.floor((((item?.total_hostel_rooms ?? 0) - (item?.available_rooms ?? 0)) / (item.total_hostel_rooms ?? 0)) * 143)
 
-                                return (<TouchableOpacity onPress={() => item?.id && router.push({ pathname: "/hostel/[id]", params: { id: String(item.id) } })} key={idx} style={[dashboardStyles.eachListing]}>
+                                return (<TouchableOpacity key={idx} style={[dashboardStyles.eachListing]}>
                                     <View>
                                         <Text style={[roboto.bodyMediumBold]}>{item?.title ?? ""}</Text>
                                         <Text style={[roboto.caption, dashboardStyles.postedT]}>{`posted: ${lastMessageSentTime(item?.created_at)}`}</Text>

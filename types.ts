@@ -7,6 +7,7 @@ export type EnrichedHostel = {
     id: string,
     kitchen_access: 'personal' | 'public',
     landlord_resides: 'yes' | 'no',
+    power_supply: string,
     location: string,
     rent_per_year: number,
     room_type: string,
@@ -18,7 +19,7 @@ export type EnrichedHostel = {
     updated_at: string,
     vendor_id: string,
     vendor_info?: VendorInfo,
-    available_hostels: number,
+    available_rooms: number,
     geolocation: LocationObj
 }
 
