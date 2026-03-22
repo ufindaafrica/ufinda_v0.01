@@ -77,7 +77,7 @@ type Hostel struct {
 	LandlordResides  string      `json:"landlord_resides" binding:"required"`
 	TotalHostelRooms int       `json:"total_hostel_rooms"`
 	PowerSupply string `json:"power_supply"`
-	AvailableRooms int `json:"available_rooms" binding:"required,gte=1"`
+	AvailableRooms *int `json:"available_rooms" binding:"required,gt=1"`
 	RoommatesAllowed string      `json:"roommates_allowed" binding:"required"`
 	KitchenAccess    string    `json:"kitchen_access" binding:"required"`
 	ToiletAccess     string      `json:"toilet_access" binding:"required"`

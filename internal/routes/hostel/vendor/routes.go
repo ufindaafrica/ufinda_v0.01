@@ -15,6 +15,7 @@ import (
 	"github.com/oladev/ufinda_v0.01/internal/db"
 	"github.com/oladev/ufinda_v0.01/internal/db/hostel"
 	"github.com/oladev/ufinda_v0.01/internal/logs/auth"
+	"github.com/go-playground/validator/v10"
 	"github.com/oladev/ufinda_v0.01/internal/token"
 	"github.com/oladev/ufinda_v0.01/internal/logs/hostel"
 )
@@ -39,6 +40,13 @@ func CreateHostelHandler() gin.HandlerFunc {
 		// 2. Bind JSON Payload
 		var req CreateHostelRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
+			var ve validator.ValidationErrors
+			if errors.As(err, &ve) {
+				// Just grab the first error to keep the UI clean
+				msg := getErrorMessage(ve[0])
+				c.JSON(http.StatusBadRequest, gin.H{"error": msg})
+				return
+			}
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
