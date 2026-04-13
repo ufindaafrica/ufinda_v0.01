@@ -38,10 +38,16 @@ func InitDB() {
 
 	client := &http.Client{Timeout: 20 * time.Second}
 	resp, err := client.Do(req)
-	if err != nil || resp.StatusCode != 200 {
-		panic("❌ Cannot connect to Supabase")
+	if err != nil {
+		log.Fatalf("❌ Network Error: %v", err)
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		body, _ := io.ReadAll(resp.Body)
+		// This will print "401 Unauthorized" or "503 Service Unavailable" etc.
+		log.Fatalf("❌ Supabase Error | Status: %d | Body: %s", resp.StatusCode, string(body))
+	}
 
 	fmt.Println("✅ Connected to Supabase REST API")
 }
