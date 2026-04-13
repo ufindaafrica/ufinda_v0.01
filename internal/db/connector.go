@@ -10,6 +10,7 @@ import (
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 	"os"
+	"log"
 	"time"
 	"github.com/go-redis/redis/v8"
 )
@@ -34,7 +35,7 @@ func InitDB() {
 
 	// Test database connection
 	req, _ := http.NewRequest("GET", BaseURL+"/rest/v1/", nil)
-	req.Header.Set("apikey", APIKey)
+	req.Header.Set("apikey", ServiceRoleKey)
 
 	client := &http.Client{Timeout: 20 * time.Second}
 	resp, err := client.Do(req)
