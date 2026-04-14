@@ -8,7 +8,8 @@ export const drawerStyles = StyleSheet.create({
         width: "100%",
         position: "absolute",
         top: 0,
-        left: 0
+        left: 0,
+        zIndex: 100
     },
 
     animated: {

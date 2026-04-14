@@ -36,7 +36,7 @@ export default function Dashboard() {
                 listings = await getAgentData()
 
                 if (listings[0] != "200") {
-                    return
+                    // null
                 } else {
                     setVendorHostels(listings?.[1])
                     await AsyncStorage.setItem('LISTINGS', JSON.stringify(listings?.[1]))
@@ -51,6 +51,7 @@ export default function Dashboard() {
 
             const vendor_raw = await AsyncStorage.getItem('VENDOR_INFO') ?? '{}'
             vendor = JSON.parse(vendor_raw)
+            console.log(vendor)
 
             if (Object.keys(vendor).length === 0) {
                 console.log("refetching vendor")
@@ -66,6 +67,7 @@ export default function Dashboard() {
                 }
             } else {
                 setVendor(vendor)
+                console.log(vendor)
             }
         }
 
@@ -102,7 +104,7 @@ export default function Dashboard() {
         <SafeAreaView style={[globals.vendorContainer]}>
             <Plus />
 
-            <VendorAppHeader firstName={vendor?.first_name} profileImg={vendor?.kyc_data?.url} />
+            <VendorAppHeader firstName={vendor?.first_name} profileImg={vendor?.kyc_data?.profile_img?.url} />
 
             <ScrollView contentContainerStyle={dashboardStyles.scrollV} showsVerticalScrollIndicator={false}>
                 <LineBreak />

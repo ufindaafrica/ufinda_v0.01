@@ -1,3 +1,4 @@
+import AppHeader from "@/components/appHeader";
 import ChatAppHeader from "@/components/chatAppHeader";
 import LineBreak from "@/components/lineBreak";
 import Plus from "@/components/plus";
@@ -9,6 +10,7 @@ import { getAllChats } from "@/services/allChats";
 import { getStudentInfo, getVendorInfo } from "@/services/getStudentInfo";
 import { chatStyles } from "@/styles/chat";
 import { colors, globals, roboto } from "@/styles/globals";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useFocusEffect } from "expo-router";
 import { getItemAsync } from "expo-secure-store";
 import { useCallback, useEffect, useState } from "react";
@@ -60,11 +62,11 @@ export default function VendorChat({ student }: VendorChatProps) {
     // }, []))
 
     const currentChats = () => {
-        if (activated === "Unread") return allChats.filter(item => (item.last_message?.is_read == false && item.last_message?.sender_id !== myId))
+        // if (activated === "Unread") return allChats.filter(item => (item.last_message?.is_read == false && item.last_message?.sender_id !== myId))
 
-        if (activated === "Read") return allChats.filter(item => item.last_message?.is_read == true && item.last_message?.sender_id === myId)
+        // if (activated === "Read") return allChats.filter(item => item.last_message?.is_read == true && item.last_message?.sender_id === myId)
 
-        if (activated === "Sent") return allChats.filter(item => item.last_message?.sender_id === myId)
+        // if (activated === "Sent") return allChats.filter(item => item.last_message?.sender_id === myId)
 
         return allChats
     }
@@ -102,11 +104,21 @@ export default function VendorChat({ student }: VendorChatProps) {
         const getChats = async () => {
             if (!myId) return
 
-            const everyChat = (await getAllChats())[1] ?? []
+            let everyChat = []
+
+            const storedChats = JSON.parse(await AsyncStorage.getItem('ALL_CHATS') ?? "[]")
+
+            if (storedChats.length == 0) {
+                everyChat = (await getAllChats())[1] ?? []
+                await AsyncStorage.setItem('ALL_CHATS', JSON.stringify(everyChat))
+            } else {
+                everyChat = storedChats
+            }
+
             console.log(everyChat)
-            
+
             const peopleInChats: Array<string> = everyChat?.map((chat: any) => chat?.buyer_id === myId ? chat?.vendor_id : chat?.buyer_id) ?? []
-            
+
             await Promise.all(
                 peopleInChats.map(personId => chatMateInfo(personId))
             )
@@ -140,17 +152,17 @@ export default function VendorChat({ student }: VendorChatProps) {
             }
 
             <View style={[chatStyles.padding]}>
-                <ChatAppHeader />
+                <AppHeader hostel />
             </View>
 
-            <View style={chatStyles.chatOptionsV}>
+            {/* <View style={chatStyles.chatOptionsV}>
                 {
                     ["All", "Unread", "Read", "Sent"].map((item, idx) =>
                         <TouchableOpacity onPress={() => setActivated(item)} key={idx} style={[chatStyles.eachOption, (activated === item) && chatStyles.activated]}>
                             <Text style={[roboto.bodyMedium, colors.foundationPrimaryNormal, (activated === item) && colors.white]}>{item ?? ""}</Text>
                         </TouchableOpacity>)
                 }
-            </View>
+            </View> */}
 
             <ScrollView contentContainerStyle={chatStyles.scrollV}>
                 <LineBreak />
@@ -180,7 +192,7 @@ export default function VendorChat({ student }: VendorChatProps) {
                                             {
                                                 (item?.unread_count ?? 0) > 0 ? null : (item?.last_message?.sender_id ?? "") === myId && <Image source={(item?.unread_count ?? 0) > 0 ? null : item?.last_message?.is_read ? images.greenTicks : images.twoticks} style={chatStyles.tick} />
                                             }
-                                            <Text style={[roboto.bodySmall, colors.grays]}>{item?.last_message?.message_type === "image" ? "📸 Picture" : item?.last_message?.content ?? ""}</Text>
+                                            <Text style={[roboto.bodySmall, colors.grays]}>{item?.last_message?.message_type === "image" ? "📸 Picture" : ((item?.last_message?.content?.length ?? 0) > 40 ? item?.last_message?.content?.slice(0, 40) + "..." : item?.last_message?.content) ?? ""}</Text>
                                         </View>
                                     </View>
                                     <View>

@@ -12,9 +12,9 @@ export default function ChatAppHeader() {
                 <Image source={images.menu} style={chatAppHeaderStyles.img} />
             </TouchableOpacity>
 
-            <View style={chatAppHeaderStyles.searchV}>
+            {/* <View style={chatAppHeaderStyles.searchV}>
                 <Search />
-            </View>
+            </View> */}
 
             <TouchableOpacity style={chatAppHeaderStyles.imgV}>
                 <Image source={images.bell} style={chatAppHeaderStyles.img} />

@@ -22,6 +22,8 @@ export const logOut = async () => {
         result[0] = "200"
         result[1] = res.data
 
+        // when logging out 
+        
         await deleteItemAsync("ACCESS_TOKEN")
         await deleteItemAsync("REFRESH_TOKEN")
         await deleteItemAsync('ID')
@@ -29,6 +31,9 @@ export const logOut = async () => {
         await deleteItemAsync('PROFILE')
         await AsyncStorage.removeItem('LISTINGS')
         await AsyncStorage.removeItem('VENDOR_INFO')
+        await AsyncStorage.removeItem('ALL_CHATS')
+
+        // is there a single command that will clear everything stored in expo secure store, likewise for async storage
     } catch (err: unknown) {
 
         if (axios.isAxiosError(err)) {
