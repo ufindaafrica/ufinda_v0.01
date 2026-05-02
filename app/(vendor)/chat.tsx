@@ -152,7 +152,7 @@ export default function VendorChat({ student }: VendorChatProps) {
             }
 
             <View style={[chatStyles.padding]}>
-                <AppHeader hostel />
+                <ChatAppHeader />
             </View>
 
             {/* <View style={chatStyles.chatOptionsV}>

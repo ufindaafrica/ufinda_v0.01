@@ -57,7 +57,7 @@ export default function MemberProfile() {
                 const existingInfo = JSON.parse(existingInfoRaw)
                 if (existingInfo) {
                     setName(`${existingInfo?.first_name ?? ""} ${existingInfo?.last_name ?? ""}`)
-                    setProfileImg(`${existingInfo?.kyc_data?.profile_img?.url ?? ""}`)
+                    setProfileImg(`${existingInfo?.img_url ?? ""}`)
                     return
                 }
             }

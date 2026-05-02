@@ -374,6 +374,7 @@ export default function SingleChat() {
             const mes = await getChatMessages({ room_id: idString })
             if (mes[0] == "200") {
                 setAllMessages(mes[1])
+                console.log(mes[1])
             }
         }
 

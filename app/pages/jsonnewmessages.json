@@ -1,0 +1,58 @@
+[
+    {
+        "buyer_id": "usr-142408", 
+        "id": "00ae18e6-e005-463b-9e11-fd0ed0bc9825", 
+        "last_message": {
+            "chat_room_id": "00ae18e6-e005-463b-9e11-fd0ed0bc9825", 
+            "content": "file:///data/user/0/host.exp.exponent/cache/ImagePicker/1c9d4287-fd05-4d2b-9c66-5fb069913329.jpeg", "created_at": "2026-03-20T14:01:13.917726Z", 
+            "delivered_at": "2026-03-20T14:11:19.669447Z", 
+            "id": "50dc10bf-fa28-4c5d-927c-03bb05bdff2e", 
+            "is_read": true, 
+            "message_type": "text", 
+            "sender_id": "vnd-698389"}, 
+        "unread_count": 0, 
+        "vendor_id": "vnd-698389"}, 
+    {
+        "buyer_id": "usr-142408", 
+        "id": "3739da08-62a1-46d9-9bd9-6c6194e82863", 
+        "last_message": {
+            "chat_room_id": "3739da08-62a1-46d9-9bd9-6c6194e82863", 
+            "content": "Okay", 
+            "created_at": "2026-01-12T14:20:14.060811Z", 
+            "delivered_at": "2026-03-20T13:46:25.135875Z", 
+            "id": "65aff3ca-b155-4803-9bef-9e35fcddc450", 
+            "is_read": true, 
+            "message_type": "text", 
+            "sender_id": "vnd-613797"}, 
+        "new_changes": null, 
+        "unread_count": 0, 
+        "vendor_id": "vnd-613797"}, 
+    {
+        "buyer_id": "usr-142408", 
+        "id": "10d6f6d5-1402-4764-b383-a8ea2c032ed2", 
+        "last_message": {
+            "chat_room_id": "10d6f6d5-1402-4764-b383-a8ea2c032ed2", 
+            "content": "Final price?", 
+            "created_at": "2025-12-30T15:17:25.774622Z", 
+            "id": "71f5e683-1725-4b7e-a434-58ed89c56839", 
+            "is_read": false, 
+            "message_type": "text", 
+            "sender_id": "usr-142408"}, 
+        "unread_count": 0, 
+        "vendor_id": "vnd-452096"}, 
+    {
+        "buyer_id": "usr-142408", 
+        "id": "e0bc2f9a-2c3c-441d-a236-e2bbc62dba9d", 
+        "last_message": {
+            "chat_room_id": "e0bc2f9a-2c3c-441d-a236-e2bbc62dba9d", 
+            "content": "Hi Rose", 
+            "created_at": "2025-12-21T10:09:12.161533Z", 
+            "id": "5ff9bd0a-93e2-434a-84cc-92be68a033cb", 
+            "is_read": false, 
+            "message_type": "text", 
+            "sender_id": "usr-142408"}, 
+        "unread_count": 0, 
+        "vendor_id": "vnd-683718"}
+]
+
+
