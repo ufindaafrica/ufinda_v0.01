@@ -114,7 +114,7 @@ export default function MemberProfile() {
                 <Setting setting="Change password" icon settingFun={() => router.push("/pages/changePassword")} />
                 <Setting setting="Theme" icon value="Device theme" />
                 <TouchableOpacity onPress={signOut}>
-                    <Text style={[roboto.bodyMedium, { color: 'red' }, singleChatStyles.settings]}>Sign out</Text>
+                    <Text style={[roboto.bodyMedium, { color: 'yellow' }, singleChatStyles.settings]}>Sign out</Text>
                 </TouchableOpacity>
             </View>
 
