@@ -28,23 +28,21 @@ export default function Dashboard() {
 
             const existing_listings_raw = await AsyncStorage.getItem('LISTINGS') ?? "[]"
             const existing_listings = JSON.parse(existing_listings_raw)
+            setVendorHostels(existing_listings)
 
-            if (existing_listings.length === 0) {
-
-                console.log('refetching listings')
-
+            try {
                 listings = await getAgentData()
-
-                if (listings[0] != "200") {
-                    // null
-                } else {
-                    setVendorHostels(listings?.[1])
+                if (listings[0] == "200") {
                     await AsyncStorage.setItem('LISTINGS', JSON.stringify(listings?.[1]))
+                    setVendorHostels(listings?.[1])
                 }
-            } else {
-                setVendorHostels(existing_listings)
-            }
 
+                // WEB SOCKET HERE
+
+                
+            } catch {
+                return
+            }
 
             // now get vendor"s info
             let vendor: any

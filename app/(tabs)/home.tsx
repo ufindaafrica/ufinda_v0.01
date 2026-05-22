@@ -246,6 +246,10 @@ export default function Home() {
 
         if (apiHostels[0] == '200') {
             setHostels(apiHostels[1])
+
+            // WEB SOCKET CONNECTION HERE
+            
+
             // await AsyncStorage.setItem('HOSTELS', JSON.stringify(apiHostels[1]))
         } else {
             router.replace("/auth/login")

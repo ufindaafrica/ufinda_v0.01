@@ -1,3 +1,52 @@
+# Welcome to uFinda
+
+uFinda is a mobile app that connects students with hostel agents and vendors selling other products. The main focus is helping students get hostel accomodations. But, the other major aspect is connecting students with vendors selling other products near them. 
+
+
+Right now, a lot of the hostel flows are complete, with mostly optimizations going on. But, the other products/shop side hasn't been started yet. 
+
+
+## The Stack
+
+uFinda is a React Native project built with the Expo framework.
+
+
+## Set up
+
+1. Clone the mobile branch of this repo
+
+2. Navigate into the folder
+
+3. Install dependencies
+
+   ```bash
+   npm install
+   ```
+
+4. Start the app (Expo version. Also, faster.)
+
+   ```bash
+   npx expo start
+   ```
+
+
+
+You can create a dev build, which is recommended. To do that, assuming you already have eas installed:
+
+```bash
+eas build --profile development --platform android
+```
+
+When it's done, you'll download the latest dev build, and open it in your phone. Then, run:
+
+```bash
+npx expo start --dev-client
+```
+
+
+# Thanks
+
+
 # Welcome to your Expo app 👋
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).

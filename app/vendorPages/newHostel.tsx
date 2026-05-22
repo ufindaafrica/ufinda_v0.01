@@ -154,6 +154,7 @@ export default function NewHostel() {
                 total_hostel_rooms: totalRooms ?? 0,
                 rent_per_year: yearlyrent ?? 0,
                 location: address ?? "",
+                ...(power && { power_supply: power}),
                 ...(kitchen && { kitchen_access: kitchen }),
                 ...(toilet && { toilet_access: toilet }),
                 ...(landlord && { landlord_resides: landlord }),
