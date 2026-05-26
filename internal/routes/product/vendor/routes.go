@@ -45,14 +45,14 @@ func CreateProductHandler(asynqClient *asynq.Client) gin.HandlerFunc {
             return
         }
 
-        // Corrected variable name to match usage below
+        // accepting multiple images
         imageHeaders := form.File["product_images"]
         if len(imageHeaders) < 1 {
             c.JSON(http.StatusBadRequest, gin.H{"error": "no image provided"})
             return
         }
 
-        // Use c.FormFile for a single file or form.File["video"] for a slice
+        // accepting just a video
         videoHeader, _ := c.FormFile("product_video") 
 		var videoSlice []*multipart.FileHeader
 		if videoHeader != nil {
@@ -89,12 +89,10 @@ func CreateProductHandler(asynqClient *asynq.Client) gin.HandlerFunc {
 
         productID, err := token.GenerateRandomID("product", checkUniquenessFunc)
         if err != nil {
-            // Changed to log generic error or use product log
             c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate id"})
             return
         }
 
-        // Corrected: added the second '}' for map[string]interface{}{}
         data := map[string]interface{}{
             "p_id":          productID,
 			"p_vendor_id":	 getUser.ID,
