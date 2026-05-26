@@ -10,7 +10,7 @@ import { globals, roboto } from "@/styles/globals";
 import { idStyles } from "@/styles/id";
 import { signupStyles } from "@/styles/signup";
 import { router } from "expo-router";
-import { getItem, getItemAsync } from "expo-secure-store";
+import { getItemAsync } from "@/deps/secureStorage";
 import { useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView, useSafeAreaFrame } from "react-native-safe-area-context";

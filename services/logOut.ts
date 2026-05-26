@@ -1,6 +1,6 @@
 import axios from "axios"
 import { BASE_URL, getAccessToken, getRefreshToken, timeout } from "./apiConstants"
-import { deleteItemAsync } from "expo-secure-store"
+import { deleteItemAsync } from "@/deps/secureStorage"
 import { api } from "./apiClient"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 

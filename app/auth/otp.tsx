@@ -9,7 +9,7 @@ import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Image, Keyboard, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import * as SecureStore from "expo-secure-store"
+import { getItemAsync } from "@/deps/secureStorage"
 import Loader from "@/components/loader";
 import ErrorModal from "@/components/errorModal";
 import { verifyOtp } from "@/services/verifyOtp";
@@ -22,9 +22,9 @@ export default function Otp() {
 
     useEffect(() => {
         const getUserEmail = async () => {
-            const email = await SecureStore.getItemAsync("EMAIL")
+            const email = await getItemAsync("EMAIL")
             setUserEmail(email)
-            const userMode = await SecureStore.getItemAsync("MODE")
+            const userMode = await getItemAsync("MODE")
             setMode(userMode)
         }
 

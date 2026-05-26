@@ -20,7 +20,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { handleNewChat } from "@/deps/handleNewChat";
 import { getRelatedHostels } from "@/services/relatedHostels";
 import { toast } from "@/deps/toast";
-import { getItemAsync } from "expo-secure-store";
+import { getItemAsync } from "@/deps/secureStorage";
 import { getAgentData, getAgentInfo } from "@/services/agentInfo";
 
 

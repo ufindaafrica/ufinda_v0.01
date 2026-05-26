@@ -1,4 +1,4 @@
-import { getItemAsync } from "expo-secure-store"
+import { getItemAsync } from "@/deps/secureStorage"
 
 
 export const BASE_URL = "https://ufinda-v0-01.onrender.com"

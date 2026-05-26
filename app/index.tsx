@@ -1,6 +1,6 @@
 import { useFonts as useRobotoFonts, Roboto_700Bold, Roboto_400Regular } from "@expo-google-fonts/roboto"
 import { router } from "expo-router";
-import * as SecureStore from "expo-secure-store";
+import { getItemAsync } from "@/deps/secureStorage";
 import { useEffect, useState } from "react";
 import Onboarding from "./onboarding";
 import Splash from "./splash";
@@ -41,8 +41,8 @@ export default function Index() {
   useEffect(() => {
     const navigate = async () => {
       if (!splashScreen && firstOpen === false) {
-        const auth = await SecureStore.getItemAsync('ACCESS_TOKEN')
-        const mode = await SecureStore.getItemAsync('ROLE')
+        const auth = await getItemAsync('ACCESS_TOKEN')
+        const mode = await getItemAsync('ROLE')
         if (auth == null) {
           console.log("auth null")
           router.replace("/auth/login")

@@ -1,6 +1,6 @@
 import axios from "axios"
 import { BASE_URL, timeout } from "./apiConstants"
-import { getItemAsync, setItemAsync } from "expo-secure-store"
+import { getItemAsync, setItemAsync } from "@/deps/secureStorage"
 import { router } from "expo-router"
 import { toast } from "@/deps/toast"
 

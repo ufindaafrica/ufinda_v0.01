@@ -10,7 +10,7 @@ import * as ImagePicker from "expo-image-picker"
 import { studentKyc, vendorKyc } from "@/services/studentKyc";
 import Loader from "@/components/loader";
 import ErrorModal from "@/components/errorModal";
-import { getItemAsync } from "expo-secure-store";
+import { getItemAsync } from "@/deps/secureStorage";
 import { userUploadSignature, vendorUploadSignature } from "@/services/uploadSignature";
 import { uploadToCloudinary } from "@/services/uploadToCloudinary";
 import { toast } from "@/deps/toast";

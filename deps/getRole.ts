@@ -1,4 +1,4 @@
-import { getItemAsync } from "expo-secure-store"
+import { getItemAsync } from "@/deps/secureStorage"
 
 
 export const getRole = async () => {

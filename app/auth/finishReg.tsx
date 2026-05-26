@@ -2,7 +2,7 @@ import { images } from "@/constants/images";
 import { roboto } from "@/styles/globals";
 import { picStyles } from "@/styles/pic";
 import { router } from "expo-router";
-import { getItemAsync } from "expo-secure-store";
+import { getItemAsync } from "@/deps/secureStorage";
 import { useEffect } from "react";
 import { Image, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";

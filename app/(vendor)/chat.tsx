@@ -12,7 +12,7 @@ import { chatStyles } from "@/styles/chat";
 import { colors, globals, roboto } from "@/styles/globals";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useFocusEffect } from "expo-router";
-import { getItemAsync } from "expo-secure-store";
+import { getItemAsync } from "@/deps/secureStorage";
 import { useCallback, useEffect, useState } from "react";
 import { Image, ImageBackground, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";

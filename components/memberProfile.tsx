@@ -13,7 +13,7 @@ import Loader from "./loader";
 import { toast } from "@/deps/toast";
 import { getRole } from "@/deps/getRole";
 import { getStudentInfo, getVendorInfo } from "@/services/getStudentInfo";
-import { getItemAsync, setItemAsync } from "expo-secure-store";
+import { getItemAsync, setItemAsync } from "@/deps/secureStorage";
 
 
 export default function MemberProfile() {

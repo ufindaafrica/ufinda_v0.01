@@ -13,7 +13,7 @@ import { studentKyc, vendorKyc } from "@/services/studentKyc";
 import { colors, globals, roboto } from "@/styles/globals";
 import { idStyles } from "@/styles/id";
 import { router } from "expo-router";
-import { getItemAsync, setItemAsync } from "expo-secure-store";
+import { getItemAsync, setItemAsync } from "@/deps/secureStorage";
 import { useEffect, useRef, useState } from "react";
 import { Keyboard, KeyboardAvoidingView, Platform, Text, TextInput } from "react-native";
 import { View } from "react-native";

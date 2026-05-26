@@ -17,7 +17,7 @@ export default function AppHeader({ hostel, shop } : AppHeaderProps) {
             </TouchableOpacity>
 
             <View style={appHeaderStyles.textV}>
-                <TouchableOpacity onPress={() => router.push("/home")} style={[hostel && appHeaderStyles.selectedTextTouch, appHeaderStyles.textTouch]}>
+                <TouchableOpacity onPress={() => router.push("/(tabs)/home")} style={[hostel && appHeaderStyles.selectedTextTouch, appHeaderStyles.textTouch]}>
                     <Text style={[appHeaderStyles.text, hostel && appHeaderStyles.selectedText, roboto.bodySmallBold]}>Hostel</Text>
                 </TouchableOpacity>
 

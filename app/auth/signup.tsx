@@ -10,7 +10,7 @@ import { images } from "@/constants/images";
 import { router } from "expo-router";
 import { colors, globals, roboto } from "@/styles/globals";
 import { signUp } from "@/services/signUp";
-import * as SecureStore from "expo-secure-store"
+import { getItemAsync, setItemAsync } from "@/deps/secureStorage"
 import Loader from "@/components/loader";
 import ErrorModal from "@/components/errorModal";
 
@@ -21,7 +21,7 @@ export default function SignUp() {
 
     useEffect(() => {
         const getRole = async () => {
-            const roleValue = await SecureStore.getItemAsync("MODE")
+            const roleValue = await getItemAsync("MODE")
             setRole(roleValue ?? "user")
         }
 
@@ -159,7 +159,7 @@ export default function SignUp() {
 
         console.log(newUser)
 
-        await SecureStore.setItemAsync("EMAIL", newUser.email)
+        await setItemAsync("EMAIL", newUser.email)
 
         const result = await signUp(newUser)
 

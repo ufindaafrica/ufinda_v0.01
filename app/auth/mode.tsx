@@ -4,7 +4,7 @@ import { modeStyles } from "@/styles/mode";
 import { useState } from "react";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import * as Secure from "expo-secure-store"
+import { setItemAsync } from "@/deps/secureStorage"
 import { router } from "expo-router";
 import BackArrow from "@/components/back";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -30,10 +30,10 @@ export default function Mode () {
 
     const setMode = async () => {
         if (agent === true) {
-            await Secure.setItemAsync("MODE", "vendor")
+            await setItemAsync("MODE", "vendor")
         }
         if (student === true) {
-            await Secure.setItemAsync("MODE", "user")
+            await setItemAsync("MODE", "user")
         }
         router.push("/auth/signup")
     }

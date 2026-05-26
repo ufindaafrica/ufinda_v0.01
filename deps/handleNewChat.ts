@@ -2,7 +2,7 @@ import { ChatMate } from "@/app/(vendor)/chat"
 import { getAgentInfo } from "@/services/agentInfo"
 import { createNewChat } from "@/services/newChat"
 import { router } from "expo-router"
-import { getItemAsync } from "expo-secure-store"
+import { getItemAsync } from "@/deps/secureStorage"
 
 
 export const handleNewChat = async (id: string, book?: string) => {

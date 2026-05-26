@@ -17,7 +17,7 @@ import { colors, globals, roboto } from "@/styles/globals";
 import { singleChatStyles } from "@/styles/singleChat";
 import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder, useAudioRecorderState } from "expo-audio";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { getItemAsync } from "expo-secure-store";
+import { getItemAsync } from "@/deps/secureStorage";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Image, Keyboard, KeyboardAvoidingView, Linking, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";

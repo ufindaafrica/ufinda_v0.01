@@ -1,6 +1,6 @@
 import axios from "axios"
 import { BASE_URL, timeout } from "./apiConstants"
-import { setItemAsync } from "expo-secure-store"
+import { setItemAsync } from "@/deps/secureStorage"
 
 export const verifyOtp = async (data : any) => {
 

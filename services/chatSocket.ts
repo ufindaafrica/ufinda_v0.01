@@ -1,5 +1,5 @@
 import { Children, createContext, useCallback, useContext, useRef, useState } from "react";
-import * as SecureStore from 'expo-secure-store'
+import { getItemAsync } from '@/deps/secureStorage'
 
 
 const devLog = (...args: any) => {
@@ -17,7 +17,7 @@ export const WebSocketProvider = ({ children }: any) => {
     const reconnectTimeoutRef = useRef(null)
 
     const connect = useCallback(async () => {
-        const token = await SecureStore.getItemAsync('ACCESS_TOKEN')
+        const token = await getItemAsync('ACCESS_TOKEN')
         if (!token) {
             devLog('no auth token. skipping websocket conn.')
             setIsAuthenticated(false)

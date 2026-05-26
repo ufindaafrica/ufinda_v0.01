@@ -10,7 +10,7 @@ import { studentKyc, vendorKyc } from "@/services/studentKyc";
 import { globals, roboto } from "@/styles/globals";
 import { idStyles } from "@/styles/id";
 import { router } from "expo-router";
-import { getItemAsync } from "expo-secure-store";
+import { getItemAsync } from "@/deps/secureStorage";
 import { useEffect, useRef, useState } from "react";
 import { Keyboard, KeyboardAvoidingView, Platform, Text, TextInput } from "react-native";
 import { View } from "react-native";
