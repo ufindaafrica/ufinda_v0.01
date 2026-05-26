@@ -80,7 +80,8 @@ func main() {
 	r.SetTrustedProxies([]string{"10.0.0.0/8"})
 
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"https://ufinda.org","http://localhost:3000","http://127.0.0.1:3000"}
+	// config.AllowOrigins = []string{"https://ufinda.org","http://localhost:3000","http://127.0.0.1:3000"}
+	config.AllowAllOrigins = true
 	config.AllowMethods = []string{"GET", "POST", "DELETE", "PATCH", "OPTIONS"}
 	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization"}
 	r.Use(cors.New(config))
