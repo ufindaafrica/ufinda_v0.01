@@ -1,3 +1,4 @@
+import { getNewTokens } from "@/services/refreshToken";
 import { getItemAsync } from "expo-secure-store";
 import { createContext, useContext, useEffect, useRef } from "react";
 
@@ -39,8 +40,28 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
                 console.log("❌ Error:", error)
             }
 
-            ws.onclose = () => {
-                console.log("🔌 Disconnected")
+            ws.onclose = async (event) => {
+                console.log("🔌 Disconnected", event.code)
+
+                // if auth error, try to get new access token
+                if (event.code === 1008 || event.code === 4001) {
+                    console.log("🔄 Auth error, refreshing token...")
+                    const refreshed = await getNewTokens()
+
+                    if (refreshed) {
+                        console.log("✅ Token refreshed, reconnecting...")
+                        connect()
+                    }
+
+                    // if refresh failed, getNewTokens() already redirects to login
+                    return
+                }
+
+                // any other disconnect not connected to auth error, reconnect after 3 seconds
+                setTimeout(() => {
+                    console.log("🔄 Reconnecting to websocket...")
+                    connect()
+                }, 3000)
             }
 
             wsRef.current = ws
