@@ -3,13 +3,22 @@ import { getItemAsync } from "expo-secure-store";
 import { createContext, useContext, useEffect, useRef } from "react";
 
 
-interface WebSocketContextType { }
+interface WebSocketContextType {
+    joinRoom: (roomId: string, onMessage: (msg: any) => void) => void;
+    leaveRoom: (roomId: string) => void;
+    sendMessage: (roomId: string, content: string, messageType?: string, publicId?: string) => void
+}
 
-const WebSocketContext = createContext<WebSocketContextType>({})
+const WebSocketContext = createContext<WebSocketContextType>({
+    joinRoom: () => {},
+    leaveRoom: () => {},
+    sendMessage: () => {}
+})
 
 export const WebSocketProvider = ({ children }: { children: React.ReactNode }) => {
 
     const wsRef = useRef<WebSocket | null>(null)
+    const messageHandlersRef = useRef<Map<string, (msg: any) => void>>(new Map())
 
     useEffect(() => {
 
@@ -34,6 +43,12 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data)
                 console.log("📨 Message received:", data)
+
+                if (data.type === "new_message") {
+                    const msg = data.payload
+                    const handler = messageHandlersRef.current.get(msg.chat_room_id);
+                    if (handler) handler(msg)
+                }
             }
 
             ws.onerror = (error) => {
@@ -74,8 +89,45 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         }
     }, [])
 
+    const joinRoom = (roomId: string, onMessage: (msg: any) => void) => {
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({
+                type: "join_room",
+                payload: { room_id: roomId }
+            }))
+            messageHandlersRef.current.set(roomId, onMessage)
+            console.log("📥 Joined room:", roomId)
+        }
+    }
+
+    const leaveRoom = (roomId: string) => {
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({
+                type: "leave_room",
+                payload: { room_id: roomId }
+            }))
+            messageHandlersRef.current.delete(roomId)
+            console.log("📤 Left room:", roomId)
+        }
+    }
+
+    const sendMessage = (roomId: string, content: string, messageType: string = "text", publicId?: string) => {
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({
+                type: "message",
+                payload: {
+                    room_id: roomId,
+                    content,
+                    message_type: messageType,
+                    ...(publicId && { public_id: publicId })
+                }
+            }))
+            console.log("📤 Sent message")
+        }
+    }
+
     return (
-        <WebSocketContext.Provider value={{}}>
+        <WebSocketContext.Provider value={{ joinRoom, leaveRoom, sendMessage }}>
             {children}
         </WebSocketContext.Provider>
     )

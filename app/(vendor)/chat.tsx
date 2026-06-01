@@ -108,14 +108,24 @@ export default function VendorChat({ student }: VendorChatProps) {
 
             const storedChats = JSON.parse(await AsyncStorage.getItem('ALL_CHATS') ?? "[]")
 
-            if (storedChats.length == 0) {
-                everyChat = (await getAllChats())[1] ?? []
-                await AsyncStorage.setItem('ALL_CHATS', JSON.stringify(everyChat))
-            } else {
-                everyChat = storedChats
-            }
+            everyChat = storedChats
 
-            console.log(everyChat)
+            // if (storedChats.length === 0) {
+                const chatsList = await getAllChats()
+
+                if (chatsList[0] != "200") {
+                    console.log("error getting chats", chatsList[1])
+                } else {
+                    console.log("got chats")
+
+                    everyChat = (chatsList[1] ?? [])
+                    await AsyncStorage.setItem('ALL_CHATS', JSON.stringify(everyChat))
+                }
+            // }
+
+            console.log("every chat log =>", everyChat)
+            
+            // AsyncStorage.removeItem('ALL_CHATS')
 
             const peopleInChats: Array<string> = everyChat?.map((chat: any) => chat?.buyer_id === myId ? chat?.vendor_id : chat?.buyer_id) ?? []
 
