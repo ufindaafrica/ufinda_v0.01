@@ -18,6 +18,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/oladev/ufinda_v0.01/internal/db"
+	"github.com/oladev/ufinda_v0.01/internal/db/auth"
 	"github.com/oladev/ufinda_v0.01/internal/db/notification" // Imported as requested
 	chatlog "github.com/oladev/ufinda_v0.01/internal/logs/chat"
 )
@@ -471,72 +472,93 @@ func (h *Hub) LeaveRoom(client *Client, roomID string) {
 
 // Optimized BroadcastToRoom with Push Notification logic
 func (h *Hub) BroadcastToRoom(roomID string, message WSMessage, senderID string) {
-    h.mutex.RLock()
-    roomInfo, roomCached := h.RoomParticipants[roomID]
-    clientsInRoom := h.Rooms[roomID]
-    h.mutex.RUnlock()
+	h.mutex.RLock()
+	roomInfo, roomCached := h.RoomParticipants[roomID]
+	clientsInRoom := h.Rooms[roomID]
+	h.mutex.RUnlock()
 
-    if !roomCached {
-        room, err := h.ChatService.findExistingRoomByID(roomID)
-        if err == nil && room != nil {
-            h.mutex.Lock()
-            h.RoomParticipants[roomID] = *room
-            roomInfo = *room
-            h.mutex.Unlock()
-        } else { return }
-    }
+	// 1. Fetch room info if not cached
+	if !roomCached {
+		room, err := h.ChatService.findExistingRoomByID(roomID)
+		if err == nil && room != nil {
+			h.mutex.Lock()
+			h.RoomParticipants[roomID] = *room
+			roomInfo = *room
+			h.mutex.Unlock()
+		} else {
+			return
+		}
+	}
 
-    recipientID := roomInfo.VendorID
-    if senderID == roomInfo.VendorID {
-        recipientID = roomInfo.BuyerID
-    }
+	// 2. Determine Recipient
+	recipientID := roomInfo.VendorID
+	if senderID == roomInfo.VendorID {
+		recipientID = roomInfo.BuyerID
+	}
+	
+	recipientReceived := false
 
-    recipientReceived := false
+	// 3. Send to Active Room Participants
+	// Only set recipientReceived to true if they are actually in the room
+	for client := range clientsInRoom {
+		if client.UserID == recipientID {
+			select {
+			case client.Send <- message:
+				recipientReceived = true
+			default:
+				h.Unregister <- client
+			}
+		}
+	}
 
-    // 1. Send to Active Room Participants
-    for client := range clientsInRoom {
-        if client.UserID != senderID {
-            select {
-            case client.Send <- message:
-                recipientReceived = true
-            default:
-                h.Unregister <- client
-            }
-        }
-    }
+	// 4. Send to Recipient's Global Connection (if they are online but not in this room)
+	// We still deliver the message so they see it in their chat list, 
+	// but we DON'T set recipientReceived = true because we want to trigger a push
+	h.mutex.RLock()
+	globalClient, isOnline := h.Clients[recipientID]
+	h.mutex.RUnlock()
 
-    // 2. Send to Recipient's Global Connection (if they are in another screen)
-    if !recipientReceived {
-        h.mutex.RLock()
-        globalClient, isOnline := h.Clients[recipientID]
-        h.mutex.RUnlock()
+	if isOnline && !recipientReceived {
+		select {
+		case globalClient.Send <- message:
+			// Message delivered globally, but they aren't in the specific room.
+			// Depending on your preference, you can keep recipientReceived = false
+			// to trigger a push, or set it to true if you don't want push while online.
+			// RECOMMENDED: Keep false so they get a push if they aren't in the specific chat.
+		default:
+			h.Unregister <- globalClient
+		}
+	}
 
-        if isOnline {
-            select {
-            case globalClient.Send <- message:
-                recipientReceived = true
-            default:
-                h.Unregister <- globalClient
-            }
-        }
-    }
-
-    // 3. Push Notification fallback
-    if !recipientReceived {
-        var payload NewMessagePayload
-        json.Unmarshal(message.Payload, &payload)
-        go h.handleOfflinePush(recipientID, roomID, payload.Content)
-    }
+	// 5. Push Notification fallback
+	// This will trigger if they weren't in the room
+	if !recipientReceived {
+		var payload NewMessagePayload
+		if err := json.Unmarshal(message.Payload, &payload); err == nil {
+			log.Printf("[DEBUG] Recipient %s not in room. Triggering push notification...", recipientID)
+			go h.handleOfflinePush(senderID, recipientID, roomID, payload.Content)
+		} else {
+			log.Printf("[ERROR] Failed to unmarshal payload for push: %v", err)
+		}
+	}
 }
 
 // Helper for Push Notification
-func (h *Hub) handleOfflinePush(recipientID, roomID, content string) {
+func (h *Hub) handleOfflinePush(senderID string, recipientID string, roomID string, content string) {
     tokens, err := notifdb.GetPushTokens(recipientID)
     if err != nil || len(tokens) == 0 {
         return
     }
 
-    title := "New Message on uFinda"
+	user, err := authdb.FindCreatedUserByID(senderID)
+	title := "uFinda User" // Default fallback
+        if err == nil {
+            if user.UserName != nil {
+                title = *user.UserName
+            } else if user.FirstName != "" {
+                title = user.FirstName
+            }
+        }
 
     // 2. Loop through every device token found for this user
     for _, tData := range tokens {
