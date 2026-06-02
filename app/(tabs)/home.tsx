@@ -18,6 +18,7 @@ import { getRole } from "@/deps/getRole";
 import * as Location from 'expo-location';
 import { getDistance } from 'geolib'
 import { cacheHostels } from "@/deps/cacheServices";
+import { registerForPushNotifications } from "@/deps/registerForPushNotifications";
 
 
 /// start and stop foreground service to schedule cache calls
@@ -238,6 +239,10 @@ export default function Home() {
 
     useEffect(() => {
         allHostels()
+    }, [])
+
+    useEffect(() => {
+        registerForPushNotifications()
     }, [])
 
     const allHostels = async () => {
