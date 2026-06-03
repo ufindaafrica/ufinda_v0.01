@@ -13,6 +13,7 @@ import (
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/cloudinary/cloudinary-go/v2/api"
 	"github.com/oladev/ufinda_v0.01/internal/db"
+	"github.com/oladev/ufinda_v0.01/internal/db/notification"
 	"github.com/oladev/ufinda_v0.01/internal/db/hostel"
 	"github.com/oladev/ufinda_v0.01/internal/logs/auth"
 	"github.com/go-playground/validator/v10"
@@ -91,6 +92,20 @@ func CreateHostelHandler() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 			return
 		}
+
+		go func(userID, hostelName string) {
+			tokens, err := notifdb.GetPushTokens(userID)
+			if err == nil && len(tokens) > 0 {
+				title := "Listing Added! 🎉"
+				body := fmt.Sprintf("Your hostel '%s' has been listed successfully.", hostelName)
+				
+				for _, tData := range tokens {
+					if tData.DeviceToken != "" {
+						_ = notifdb.SendPushNotification(tData.DeviceToken, title, body, "LISTING_SCREEN")
+					}
+				}
+			}
+		}(getUser.ID, newHostel.Title)
 
 		c.JSON(http.StatusCreated, gin.H{
 			"message": "Hostel created successfully",
