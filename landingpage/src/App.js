@@ -2,6 +2,7 @@ import React from 'react';
 import LandingPage from './pages/landingPage'
 import ResetPassword from './pages/resetPassword'
 import Navbar from './components/shared/navbar'
+import DownloadPage from "./pages/downloadPage"
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 
 function App () {
@@ -12,7 +13,9 @@ function App () {
             <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
-            </Routes>
+
+	  <Route path="/download" element={<DownloadPage />} />
+      </Routes>
         </div>
     </Router>
   )

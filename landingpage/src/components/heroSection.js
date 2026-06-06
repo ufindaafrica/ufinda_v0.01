@@ -1,13 +1,15 @@
-import { React, useState } from 'react'
+import { React } from 'react'
 import '../styles/heroSection.css'
 import Image from '../assets/Hero.png'
 import { Button } from './ui/Buttons.js'
-import  Modal from './Modal.js'
-import DownloadTypes from './downloadTypes.js'
-// import { FaChevronDown } from 'react-icons/fa'
+//import  Modal from './Modal.js'
+//import DownloadTypes from './downloadTypes.js'
+import { FaChevronDown } from 'react-icons/fa'
+import { useNavigate } from "react-router-dom"
 
 const HeroSection = () => {
-  const [ isModalOpen, setIsModalOpen ] = useState(false);
+	const navigate =useNavigate();
+ // const [ isModalOpen, setIsModalOpen ] = useState(false);
 
   return (
     <section id="hero" className="herosection section">
@@ -27,10 +29,11 @@ const HeroSection = () => {
         <img src={Image} alt="shows three mockups of the app" className="image"/>
       </div>
       <div className="herobtns">
-        <Button variant="default" className="btns" onClick={() => setIsModalOpen(true)}>Get the app Now!</Button>
-        <Modal isOpen={isModalOpen}  onClose={() => setIsModalOpen(false)}>
-          <DownloadTypes />
-        </Modal>
+        <Button onClick={() => navigate("/download")}
+  variant="default" target="_self">
+  Get the App Now!
+  <FaChevronDown className="chevron" />
+</Button>
       </div>
     </section>
   )

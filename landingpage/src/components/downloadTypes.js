@@ -1,16 +1,42 @@
-import React from 'react'
-import { FaGooglePlay, FaAppStore, FaDownload } from 'react-icons/fa'
-import '../styles/downloadTypes.css' 
-import { Button } from './ui/Buttons.js'
+import React from "react";
+import { FaGooglePlay, FaAppStore, FaDownload } from "react-icons/fa";
+import "../styles/downloadTypes.css";
+import { Button } from "./ui/Buttons";
 
-const downloadTypes = () => {
+const DownloadTypes = () => {
   return (
-    <div className={{display: "flex", flexDirection: "cloumn", gap: "0"}}>
-        <Button variant="text" href="expo-link" target="_blank" className="btns"><FaDownload style={{fontSize: "16px", color: "#fcfcfc" }}/>Direct Download</Button>
-        <Button variant="text" href="playstore-link" target="_blank" className="btns"><FaGooglePlay style={{fontSize: "16px", color: "#fcfcfc" }}/>Get the app Now!</Button>
-        <Button variant="text"  href="appstore-link" target="_blank" className="btns"><FaAppStore style={{fontSize: "16px", color: "#fcfcfc" }}/>Download from AppStore</Button>
-    </div>
-  )
-}
+    <div className="download-container">
+      <Button
+        variant="default"
+        href="expo-link"
+        target="_blank"
+        className="download-option"
+      >
+        <FaDownload />
+        Direct Download
+      </Button>
 
-export default downloadTypes
+      <Button
+        variant="stroke"
+        href="playstore-link"
+        target="_blank"
+        className="download-option"
+      >
+        <FaGooglePlay />
+        Google Play Store
+      </Button>
+
+      <Button
+        variant="stroke"
+        href="appstore-link"
+        target="_blank"
+        className="download-option"
+      >
+        <FaAppStore />
+        Apple App Store
+      </Button>
+    </div>
+  );
+};
+
+export default DownloadTypes;

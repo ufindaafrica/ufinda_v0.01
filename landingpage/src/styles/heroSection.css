@@ -10,6 +10,24 @@
     background: linear-gradient(to bottom, var(--color-white) 0%, var(--color-gradient1) 50%, var(--color-gradient2) 75%);
     animation: gradientFade 2s ease-in-out forwards;
 }
+
+.download-btn {
+  transition: all .3s ease;
+}
+
+.download-btn:hover {
+  transform: translateY(-3px);
+}
+
+.chevron {
+  transition: transform .3s ease;
+  display: none;
+}
+
+.download-btn.active .chevron {
+  transform: rotate(180deg);
+}
+
 @keyframes gradientFade {
     from {
         opacity: 0;
