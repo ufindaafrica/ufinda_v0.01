@@ -1,10 +1,14 @@
-import React from 'react'
+import { React, useState } from 'react'
 import '../styles/heroSection.css'
 import Image from '../assets/Hero.png'
 import { Button } from './ui/Buttons.js'
-import { FaGooglePlay, FaAppStore } from 'react-icons/fa'
+import  Modal from './Modal.js'
+import DownloadTypes from './downloadTypes.js'
+// import { FaChevronDown } from 'react-icons/fa'
 
-const heroSection = () => {
+const HeroSection = () => {
+  const [ isModalOpen, setIsModalOpen ] = useState(false);
+
   return (
     <section id="hero" className="herosection section">
       <div>
@@ -23,11 +27,13 @@ const heroSection = () => {
         <img src={Image} alt="shows three mockups of the app" className="image"/>
       </div>
       <div className="herobtns">
-        <Button variant="default" href="playstorelink" target="_blank" className="btns"><FaGooglePlay style={{fontSize: "16px", color: "#fcfcfc" }}/>Download from PlayStore</Button>
-        <Button variant="default"  href="appstorelink" target="_blank" className="btns"><FaAppStore style={{fontSize: "16px", color: "#fcfcfc" }}/>Download from AppStore</Button>
+        <Button variant="default" className="btns" onClick={() => setIsModalOpen(true)}>Get the app Now!</Button>
+        <Modal isOpen={isModalOpen}  onClose={() => setIsModalOpen(false)}>
+          <DownloadTypes />
+        </Modal>
       </div>
     </section>
   )
 }
 
-export default heroSection
+export default HeroSection

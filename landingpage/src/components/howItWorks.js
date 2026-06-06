@@ -69,7 +69,7 @@ const howItWorks = () => {
         </video>
       </div>
       <Link to="/#hero">
-        <Button variant="default" href="#hero" className="worksBtn">Get the App now!</Button>
+        <Button variant="stroke" href="#hero" className="worksBtn">Get the App now!</Button>
       </Link>
       
     </section>
