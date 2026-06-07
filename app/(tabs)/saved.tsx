@@ -39,19 +39,26 @@ export default function Saved() {
     }
 
     const [savedHostels, setSavedHostels] = useState<Array<EnrichedHostel>>([])
+
     const [reloadSave, setReloadSave] = useState(false)
 
     const getSavedHostels = async () => {
-        const savedHostels: Array<string> = JSON.parse(await AsyncStorage.getItem("SAVED") || "[]")
+        const savedHostels: Array<EnrichedHostel> = JSON.parse(await AsyncStorage.getItem("SAVED") || "[]")
+        const savedBefore = await AsyncStorage.getItem("SAVED_BEFORE")
+
         let savedHostelData: Array<EnrichedHostel> = []
 
-        if (savedHostels.length > 0) {
+        if (savedHostels.length > 0 && savedBefore) {
+            savedHostelData = savedHostels
+        } else {
             const savedHs = await allSavedHostels()
             if (savedHs[0] != "200") {
                 toast("error getting saved hostels. try again.")
                 return
             }
             savedHostelData = savedHs[1]
+            await AsyncStorage.setItem("SAVED", JSON.stringify(savedHs[1]))
+            await AsyncStorage.setItem("SAVED_BEFORE", "true")
         }
 
         return savedHostelData

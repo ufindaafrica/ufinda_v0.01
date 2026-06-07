@@ -24,9 +24,9 @@ type HostelCardProps = {
 
 export default function HostelCard({ hostel, isSaved, reload, coords }: HostelCardProps) {
 
-    const onSave = async (id: string, saved: boolean) => {
+    const onSave = async (id: string, saved: boolean, hostel: EnrichedHostel) => {
 
-        let savedHostels: Array<string> = JSON.parse(await AsyncStorage.getItem("SAVED") || "[]")
+        let savedHostels: Array<EnrichedHostel> = JSON.parse(await AsyncStorage.getItem("SAVED") || "[]")
 
         if (!saved) {
             const saveH = await saveHostel(id)
@@ -34,7 +34,7 @@ export default function HostelCard({ hostel, isSaved, reload, coords }: HostelCa
                 toast("error saving hostel. try again.")
                 return
             }
-            savedHostels.includes(id) ? null : savedHostels.push(id)
+            savedHostels.push(hostel)
             setSaved(true)
         } else {
             const deletH = await removeSavedHostel(id)
@@ -42,7 +42,7 @@ export default function HostelCard({ hostel, isSaved, reload, coords }: HostelCa
                 toast("error removing saved hostel. try again.")
                 return
             }
-            savedHostels = savedHostels.filter(item => item !== id)
+            savedHostels = savedHostels.filter(item => item.id !== id)
             setSaved(false)
         }
 
@@ -86,7 +86,7 @@ export default function HostelCard({ hostel, isSaved, reload, coords }: HostelCa
                         <Text style={[hostelCardStyles.hostelName, roboto.titleMediumBold]}>₦ {hostel.rent_per_year} / year</Text>
                         <Text style={[hostelCardStyles.address, roboto.bodySmallBold]}>PID: {hostel.id}</Text>
                     </View>
-                    <TouchableOpacity onPress={() => { onSave(hostel.id, saved) }}>
+                    <TouchableOpacity onPress={() => { onSave(hostel.id, saved, hostel) }}>
                         <Image source={archiveImg} style={hostelCardStyles.archiveImg} />
                     </TouchableOpacity>
                 </View>
