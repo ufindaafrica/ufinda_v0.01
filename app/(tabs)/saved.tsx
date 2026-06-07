@@ -90,18 +90,28 @@ export default function Saved() {
                 return
             }
 
-            const searchFilter = await searchHostels({ type: currentFilter })
-            if (searchFilter[0] != "200") {
-                toast("error searching saved hostels. try again.")
-                setCurrentFilter("Categories")
-                return
-            }
+            const allSavedHostels: Array<EnrichedHostel> = JSON.parse(await AsyncStorage.getItem("SAVED") || "[]")
 
-            const savedHostels: Array<string> = JSON.parse(await AsyncStorage.getItem("SAVED") || "[]")
+            const filteredList = allSavedHostels.filter((hostel) => hostel.room_type.toLowerCase() == currentFilter.toLowerCase())
 
-            const savedOptions: Array<EnrichedHostel> = searchFilter[1].filter((hostel: EnrichedHostel) => savedHostels.includes(hostel.id))
+            console.log("filtered list =>", filteredList)
 
-            setSavedHostels(savedOptions)
+            setSavedHostels(filteredList)
+
+            // const searchFilter = await searchHostels({ type: currentFilter })
+            // if (searchFilter[0] != "200") {
+            //     toast("error searching saved hostels. try again.")
+            //     setCurrentFilter("Categories")
+            //     return
+            // }
+
+            // const savedHostels: Array<string> = JSON.parse(await AsyncStorage.getItem("SAVED") || "[]")
+
+            // const savedOptions: Array<EnrichedHostel> = searchFilter[1].filter((hostel: EnrichedHostel) => savedHostels.includes(hostel.id))
+
+            // setSavedHostels(savedOptions)
+
+            console.log("nothing")
         }
 
         filterChanged()
