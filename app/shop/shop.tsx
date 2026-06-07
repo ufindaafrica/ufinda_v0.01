@@ -14,9 +14,11 @@ export default function Shop() {
                 <View style={homeStyles.layoutMargin}>
                     <AppHeader shop />
                 </View>
-                <View style={{ justifyContent: "center", height: "85%", width: "100%", alignItems: "center" }}>
+                {/* <View style={{ justifyContent: "center", height: "85%", width: "100%", alignItems: "center" }}>
                     <Image source={images.comingSoon} style={{ width: 243, height: 243 }} />
-                </View>
+                </View> */}
+
+                
             </SafeAreaView>
         </SafeAreaProvider>
     )
