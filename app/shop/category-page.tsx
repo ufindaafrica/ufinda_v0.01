@@ -42,7 +42,7 @@ export default function SingleCategoryPage() {
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 150 }}>
 
                     <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
-                        <ProductFlatList name="Top Picks" products={(dummy_shop.products).filter((product) => subCatString ? product.name.includes(catName) : (product.category == catId) && (Number(product.discountRate) > 40))} cartbutton />
+                        <ProductFlatList name="Top Picks" products={(dummy_shop.products).filter((product) => subCatString ? product.name.includes(catName) && (product.category == catId) : (product.category == catId) && (Number(product.discountRate) > 40))} cartbutton />
                     </View>
 
                     { subCatString ? null : <LineBreak />}
