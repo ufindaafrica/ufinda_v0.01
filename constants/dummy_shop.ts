@@ -21,7 +21,7 @@ export const dummy_shop = {
   "categories": [
     {
       "id": "phones-tablets",
-      "name": "Phones Tablets"
+      "name": "Phones & Tablets"
     },
     {
       "id": "fashion",
@@ -29,7 +29,7 @@ export const dummy_shop = {
     },
     {
       "id": "tv-audio",
-      "name": "Tv Audio"
+      "name": "Tv & Audio"
     },
     {
       "id": "generators",
@@ -49,7 +49,7 @@ export const dummy_shop = {
     },
     {
       "id": "books-materials",
-      "name": "Books Materials"
+      "name": "Books & Materials"
     }
   ],
   "products": [

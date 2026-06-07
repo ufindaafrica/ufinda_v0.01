@@ -4,11 +4,10 @@ import ProductFlatList from "@/components/productFlatList";
 import Search from "@/components/search";
 import { dummy_shop } from "@/constants/dummy_shop";
 import { images } from "@/constants/images";
-import { colors, globals, roboto } from "@/styles/globals";
+import { globals } from "@/styles/globals";
 import { homeStyles } from "@/styles/home";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { SearchBar } from "react-native-screens";
 
 
 export default function Shop() {
@@ -37,7 +36,7 @@ export default function Shop() {
                     {/* category list view */}
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center' }}>
                         {
-                            dummy_shop.categories.map((item, idx) => <CategoryTouchable name={item.name} img={`https://picsum.photos/100/100?random=${idx}`} key={idx} />)
+                            dummy_shop.categories.map((item, idx) => <CategoryTouchable catId={item.id} name={item.name} img={`https://picsum.photos/100/100?random=${idx}`} key={idx} />)
                         }
                     </View>
 
