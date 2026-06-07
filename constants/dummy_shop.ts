@@ -1,3 +1,21 @@
+export interface ProductType {
+      "id": number,
+      "name": string,
+      "category": string,
+      "price": number,
+      "originalPrice": number,
+      "discountRate": number,
+      "condition": string,
+      "isFeatured": boolean,
+      "isSaved": boolean,
+      "sellerName": string,
+      "sellerRating": number,
+      "location": string,
+      "views": number,
+      "createdAt": string,
+      "image": string
+    }
+
 
 export const dummy_shop = {
   "categories": [
