@@ -2,15 +2,15 @@
 	display: flex;
 	width:500px;
 	gap: 40px;
-	margin: 80px auto !important;
+	margin: auto !important;
 	border: 1px dashed lightgrey;
 	border-radius: 8px;
 	padding: 24px 16px;
 
 }
 
-@media (max-width:720px) {
-	.download-page-title: {
+@media (max-width: 728px) {
+	.download-page-title {
 		display: flex;
 		justify-content: space-between;
 		flex-direction: row;
