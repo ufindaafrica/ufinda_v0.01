@@ -87,17 +87,15 @@ export default function VendorChat({ student }: VendorChatProps) {
         const chatMate = chatMateId.startsWith("usr") ? await getStudentInfo() : await getAgentInfo(chatMateId)
         const chatMateDat = chatMateId.startsWith("usr") ? chatMate?.[1] : chatMate?.[1]?.[0]?.vendor_info
         const chatMateData: ChatMate = {
-            name: `${chatMateDat?.first_name ?? ""} ${chatMateDat?.last_name ?? ""}`,
+            name: chatMateId.startsWith("usr") ? `${chatMateDat?.first_name ?? ""} ${chatMateDat?.last_name ?? ""}` : `${chatMateDat?.username}`,
             profile_img: chatMateId.startsWith("usr") ? chatMateDat?.kyc_data?.profile_img?.url ?? "" : chatMateDat?.vendor_kyc?.profile_img?.url ?? "",
             phone_number: chatMateDat?.phone ?? "",
             id: chatMateId
         }
         console.log("final data =>", chatMateData)
-        setChatMateInfos(prev => {
-            const old = [...prev]
-            old.push(chatMateData)
-            return old
-        })
+        console.log("chatmateDat => ", chatMateDat)
+        
+        return chatMateData
     }
 
     useFocusEffect(useCallback(() => {
@@ -108,23 +106,34 @@ export default function VendorChat({ student }: VendorChatProps) {
 
             const storedChats = JSON.parse(await AsyncStorage.getItem('ALL_CHATS') ?? "[]")
 
-            if (storedChats.length == 0) {
-                everyChat = (await getAllChats())[1] ?? []
-                await AsyncStorage.setItem('ALL_CHATS', JSON.stringify(everyChat))
-            } else {
-                everyChat = storedChats
-            }
+            everyChat = storedChats
 
-            console.log(everyChat)
+            // if (storedChats.length === 0) {
+                const chatsList = await getAllChats()
+
+                if (chatsList[0] != "200") {
+                    console.log("error getting chats", chatsList[1])
+                } else {
+                    console.log("got chats")
+
+                    everyChat = (chatsList[1] ?? [])
+                    await AsyncStorage.setItem('ALL_CHATS', JSON.stringify(everyChat))
+                }
+            // }
+
+            console.log("every chat log =>", everyChat)
+            
+            // AsyncStorage.removeItem('ALL_CHATS')
 
             const peopleInChats: Array<string> = everyChat?.map((chat: any) => chat?.buyer_id === myId ? chat?.vendor_id : chat?.buyer_id) ?? []
 
-            await Promise.all(
+            const resolvedChatMates: Array<ChatMate> = await Promise.all(
                 peopleInChats.map(personId => chatMateInfo(personId))
             )
 
-            console.log(peopleInChats)
+            setChatMateInfos(resolvedChatMates)
             setAllChats(everyChat ?? [])
+
         }
 
         getChats()
@@ -132,6 +141,7 @@ export default function VendorChat({ student }: VendorChatProps) {
 
     const getChatMateName = (id: string) => {
         const hostel = chatMateInfos.find(chatmate => chatmate.id == id)
+        console.log("hostel  ... =>", hostel)
         return hostel?.name ?? ""
     }
 

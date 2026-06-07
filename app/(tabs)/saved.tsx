@@ -10,7 +10,8 @@ import { globals } from "@/styles/globals";
 import { homeStyles } from "@/styles/home";
 import { EnrichedHostel } from "@/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import { View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -39,19 +40,27 @@ export default function Saved() {
     }
 
     const [savedHostels, setSavedHostels] = useState<Array<EnrichedHostel>>([])
+
     const [reloadSave, setReloadSave] = useState(false)
 
     const getSavedHostels = async () => {
-        const savedHostels: Array<string> = JSON.parse(await AsyncStorage.getItem("SAVED") || "[]")
+        const savedHostels: Array<EnrichedHostel> = JSON.parse(await AsyncStorage.getItem("SAVED") || "[]")
+        const savedBefore = await AsyncStorage.getItem("SAVED_BEFORE")
+
         let savedHostelData: Array<EnrichedHostel> = []
 
-        if (savedHostels.length > 0) {
+        if (savedHostels.length > 0 && savedBefore) {
+            console.log("i'm here")
+            savedHostelData = savedHostels
+        } else {
             const savedHs = await allSavedHostels()
             if (savedHs[0] != "200") {
                 toast("error getting saved hostels. try again.")
                 return
             }
             savedHostelData = savedHs[1]
+            await AsyncStorage.setItem("SAVED", JSON.stringify(savedHs[1]))
+            await AsyncStorage.setItem("SAVED_BEFORE", "true")
         }
 
         return savedHostelData
@@ -66,14 +75,14 @@ export default function Saved() {
         hostels()
     }, [reloadSave])
 
-    useEffect(() => {
+    useFocusEffect(useCallback(() => {
         const hostels = async () => {
             const hostelData = await getSavedHostels() ?? []
             setSavedHostels(hostelData)
         }
         
         hostels()
-    }, [])
+    }, []))
 
     useEffect(() => {
         const filterChanged = async () => {
@@ -83,18 +92,11 @@ export default function Saved() {
                 return
             }
 
-            const searchFilter = await searchHostels({ type: currentFilter })
-            if (searchFilter[0] != "200") {
-                toast("error searching saved hostels. try again.")
-                setCurrentFilter("Categories")
-                return
-            }
+            const allSavedHostels: Array<EnrichedHostel> = JSON.parse(await AsyncStorage.getItem("SAVED") || "[]")
 
-            const savedHostels: Array<string> = JSON.parse(await AsyncStorage.getItem("SAVED") || "[]")
+            const filteredList = allSavedHostels.filter((hostel) => hostel.room_type.toLowerCase() == currentFilter.toLowerCase())
 
-            const savedOptions: Array<EnrichedHostel> = searchFilter[1].filter((hostel: EnrichedHostel) => savedHostels.includes(hostel.id))
-
-            setSavedHostels(savedOptions)
+            setSavedHostels(filteredList)
         }
 
         filterChanged()

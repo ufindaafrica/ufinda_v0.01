@@ -8,17 +8,18 @@ type selectProps = {
     selected: boolean,
     selectFun?: (value: any) => void,
     clickable?: boolean,
-    adBox?: boolean
+    adBox?: boolean,
+    cartbutton?: boolean
 }
 
-export default function Select({ text, icon, selected, selectFun, clickable, adBox }: selectProps) {
+export default function Select({ text, icon, selected, selectFun, clickable, adBox, cartbutton }: selectProps) {
 
     return (
 
         <TouchableOpacity
             onPress={selectFun}
             disabled={clickable}
-            style={[selectStyles.box, selected && selectStyles.activeBox, clickable && selectStyles.clickable, icon && selectStyles.boxWithIcon, adBox && selectStyles.adBox, (!selected && adBox) && selectStyles.inactiveAdBox]}>
+            style={[selectStyles.box, selected && selectStyles.activeBox, clickable && selectStyles.clickable, icon && selectStyles.boxWithIcon, adBox && selectStyles.adBox, (!selected && adBox) && selectStyles.inactiveAdBox, cartbutton && {height: 32}]}>
 
             {icon ? <Image source={icon} style={[selectStyles.icon]} /> : null}
 

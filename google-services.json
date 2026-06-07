@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "601825196752",
+    "project_id": "ufinda-2026",
+    "storage_bucket": "ufinda-2026.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:601825196752:android:32fc4d9601b49c0855bcd5",
+        "android_client_info": {
+          "package_name": "com.app.ufinda"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9nnhZiXV_lFtGkjLGJULR_p_Kvac8bXE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

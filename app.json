@@ -21,7 +21,8 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.app.ufinda"
+      "package": "com.app.ufinda",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "static",
@@ -50,7 +51,8 @@
       ],
       "react-native-compressor",
       "expo-video",
-      "expo-audio"
+      "expo-audio",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,

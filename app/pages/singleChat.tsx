@@ -3,6 +3,7 @@ import BackArrow from "@/components/back";
 import Message from "@/components/message";
 import { dummyHostels } from "@/constants/dummy_data";
 import { images } from "@/constants/images";
+import { useWebSocket } from "@/contexts/chatSocket";
 import { isLast, isLastInGroup } from "@/deps/chatTime";
 import { pickChatMedia } from "@/deps/pickImage";
 import { verticalScale } from "@/deps/scale";
@@ -41,9 +42,10 @@ type ChatMedia = {
 }
 
 export default function SingleChat() {
+    const scrollViewRef = useRef<ScrollView>(null)
 
     const params = useLocalSearchParams()
-    const id = params.id
+    const id = Array.isArray(params.id) ? params.id[0] : params.id
     const vendorIdString = Array.isArray(params.vendor_id) ? params.vendor_id[0] : params.vendor_id
     const bookString = Array.isArray(params.book) ? params.book[0] : params.book
     const chatmate = Array.isArray(params.chatmate_data) ? params.chatmate_data[0] : params.chatmate_data
@@ -101,76 +103,88 @@ export default function SingleChat() {
     const [imgLoading, setImgLoading] = useState(false)
     const [mediaUpload, setMediaUpload] = useState(0)
 
-    const [userToken, setUserToken] = useState("")
-    const [chatUrl, setChatUrl] = useState("")
-    const chatSocket = useRef<WebSocket | null>(null)
+    // const [userToken, setUserToken] = useState("")
+    // const [chatUrl, setChatUrl] = useState("")
+    // const chatSocket = useRef<WebSocket | null>(null)
     const [userId, setUserId] = useState("")
-
-    const scrollViewRef = useRef<ScrollView>(null)
+    const {joinRoom, leaveRoom, sendMessage: wsSend } = useWebSocket()
 
     useFocusEffect(useCallback(() => {
-        let active = true
+        joinRoom(id, (msg: any) => {
+            setAllMessages(prev => [...prev, msg])
+        })
 
-        const joinChatRoom = async () => {
-
-            const token = await getAccessToken()
-            if (!token || !active) return
-
-            const url = `wss://${BARE_URL}/ws/chat?token=${token}`
-            const chatS = new WebSocket(url)
-            chatSocket.current = chatS
-
-            chatS.onopen = () => {
-                chatS.send(JSON.stringify({
-                    type: "join_room",
-                    payload: {
-                        room_id: id
-                    }
-                }))
-                console.log("room joined")
-            }
-
-            chatS.onmessage = (event) => {
-                const msg = JSON.parse(event.data)
-                if (msg.type === "message") {
-                    setAllMessages(prev => [...prev, msg.payload])
-                }
-            }
-
-            chatS.onerror = (error) => {
-                console.error("websocket error: ", error)
-            }
-
-            chatS.onclose = () => {
-                chatSocket.current = null
-            }
-
-        }
-
-        const markRead = async () => {
-            await markAsRead({ room_id: id })
-        }
-
-        joinChatRoom()
-        markRead()
+        markAsRead({ room_id: id })
 
         return () => {
-            active = false
-
-            const socket = chatSocket.current
-            if (socket && socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify({
-                    type: 'leave_room',
-                    payload: {
-                        room_id: id
-                    }
-                }))
-                socket.close()
-            }
-
-            chatSocket.current = null
+            leaveRoom(id)
         }
     }, [id]))
+    
+
+    // useFocusEffect(useCallback(() => {
+    //     let active = true
+
+    //     const joinChatRoom = async () => {
+
+    //         const token = await getAccessToken()
+    //         if (!token || !active) return
+
+    //         const url = `wss://${BARE_URL}/ws/chat?token=${token}`
+    //         const chatS = new WebSocket(url)
+    //         chatSocket.current = chatS
+
+    //         chatS.onopen = () => {
+    //             chatS.send(JSON.stringify({
+    //                 type: "join_room",
+    //                 payload: {
+    //                     room_id: id
+    //                 }
+    //             }))
+    //             console.log("room joined")
+    //         }
+
+    //         chatS.onmessage = (event) => {
+    //             const msg = JSON.parse(event.data)
+    //             if (msg.type === "message") {
+    //                 setAllMessages(prev => [...prev, msg.payload])
+    //             }
+    //         }
+
+    //         chatS.onerror = (error) => {
+    //             console.error("websocket error: ", error)
+    //         }
+
+    //         chatS.onclose = () => {
+    //             chatSocket.current = null
+    //         }
+
+    //     }
+
+    //     const markRead = async () => {
+    //         await markAsRead({ room_id: id })
+    //     }
+
+    //     joinChatRoom()
+    //     markRead()
+
+    //     return () => {
+    //         active = false
+
+    //         const socket = chatSocket.current
+    //         if (socket && socket.readyState === WebSocket.OPEN) {
+    //             socket.send(JSON.stringify({
+    //                 type: 'leave_room',
+    //                 payload: {
+    //                     room_id: id
+    //                 }
+    //             }))
+    //             socket.close()
+    //         }
+
+    //         chatSocket.current = null
+    //     }
+    // }, [id]))
 
     const sendMessage = async (message: string, type: "text" | "image" | "audio" = "text") => {
 
@@ -184,14 +198,15 @@ export default function SingleChat() {
             }
 
             try {
-                chatSocket.current?.send(JSON.stringify({
-                    type: "message",
-                    payload: {
-                        room_id: id,
-                        content: newMessage.content,
-                        message_type: "text"
-                    }
-                }))
+                // wsSend(JSON.stringify({
+                //     type: "message",
+                //     payload: {
+                //         room_id: id,
+                //         content: newMessage.content,
+                //         message_type: "text"
+                //     }
+                // }))
+                wsSend(id, newMessage.content, "text")
             } catch {
                 console.log("rest fallback")
                 const sent = await sendChat(newMessage)
@@ -250,15 +265,16 @@ export default function SingleChat() {
                     }
 
                     try {
-                        chatSocket.current?.send(JSON.stringify({
-                            type: "message",
-                            payload: {
-                                room_id: id,
-                                content: newMessage.content,
-                                message_type: "image",
-                                public_id: newMessage.public_id
-                            }
-                        }))
+                        // wsSend(JSON.stringify({
+                        //     type: "message",
+                        //     payload: {
+                        //         room_id: id,
+                        //         content: newMessage.content,
+                        //         message_type: "image",
+                        //         public_id: newMessage.public_id
+                        //     }
+                        // }))
+                        wsSend(id, newMessage.content, "image", newMessage.public_id)
                     } catch {
                         console.log("rest fallback")
                         const sent = await sendChat(newMessage)
@@ -326,15 +342,16 @@ export default function SingleChat() {
                     }
 
                     try {
-                        chatSocket.current?.send(JSON.stringify({
-                            type: "message",
-                            payload: {
-                                room_id: id,
-                                content: newMessage.content,
-                                message_type: "audio",
-                                public_id: newMessage.public_id
-                            }
-                        }))
+                        // wsSend(JSON.stringify({
+                        //     type: "message",
+                        //     payload: {
+                        //         room_id: id,
+                        //         content: newMessage.content,
+                        //         message_type: "audio",
+                        //         public_id: newMessage.public_id
+                        //     }
+                        // }))
+                        wsSend(id, newMessage.content, "audio", newMessage.public_id)
                     } catch {
                         console.log("rest fallback")
                         const sent = await sendChat(newMessage)

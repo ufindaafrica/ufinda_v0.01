@@ -18,6 +18,7 @@ import { getRole } from "@/deps/getRole";
 import * as Location from 'expo-location';
 import { getDistance } from 'geolib'
 import { cacheHostels } from "@/deps/cacheServices";
+import { registerForPushNotifications } from "@/deps/registerForPushNotifications";
 
 
 /// start and stop foreground service to schedule cache calls
@@ -229,7 +230,7 @@ export default function Home() {
         }
         const savedHostels = async () => {
             const favHostels = JSON.parse(await AsyncStorage.getItem('SAVED') || "[]")
-            setSavedIds(favHostels)
+            setSavedIds(favHostels.map((item : EnrichedHostel) => item.id))
             // console.log(await getRole())
         }
         savedHostelData()
@@ -238,6 +239,10 @@ export default function Home() {
 
     useEffect(() => {
         allHostels()
+    }, [])
+
+    useEffect(() => {
+        registerForPushNotifications()
     }, [])
 
     const allHostels = async () => {

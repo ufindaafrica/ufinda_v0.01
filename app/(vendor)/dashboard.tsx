@@ -4,6 +4,7 @@ import Plus from "@/components/plus";
 import VendorAppHeader from "@/components/vendorAppHeader";
 import { images } from "@/constants/images";
 import { lastMessageSentTime } from "@/deps/chatTime";
+import { registerForPushNotifications } from "@/deps/registerForPushNotifications";
 import { getAgentData } from "@/services/agentInfo";
 import { getVendorInfo } from "@/services/getStudentInfo";
 import { dashboardStyles } from "@/styles/dashboard";
@@ -20,6 +21,10 @@ export default function Dashboard() {
 
     const [vendor, setVendor] = useState<any>()
     const [vendorHostels, setVendorHostels] = useState<any>()
+
+    useEffect(() => {
+        registerForPushNotifications()
+    }, [])
 
     useEffect(() => {
         const loadVendor = async () => {
@@ -39,7 +44,7 @@ export default function Dashboard() {
 
                 // WEB SOCKET HERE
 
-                
+
             } catch {
                 return
             }
