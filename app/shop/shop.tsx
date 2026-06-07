@@ -1,5 +1,7 @@
 import AppHeader from "@/components/appHeader";
+import CategoryTouchable from "@/components/categoryTouchable";
 import Search from "@/components/search";
+import { dummy_shop } from "@/constants/dummy_shop";
 import { images } from "@/constants/images";
 import { globals } from "@/styles/globals";
 import { homeStyles } from "@/styles/home";
@@ -30,8 +32,11 @@ export default function Shop() {
                 </View>
 
                 {/* category list view */}
-                <View></View>
-
+                <View style={{flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center'}}>
+                    {
+                        dummy_shop.categories.map((item, idx) => <CategoryTouchable name={item.name} img={`https://picsum.photos/100/100?random=${idx}`} key={idx}/>)
+                    }
+                </View>
 
             </SafeAreaView>
         </SafeAreaProvider>
