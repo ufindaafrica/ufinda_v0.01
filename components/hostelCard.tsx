@@ -84,7 +84,7 @@ export default function HostelCard({ hostel, isSaved, reload, coords }: HostelCa
                     <View>
                         <Text style={[hostelCardStyles.hostelName, roboto.titleSmallBold]}>{hostel.title}</Text>
                         <Text style={[hostelCardStyles.address, hostelCardStyles.textMargin, roboto.bodySmall]}>{hostel.location}</Text>
-                        <Text style={[hostelCardStyles.hostelName, roboto.titleMediumBold]}>₦ {hostel.rent_per_year} / year</Text>
+                        <Text style={[hostelCardStyles.hostelName, roboto.titleMediumBold]}>₦ {hostel.rent_per_year.toLocaleString()} / year</Text>
                         <Text style={[hostelCardStyles.address, roboto.bodySmallBold]}>PID: {hostel.id}</Text>
                     </View>
                     <TouchableOpacity onPress={() => { onSave(hostel.id, saved, hostel) }}>
