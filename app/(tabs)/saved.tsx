@@ -10,7 +10,8 @@ import { globals } from "@/styles/globals";
 import { homeStyles } from "@/styles/home";
 import { EnrichedHostel } from "@/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import { View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -49,6 +50,7 @@ export default function Saved() {
         let savedHostelData: Array<EnrichedHostel> = []
 
         if (savedHostels.length > 0 && savedBefore) {
+            console.log("i'm here")
             savedHostelData = savedHostels
         } else {
             const savedHs = await allSavedHostels()
@@ -73,14 +75,14 @@ export default function Saved() {
         hostels()
     }, [reloadSave])
 
-    useEffect(() => {
+    useFocusEffect(useCallback(() => {
         const hostels = async () => {
             const hostelData = await getSavedHostels() ?? []
             setSavedHostels(hostelData)
         }
         
         hostels()
-    }, [])
+    }, []))
 
     useEffect(() => {
         const filterChanged = async () => {
@@ -94,24 +96,7 @@ export default function Saved() {
 
             const filteredList = allSavedHostels.filter((hostel) => hostel.room_type.toLowerCase() == currentFilter.toLowerCase())
 
-            console.log("filtered list =>", filteredList)
-
             setSavedHostels(filteredList)
-
-            // const searchFilter = await searchHostels({ type: currentFilter })
-            // if (searchFilter[0] != "200") {
-            //     toast("error searching saved hostels. try again.")
-            //     setCurrentFilter("Categories")
-            //     return
-            // }
-
-            // const savedHostels: Array<string> = JSON.parse(await AsyncStorage.getItem("SAVED") || "[]")
-
-            // const savedOptions: Array<EnrichedHostel> = searchFilter[1].filter((hostel: EnrichedHostel) => savedHostels.includes(hostel.id))
-
-            // setSavedHostels(savedOptions)
-
-            console.log("nothing")
         }
 
         filterChanged()

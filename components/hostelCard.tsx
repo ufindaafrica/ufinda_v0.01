@@ -47,6 +47,7 @@ export default function HostelCard({ hostel, isSaved, reload, coords }: HostelCa
         }
 
         await AsyncStorage.setItem("SAVED", JSON.stringify(savedHostels))
+        await AsyncStorage.setItem('SAVED_BEFORE', "true")
 
         reload?.()
     }

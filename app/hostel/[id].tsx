@@ -141,25 +141,26 @@ export default function HostelDetails() {
 
     const [saved, setSaved] = useState<boolean>(false)
 
-    const saveLocal = async (id: string) => {
+    const saveLocal = async (id: string, hostel: EnrichedHostel) => {
         try {
-            const savedIds: Array<string> = JSON.parse(await AsyncStorage.getItem("SAVED") ?? "[]")
+            const savedHostels: Array<EnrichedHostel> = JSON.parse(await AsyncStorage.getItem("SAVED") ?? "[]")
 
-            let newIds: Array<string> = (savedIds.includes(id)) ? [...savedIds.filter(item => item != id)] : [...savedIds, id]
+            let newHostels: Array<EnrichedHostel> = (savedHostels.map((item: EnrichedHostel) => item.id).includes(id)) ? [...savedHostels.filter(item => item.id != id)] : [...savedHostels, hostel]
 
-            await AsyncStorage.setItem('SAVED', JSON.stringify(newIds))
-            setSaved(newIds.includes(id))
+            await AsyncStorage.setItem('SAVED', JSON.stringify(newHostels))
+            await AsyncStorage.setItem('SAVED_BEFORE', 'true')
+            setSaved(newHostels.map((item: EnrichedHostel) => item.id).includes(id))
         }
         catch (err) {
             console.error(err)
         }
     }
 
-    const handleSaveHostel = async () => {
+    const handleSaveHostel = async (hostel:EnrichedHostel) => {
         if (!saved) {
             const save = await saveHostel(idString)
             if (save[0] == "200") {
-                await saveLocal(idString)
+                await saveLocal(idString, hostel)
                 setSaved(true)
                 return
             } else {
@@ -169,7 +170,7 @@ export default function HostelDetails() {
         } else {
             const unsave = await removeSavedHostel(idString)
             if (unsave[0] == "200") {
-                await saveLocal(idString)
+                await saveLocal(idString, hostel)
                 setSaved(false)
                 return
             } else {
@@ -182,8 +183,8 @@ export default function HostelDetails() {
 
     useEffect(() => {
         const isSaved = async (id: string) => {
-            const savedIds: Array<string> = JSON.parse(await AsyncStorage.getItem('SAVED') ?? "[]")
-            if (savedIds.includes(id)) setSaved(true)
+            const savedIds: Array<EnrichedHostel> = JSON.parse(await AsyncStorage.getItem('SAVED') ?? "[]")
+            if (savedIds.map((hostel: EnrichedHostel) => hostel.id).includes(id)) setSaved(true)
             else setSaved(false)
         }
 
@@ -237,7 +238,9 @@ export default function HostelDetails() {
                             <View style={idStyles.firstTopPrelimV}>
                                 <Text style={[idStyles.regTxt, roboto.bodyLarge]}>{hostelDetails?.room_type}</Text>
                                 {
-                                    myId?.startsWith("usr") && <TouchableOpacity onPress={() => handleSaveHostel()}>
+                                    myId?.startsWith("usr") && <TouchableOpacity onPress={() => {
+                                        if (hostelDetails) handleSaveHostel(hostelDetails)
+                                    }}>
                                         <Image source={saved ? images.savedIcon : images.archiveAdd} style={idStyles.archiveImg} />
                                     </TouchableOpacity>
                                 }

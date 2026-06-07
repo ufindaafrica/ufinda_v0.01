@@ -230,7 +230,7 @@ export default function Home() {
         }
         const savedHostels = async () => {
             const favHostels = JSON.parse(await AsyncStorage.getItem('SAVED') || "[]")
-            setSavedIds(favHostels)
+            setSavedIds(favHostels.map((item : EnrichedHostel) => item.id))
             // console.log(await getRole())
         }
         savedHostelData()
