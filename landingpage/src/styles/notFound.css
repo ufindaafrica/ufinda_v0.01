@@ -19,26 +19,48 @@
 .search-wrapper {
   color: #2563eb;
   margin-bottom: 20px;
+  display: none;
+}
+
+#error-code-left {
+    transform: rotate(-15deg);
+    font-size: 180px;
+    opacity: 0.3;
+}
+
+#error-code-right {
+    transform: rotate(15deg);
+    font-size: 180px;
+    opacity: 0.3;
 }
 
 .error-code {
-  font-size: 9rem;
+  font-size: 240px;
   font-weight: 800;
-  color: #111827;
   line-height: 1;
+  text-align: center;
+  -webkit-text-stroke: 4px var(--color-grey);
+  color: transparent;
+}
+
+.error-divider {
+  border: 1px solid lightgrey;
+
 }
 
 .content h2 {
   font-size: 2.5rem;
-  margin-top: 10px;
-  color: #1f2937;
+  margin-top: 16px;
+  color: var(--color-black);
+  text-align: center;
 }
 
 .content p {
-  margin-top: 15px;
-  color: #64748b;
+  margin-top: 16px;
+  color: var(--color-black);;
   font-size: 1.1rem;
   line-height: 1.8;
+  text-align: center;
 }
 
 .actions {
@@ -47,15 +69,6 @@
   gap: 15px;
   justify-content: center;
   flex-wrap: wrap;
-}
-
-.primary-btn {
-  padding: 14px 28px;
-  border-radius: 50px;
-  text-decoration: none;
-  color: white;
-  background: #2563eb;
-  font-weight: 600;
 }
 
 .secondary-btn {
@@ -80,28 +93,6 @@
   align-items: center;
 
   box-shadow: 0 10px 30px rgba(0,0,0,.08);
-}
-
-.card1 {
-  top: 18%;
-  left: 12%;
-}
-
-.card2 {
-  top: 65%;
-  left: 15%;
-}
-
-.card3 {
-  top: 25%;
-  right: 10%;
-}
-
-.pin {
-  position: absolute;
-  right: 15%;
-  bottom: 15%;
-  color: #2563eb;
 }
 
 .blur {
@@ -133,10 +124,6 @@
   }
 
   .floating-card {
-    display: none;
-  }
-
-  .pin {
     display: none;
   }
 }
