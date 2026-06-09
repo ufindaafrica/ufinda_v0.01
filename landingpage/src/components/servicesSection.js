@@ -3,10 +3,14 @@ import { Button } from './ui/Buttons'
 import Image from '../assets/servicesImage.png'
 import '../styles/services.css'
 import { IsVisible } from './middleware/isvisible'
+import { DOWNLOADLINK } from '../utils.js'
 
 const ServicesSection = () => {
   const sectionRef = useRef(null);
   IsVisible(sectionRef);
+
+	const handleDownload = () => {                             window.open(DOWNLOADLINK, '_self');
+  };
 
   return (
     <section id="services" className="servicesection section" ref={sectionRef}>
@@ -14,7 +18,7 @@ const ServicesSection = () => {
         <h3 className="pagetitle">What we do?</h3>
         <h1 className="pageheading">We connect students to <span className="highlightedText">reliable</span> and trusted Vendors</h1>
         <p className="pagepara">At uFinda we connect students looking for hostels/products with reliable and trusted Agents/vendors. Our platform bridges the gap between students and verified vendors, ensuring safe and convenient transactions for all your daily needs from hostels to everday essentials.</p>
-        <Button variant="stroke" className="serviceBtn">Get the App</Button>
+        <Button variant="stroke" className="serviceBtn" onClick={handleDownload}>Get the App</Button>
       </div>
 
       <div className="content" id="content-large-width">

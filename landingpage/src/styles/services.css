@@ -103,6 +103,9 @@
     width: 818px;
     border-top: 1px solid #6c6c6c62;
 }
+.videodemo {
+	display: none;
+}
 .worksBtn {
     width: 502px;
 }

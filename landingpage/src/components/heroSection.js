@@ -6,6 +6,13 @@ import { Button } from './ui/Buttons.js'
 //import DownloadTypes from './downloadTypes.js'
 import { FaDownload } from 'react-icons/fa'
 // import { useNavigate } from "react-router-dom"
+import { DOWNLOADLINK } from '../utils.js'
+
+
+const handleDownload = () => {
+	window.open(DOWNLOADLINK, '_self');
+  };
+
 
 const HeroSection = () => {
   // const navigate = useNavigate();
@@ -36,7 +43,7 @@ const HeroSection = () => {
         </Button> */}
         <Button
           variant="default"
-          href="expo-link"
+          onClick={handleDownload}
           target="_blank"
           className="download-option"
         >

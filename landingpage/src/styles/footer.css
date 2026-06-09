@@ -173,7 +173,9 @@
   }
   .footerLinks, .servicesLinks span {
     font-size: var(--label-text);
-    text-align: center;
+    text-align: center !important;
+    width: 100%;
+    justify-self: center;
   }
   .socialLink{
     margin: 16px 0 0 0;
