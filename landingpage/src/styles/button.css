@@ -59,7 +59,6 @@
     }
     .btn-stroke:hover {
         background-color: var(--color-primary) !important;
-        color: var(--color-black) !important;
+        color: var(--color-white) !important;
     };
-    border-bottom: 1px solid lightgrey;
 }

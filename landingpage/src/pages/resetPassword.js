@@ -89,7 +89,7 @@ const ResetPassword = () => {
     return { passwordErrors, matchError };
   };
 
-  //<------- Handling inpu ------->
+  //<------- Handling input ------->
   const handleChange = (e) => {
     const { name, value } = e.target;
     const newFormData = { ...formData, [name]: value };

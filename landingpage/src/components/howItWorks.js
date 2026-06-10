@@ -5,7 +5,8 @@ import { Button } from './ui/Buttons'
 import { DOWNLOADLINK } from '../utils.js'
 
 const howItWorks = () => {
-	const handleDownload = () => {                             window.open(DOWNLOADLINK, '_self');
+  const handleDownload = () => {
+    window.open(DOWNLOADLINK, '_self');
   };
 
   return (
@@ -73,9 +74,9 @@ const howItWorks = () => {
         </video>
       </div>
       <Link to="/#hero">
-        <Button variant="stroke" onClick={handleDownload}  className="worksBtn">Get the App now!</Button>
+        <Button variant="stroke" onClick={handleDownload} className="worksBtn">Get the App now!</Button>
       </Link>
-      
+
     </section>
   )
 }

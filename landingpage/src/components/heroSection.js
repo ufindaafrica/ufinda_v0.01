@@ -10,8 +10,8 @@ import { DOWNLOADLINK } from '../utils.js'
 
 
 const handleDownload = () => {
-	window.open(DOWNLOADLINK, '_self');
-  };
+  window.open(DOWNLOADLINK, '_self');
+};
 
 
 const HeroSection = () => {
