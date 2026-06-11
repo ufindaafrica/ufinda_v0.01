@@ -87,7 +87,6 @@ func main() {
 	r.Use(cors.New(config))
 	// Public endpoints
 	auth.RegisterAuth(r, cld)
-	userkyc.RegisterKYC(r, cld)
 	vendorkyc.RegisterKYC(r, cld)
 	vendorproduct.RegisterVendorProduct(r, asynqClient, cld)
 	metrics.RegisterMetrics(r)
@@ -110,6 +109,7 @@ func main() {
 	chatService.SetHub(hub)
 
 	go hub.Run()
+	userkyc.RegisterKYC(r, cld)
 
 	// Chat endpoints
 	chat.RegisterChat(r, chatService)

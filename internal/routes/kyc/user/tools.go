@@ -1,6 +1,7 @@
 package userkyc
 import (
 	"github.com/oladev/ufinda_v0.01/internal/db"
+    "github.com/oladev/ufinda_v0.01/internal/sockets/chat"
 )
 
 const MsgServerError = "An unexpected error occurred. Please try again."
@@ -13,4 +14,8 @@ type UserKYCRequest struct {
     AboutMe    *string            `json:"about_me"`
     Address *string `json:"address"`
     ProfileImg *db.UploadedFile `json:"profile_img"` 
+}
+
+type KYCController struct {
+    Hub *chat.Hub
 }

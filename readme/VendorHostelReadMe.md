@@ -110,19 +110,19 @@ This endpoint allows verified vendors to create a new hostel listing. It uses a 
 | --- | --- | --- | --- |
 | `title` | `string` | Title of the listing (Min 5 chars). | Yes |
 | `total_price` | `number` | Total cost (must be > 0). | Yes |
-| `total_hostel_rooms` | `number` | Available rooms in the building. | Yes |
+| `total_hostel_rooms` | `number` | Total no. of rooms in the building. | Yes |
 | `rent_per_year` | `number` | Annual rent per room. | Yes |
 | `location` | `string` | Physical address. | Yes |
-| `kitchen_access` | `string` | `personal` or `public`. | No |
-| `toilet_access` | `string` | `personal` or `public`. | No |
-| `power_supply` | `string` | `yes` or `no`. | No |
-| `landlord_resides` | `string` | `yes` or `no`. | No |
-| `room_type` | `string` | e.g., `self-contain`, `single room`. | No |
-| `roommates_allowed` | `string` | `yes` or `no`. | No |
+| `kitchen_access` | `string` | `personal` or `public`. | Yes |
+| `toilet_access` | `string` | `personal` or `public`. | Yes |
+| `power_supply` | `string` | `yes` or `no`. | Yes |
+| `landlord_resides` | `string` | `yes` or `no`. | Yes |
+| `room_type` | `string` | e.g., `self-contain`, `single room`. | Yes |
+| `roommates_allowed` | `string` | `yes` or `no`. | Yes |
 | `description` | `string` | Full details about the hostel. | No |
 | `images` | `array` | Objects containing `url` and `public_id`. | Yes (Min=1, max=3) |
 | `videos` | `array` | Objects containing `url` and `public_id`. | No (Max=1)|
-|  `available_rooms` | `integer` | number of available roos |
+|  `available_rooms` | `integer` | number of available rooms. | Yes (Min=1)
 | `geolocation` | `string`  | string co-ordinate of the hostel  |
 
 **Example Body**

@@ -50,7 +50,7 @@ var upgrader = websocket.Upgrader{
 type RecipientProfile struct {
     UserID      string  `json:"user_id"`
     DisplayName string  `json:"display_name"` // Username for Vendor, First+Last for Buyer
-    Phone       string  `json:"phone"`
+    Phone       string  `json:"-"`
     ProfileImg  *string `json:"profile_img"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
@@ -85,8 +85,9 @@ type ChatMessage struct {
 	PublicID     *string    `json:"public_id,omitempty"`
 	CreatedAt    time.Time  `json:"created_at"`
 	SenderName   string     `json:"sender_name"`
+	ProfileImg   *string	`json:"profile_img,omitempty"`
 	DeliveredAt  *time.Time `json:"delivered_at,omitempty"`
-	NewChanges *map[string]interface{} `json:"new_changes"`
+	NewChanges *map[string]interface{} `json:"new_changes,omitempty"`
 }
 
 type WSMessage struct {
@@ -350,56 +351,57 @@ func NewHub(chatService *SupabaseChatService) *Hub {
 }
 
 func (h *Hub) Run() {
-	for {
-		select {
-		case client := <-h.Register:
-			h.mutex.Lock()
-			if oldClient, ok := h.Clients[client.UserID]; ok {
-				log.Printf("Client %s reconnected. Closing old connection.", client.UserID)
-				oldClient.Conn.Close()
-			}
-			h.Clients[client.UserID] = client
-			h.mutex.Unlock()
-			log.Printf("Client %s registered. Total clients: %d", client.UserID, len(h.Clients))
+    for {
+        select {
+        case client := <-h.Register:
+            h.mutex.Lock()
+            if oldClient, ok := h.Clients[client.UserID]; ok {
+                log.Printf("Client %s reconnected. Closing old connection.", client.UserID)
+                oldClient.Conn.Close()
+            }
+            h.Clients[client.UserID] = client
+            h.mutex.Unlock()
+            log.Printf("Client %s registered. Total clients: %d", client.UserID, len(h.Clients))
 
-		case client := <-h.Unregister:
-			h.mutex.Lock()
-			if _, ok := h.Clients[client.UserID]; ok {
-				delete(h.Clients, client.UserID)
-				select {
-				case <-client.Send:
-				default:
-					close(client.Send)
-				}
-				for roomID, clientsInRoom := range h.Rooms {
-					if _, exists := clientsInRoom[client]; exists {
-						delete(clientsInRoom, client)
-						if len(clientsInRoom) == 0 {
-							delete(h.Rooms, roomID)
-							delete(h.RoomParticipants, roomID) // Clean up cache
-							log.Printf("Chat room %s is now empty and removed.", roomID)
-						}
-					}
-				}
-				log.Printf("Client %s unregistered. Total clients: %d", client.UserID, len(h.Clients))
-			}
-			h.mutex.Unlock()
+        case client := <-h.Unregister:
+            h.mutex.Lock()
+            if _, ok := h.Clients[client.UserID]; ok {
+                delete(h.Clients, client.UserID)
+                select {
+                case <-client.Send:
+                default:
+                    close(client.Send)
+                }
+                for roomID, clientsInRoom := range h.Rooms {
+                    if _, exists := clientsInRoom[client]; exists {
+                        delete(clientsInRoom, client)
+                        if len(clientsInRoom) == 0 {
+                            delete(h.Rooms, roomID)
+                            delete(h.RoomParticipants, roomID)
+                            log.Printf("Chat room %s is now empty and removed.", roomID)
+                        }
+                    }
+                }
+                log.Printf("Client %s unregistered. Total clients: %d", client.UserID, len(h.Clients))
+            }
+            h.mutex.Unlock()
 
-		case message := <-h.Broadcast:
-			if message.Type == "message" {
-				var payload NewMessagePayload
-				if err := json.Unmarshal(message.Payload, &payload); err != nil {
-					log.Printf("[ERROR] Hub: Failed to unmarshal broadcast message payload: %v", err)
-					continue
-				}
-				if _, err := uuid.Parse(payload.ChatRoomID); err != nil {
-					log.Printf("[ERROR] Hub: Invalid chat_room_id UUID: %s", payload.ChatRoomID)
-					continue
-				}
-				h.BroadcastToRoom(payload.ChatRoomID, message, payload.SenderID)
-			}
-		}
-	}
+        case message := <-h.Broadcast:
+            switch message.Type {
+            case "message":
+                var payload NewMessagePayload
+                if err := json.Unmarshal(message.Payload, &payload); err != nil {
+                    log.Printf("[ERROR] Hub: Failed to unmarshal broadcast message payload: %v", err)
+                    continue
+                }
+                if _, err := uuid.Parse(payload.ChatRoomID); err != nil {
+                    log.Printf("[ERROR] Hub: Invalid chat_room_id UUID: %s", payload.ChatRoomID)
+                    continue
+                }
+                h.BroadcastToRoom(payload.ChatRoomID, message, payload.SenderID)
+            }
+        }
+    }
 }
 
 func (h *Hub) ConfirmSenderDelivery(payload MessageDeliveredPayload, senderID string) {
@@ -593,6 +595,29 @@ func (cs *SupabaseChatService) SetHub(hub *Hub) {
 	cs.hub = hub
 }
 
+func (cs *SupabaseChatService) CalculateProfileDelta(recipientID, senderID string, currentProfile *RecipientProfile) (map[string]interface{}, bool) {
+    ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+    defer cancel()
+
+    redisKey := cs.getProfileSyncKey(recipientID, senderID)
+    lastSeen, _ := cs.RedisClient.Get(ctx, redisKey).Result()
+    dbTimeStr := currentProfile.UpdatedAt.Format(time.RFC3339)
+
+    // If cache matches DB, no update needed
+    if lastSeen == dbTimeStr {
+        return nil, false
+    }
+
+    // Since Name is immutable, only profile_img is tracked
+    delta := map[string]interface{}{
+        "profile_img": currentProfile.ProfileImg,
+    }
+
+    // Update cache to reflect that this profile version has been synced
+    cs.RedisClient.Set(ctx, redisKey, dbTimeStr, 7*24*time.Hour)
+    return delta, true
+}
+
 func (cs *SupabaseChatService) CreateChatRoom(buyerID, vendorID string) (*ChatRoom, error) {
     // 1. Check existing room
     existingRoom, _ := cs.findExistingRoom(buyerID, vendorID)
@@ -623,7 +648,7 @@ func (cs *SupabaseChatService) CreateChatRoom(buyerID, vendorID string) (*ChatRo
 }
 
 func (cs *SupabaseChatService) GetRecipientProfile(userID string) (*RecipientProfile, error) {
-    selectQuery := "id,role,username,first_name,last_name,phone,updated_at," +
+    selectQuery := "id,role,username,first_name,last_name,updated_at," +
         "vendor_kyc!left(profile_img, updated_at)," + 
         "user_kyc!left(profile_img, updated_at)"
 
@@ -648,7 +673,6 @@ func (cs *SupabaseChatService) GetRecipientProfile(userID string) (*RecipientPro
         Username  *string   `json:"username"`
         FirstName string    `json:"first_name"`
         LastName  string    `json:"last_name"`
-        Phone     string    `json:"phone"`
         UpdatedAt time.Time `json:"updated_at"`
         VendorKYC *struct {
             ProfileImg *db.UploadedFile `json:"profile_img"`
@@ -671,14 +695,15 @@ func (cs *SupabaseChatService) GetRecipientProfile(userID string) (*RecipientPro
 	res := results[0]
     profile := &RecipientProfile{
         UserID:    res.ID,
-        Phone:     res.Phone,
         UpdatedAt: res.UpdatedAt,
     }
 
     if res.Role == "vendor" {
         if res.Username != nil {
             profile.DisplayName = *res.Username
-        } else {
+        } else if res.FirstName != "" {
+			profile.DisplayName = res.FirstName
+		} else {
             profile.DisplayName = "Vendor"
         }
         
@@ -790,47 +815,35 @@ func (cs *SupabaseChatService) SendMessage(chatRoomID, senderID, content string,
 
     message := &messages[0]
 
-    // 4. Handle Profile Sync (Global User-to-User)
+    // 4. Handle Profile Sync (Delta-based)
     var newChangesPtr *map[string]interface{}
     senderProfile, err := cs.GetRecipientProfile(senderID)
-    
-    // Fetch room to find the recipient (the viewer)
     room, roomErr := cs.findExistingRoomByID(chatRoomID)
 
-    if err == nil && senderProfile != nil && roomErr == nil && cs.RedisClient != nil {
-        ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-        defer cancel()
-
-        // Identify the receiver (Viewer)
+    if err == nil && roomErr == nil && senderProfile != nil {
         recipientID := room.VendorID
         if senderID == room.VendorID {
             recipientID = room.BuyerID
         }
 
-        // GLOBAL KEY: Tracks if this specific recipient has seen this specific sender's latest profile
-        redisKey := cs.getProfileSyncKey(recipientID, senderID)
-        
-        lastSeenStr, redisErr := cs.RedisClient.Get(ctx, redisKey).Result()
-        dbTimeStr := senderProfile.UpdatedAt.Format(time.RFC3339)
-
-        if redisErr == redis.Nil || lastSeenStr != dbTimeStr {
-            changes := map[string]interface{}{
-                "display_name": senderProfile.DisplayName,
-                "profile_img":  senderProfile.ProfileImg,
-                "phone":        senderProfile.Phone,
-            }
-            newChangesPtr = &changes
-            
-            cs.RedisClient.Set(ctx, redisKey, dbTimeStr, 7*24*time.Hour)
-            log.Printf("[SYNC] Global: Populating new_changes for %s -> recipient %s", senderID, recipientID)
+        // Use the centralized Delta calculator
+        if delta, updated := cs.CalculateProfileDelta(recipientID, senderID, senderProfile); updated {
+            newChangesPtr = &delta
         }
     }
 
     // 5. Build WebSocket Payload
     displayName := "User"
+	var profileImg *string
     if senderProfile != nil {
-        displayName = senderProfile.DisplayName
+		if senderProfile.DisplayName != "" {
+			displayName = senderProfile.DisplayName
+		}
+		if newChangesPtr == nil && senderProfile.ProfileImg != nil {
+			profileImg = senderProfile.ProfileImg
+		}
     }
+
 
     chatMsg := NewMessagePayload{
         ID:          message.ID,
@@ -840,6 +853,7 @@ func (cs *SupabaseChatService) SendMessage(chatRoomID, senderID, content string,
         MessageType: message.MessageType,
         CreatedAt:   message.CreatedAt,
         SenderName:  displayName,
+		ProfileImg: profileImg,
         PublicID:    message.PublicID,
         DeliveredAt: message.DeliveredAt,
         NewChanges:  newChangesPtr, 
