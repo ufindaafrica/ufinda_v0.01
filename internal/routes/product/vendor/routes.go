@@ -5,17 +5,14 @@ import (
 	"github.com/oladev/ufinda_v0.01/internal/db"
 	"github.com/oladev/ufinda_v0.01/internal/token"
 	"net/http"
-	"encoding/json"
     "io"
 	"strings"
-	"mime/multipart"
-	"github.com/oladev/ufinda_v0.01/internal/tasks/product"
-	"github.com/oladev/ufinda_v0.01/internal/tasks"
 	"strconv"
 	"github.com/hibiken/asynq"
 	"log"
 	"fmt"
 	"github.com/oladev/ufinda_v0.01/internal/logs/product"
+    "github.com/oladev/ufinda_v0.01/internal/db/notification"
 )
 
 func CreateProductHandler(asynqClient *asynq.Client) gin.HandlerFunc {
@@ -38,50 +35,19 @@ func CreateProductHandler(asynqClient *asynq.Client) gin.HandlerFunc {
 			return
 		}
 
-
-        form, err := c.MultipartForm()
-        if err != nil {
-            c.JSON(http.StatusBadRequest, gin.H{"error": "error getting request"})
+        var req CreateProductRequest
+        if err := c.ShouldBindJSON(&req); err != nil {
+            c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
             return
         }
 
-        // accepting multiple images
-        imageHeaders := form.File["product_images"]
-        if len(imageHeaders) < 1 {
-            c.JSON(http.StatusBadRequest, gin.H{"error": "no image provided"})
-            return
-        }
-
-        // accepting just a video
-        videoHeader, _ := c.FormFile("product_video") 
-		var videoSlice []*multipart.FileHeader
-		if videoHeader != nil {
-			videoSlice = append(videoSlice, videoHeader)
-		}
-
-		rawPrice := c.PostForm("price")
-
-		// 2. Remove all commas
-		cleanPrice := strings.ReplaceAll(rawPrice, ",", "") // becomes "200000"
-
-		// 3. Now parse the clean string
+		// 2. clean price
+		cleanPrice := strings.ReplaceAll(req.Price, ",", "")
 		price, err := strconv.ParseInt(cleanPrice, 10, 64)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid price format"})
 			return
 		}
-
-        title := c.PostForm("title")
-        description := c.PostForm("description")
-        categorySlug := c.PostForm("category")
-        attributes := c.PostForm("attributes")
-
-        var attributesJSON json.RawMessage
-        if attributes != "" {
-            attributesJSON = json.RawMessage(attributes)
-        } else {
-            attributesJSON = json.RawMessage(`{}`)
-        }
 
         checkUniquenessFunc := func(id string) (bool, error) {
             return token.IsIDUnique(id, "/rest/v1/product_items")
@@ -96,11 +62,13 @@ func CreateProductHandler(asynqClient *asynq.Client) gin.HandlerFunc {
         data := map[string]interface{}{
             "p_id":          productID,
 			"p_vendor_id":	 getUser.ID,
-            "p_slug":        categorySlug,
-            "p_title":       title,
+            "p_slug":        req.Category,
+            "p_title":       req.Title,
             "p_price":       price,
-            "p_attributes":  attributesJSON,
-            "p_description": description,
+            "p_attributes":  req.Attributes,
+            "p_description": req.Description,
+            "p_product_images": req.ProductImages,
+            "p_product_video": req.ProductVideo,
         }
 
         resp, err := db.MakeDBRequest("POST", "/rest/v1/rpc/create_product_by_slug", data, nil)
@@ -122,22 +90,20 @@ func CreateProductHandler(asynqClient *asynq.Client) gin.HandlerFunc {
             return
         }
 
-        // Prepare payload for background task
-        // Note: Check if your videoHeader needs to be handled as a slice or single
-        payload, err := json.Marshal(producttasks.ProductMediaUploadPayload{
-            ProductID:      productID,
-            VendorID:       getUser.ID,
-            ImageFilesData: tasks.FilesToBytes(imageHeaders), 
-            VideoFilesData: tasks.FilesToBytes(videoSlice), // Adjusted helper name for clarity
-        })
-        
-        if err == nil {
-            task := asynq.NewTask(producttasks.TypeProductMediaUpload, payload)
-            if _, err := asynqClient.Enqueue(task, asynq.MaxRetry(3)); err != nil {
-                log.Printf("Could not enqueue task: %v", err)
-            }
-        }
+        go func(userID, productName string) {
+			tokens, err := notifdb.GetPushTokens(userID)
+			if err == nil && len(tokens) > 0 {
+				title := "Listing Added! 🎉"
+				body := fmt.Sprintf("Your product/service '%s' has been listed successfully.", productName)
+				
+				for _, tData := range tokens {
+					if tData.DeviceToken != "" {
+						_ = notifdb.SendPushNotification(tData.DeviceToken, title, body, "LISTING_SCREEN")
+					}
+				}
+			}
+		}(getUser.ID, req.Title)
 
-        c.JSON(http.StatusAccepted, gin.H{"message": "Product listed. Media is being processed in the background."})
+        c.JSON(http.StatusAccepted, gin.H{"message": "Product listed successfully", "id": productID})
     }
 }

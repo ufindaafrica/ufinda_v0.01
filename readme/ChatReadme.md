@@ -16,19 +16,18 @@ Clients send JSON messages to perform actions.
 
 | Action | Payload Required | Description |
 | --- | --- | --- |
-| **Join Room** | `{"type": "join_room", "payload": {"room_id": "UUID"}}` | Subscribes to a specific chat room to receive real-time messages. |
+| **Join Room** | `{"type": "join_room", "payload": {"room_id": "UUID"}}` | Subscribes to a specific chat room. |
 | **Leave Room** | `{"type": "leave_room", "payload": {"room_id": "UUID"}}` | Unsubscribes from a chat room. |
-| **Send Message** | `{"type": "message", "payload": {"room_id": "UUID", "content": "text/url", "message_type": "text/image/audio", "public_id": "string?"}}` | Sends a message. `public_id` is required for media types. |
+| **Send Message** | `{"type": "message", "payload": {"room_id": "UUID", "content": "text/url", "message_type": "text/image/audio", "public_id": "string?"}}` | Sends a message. |
 
 ### Server-to-Client Events
-
-The server broadcasts these messages to the relevant clients.
 
 #### `new_message`
 
 Sent to the recipient when a new message arrives.
 
-* **Payload Example:**
+* **Payload Structure:**
+
 ```json
 {
   "type": "new_message",
@@ -40,28 +39,25 @@ Sent to the recipient when a new message arrives.
     "message_type": "text",
     "sender_name": "Olalekan",
     "created_at": "2026-01-23T...",
-    "new_changes": { "display_name": "New Name", "profile_img": "url" }
+    // One of the following two fields will be present:
+    "new_changes": {"profile_img": "url"}, 
+    // OR
+    "profile_img": "url"
   }
 }
 
 ```
 
-
-> **Note:** `new_changes` is only populated if the sender's profile has updated since the recipient last saw it (synced via Redis).
-
-
-
-#### `message_delivered`
-
-Sent back to the **sender** to acknowledge the message was saved and broadcasted.
-
-* **Payload:** `{"message_id": "UUID"}`
+> **Client Logic for Profile Images:**
+> * If `new_changes` is present, it contains a delta update. Use the `profile_img` inside `new_changes` to **immediately update** the recipient's cached profile image in your UI.
+> * If `new_changes` is absent, the `profile_img` field (if present) provides the current image. Only update the UI if you do not currently have a profile image cached for this user, or use it to verify your existing cache.
+> 
+> 
 
 ---
 
 ## 2. REST API Endpoints
 
-All endpoints require authentication and return `MsgServerError` on internal failure.
 **Base URL:** `https://ufinda-v0-01.onrender.com`
 
 ### Chat Rooms
@@ -70,89 +66,46 @@ All endpoints require authentication and return `MsgServerError` on internal fai
 
 `POST [BASE_URL]/chat/rooms`
 
-* **Request Payload:**
-```json
-{ "vendor_id": "UUID" }
+* **Request Payload:** `{ "vendor_id": "UUID" }`
+* **Response (201 Created):**
 
-```
-
-
-* **Expected Return (201 Created):**
 ```json
 {
   "id": "room_uuid",
-  "buyer_id": "user_uuid",
-  "vendor_id": "vendor_uuid",
   "recipient_info": {
     "user_id": "vendor_uuid",
-    "display_name": "VendorName",
-    "profile_img": "url"
+    "profile_img": "url" // Use this for the initial chat icon
   }
 }
 
 ```
 
-
-
 #### **Get Chat Rooms (Summary)**
 
 `GET [BASE_URL]/chat/rooms/with-last-message`
 
-* **Description:** Returns all rooms for the user including the last message, unread count, and any profile updates (`new_changes`).
-* **Expected Return (200 OK):**
+* **Description:** Returns a list of active rooms.
+* **Response (200 OK):**
+
 ```json
 [
   {
     "id": "room_uuid",
-    "last_message": { "content": "Last msg here", "created_at": "..." },
-    "unread_count": 3,
-    "new_changes": { "display_name": "Updated Name" }
+    "last_message": { "content": "...", "created_at": "..." },
+    // Similar to WebSocket events, new_changes indicates a profile photo update
+    "new_changes": { "profile_img": "new_url_here" } 
   }
 ]
 
 ```
 
-
-
-### Messages
-
-#### **Get Chat History**
-
-`GET [BASE_URL]/chat/messages?room_id=UUID&page=1`
-
-* **Parameters:** `room_id` (required), `page` (optional, default 1, 20 msgs per page).
-* **Expected Return (200 OK):** An array of `Message` objects ordered by `created_at` (Ascending for UI).
-
-#### **Mark Messages as Read**
-
-`POST [BASE_URL]/chat/messages/mark-read`
-
-* **Request Payload:** `{ "room_id": "UUID" }`
-* **Expected Return:** `204 No Content`
-
-#### **Total Unread Count**
-
-`GET [BASE_URL]/chat/unread-count`
-
-* **Expected Return (200 OK):** `{ "unread_count": 5 }`
-
-### Utilities
-
-#### **Get Cloudinary Signature**
-
-`GET /chat/signature`
-
-* **Description:** Generates a secure signature for client-side uploads.
-* **Expected Return (200 OK):** `{ "signature": "...", "timestamp": "..." }`
-
 ---
 
 ## 3. Technical Constraints & Logic
 
-* **Rate Limiting:** Users are restricted to **10 messages per minute**.
-* **Message Lengths:** * Text: Max 1000 characters.
-* Image/Audio: Max 500 characters (URL length).
+* **Profile Sync Strategy:** The system uses Redis to track when the sender last updated their profile.
+* **Efficiency:** We only send the `new_changes` object when an actual update has occurred, ensuring the mobile client doesn't perform unnecessary UI re-renders or local database writes.
+* **Initial Load:** When creating a room or fetching the room list, always check if `new_changes` is available to keep your local cache synchronized.
 
 
-* **Profile Sync:** The system uses Redis to track when User A last saw User B's profile. If User B updates their photo, the very next message sent will include a `new_changes` payload so the UI can update the contact info without a fresh API call.
-* **Offline Delivery:** If a recipient is not connected to the WebSocket, the system automatically triggers a **Push Notification** via the `notification` package.
+* **Offline Delivery:** If a recipient is not connected to the WebSocket, the system automatically triggers a **Push Notification**. Upon reconnecting and calling the history/room list endpoints, the client will receive the current state and any pending `new_changes`.
