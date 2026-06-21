@@ -2,14 +2,19 @@ package productdb
 import (
 	"github.com/cloudinary/cloudinary-go/v2"
 	"context"
+	"encoding/json"
 	"time"
+	"errors"
 	"io"
+	"log"
 	"fmt"
 	"net/url"
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 	"github.com/oladev/ufinda_v0.01/internal/db"
 	"net/http"
 )
+
+var ErrorListingNotFound = errors.New("listing not found")
 
 
 func UploadProductImages(cld *cloudinary.Cloudinary, reader io.Reader, filename string) (string, string, error) {
@@ -68,4 +73,48 @@ func UpdateProduct(id string, data interface{}) error {
 	}
 
 	return nil
+}
+
+func DeleteProduct(id string) error {
+	url := fmt.Sprintf("/rest/v1/product_items?id=eq.%s", url.QueryEscape(id))
+
+	resp, err := db.MakeDBRequest("DELETE", url, nil, nil)
+
+	if err != nil {
+		return fmt.Errorf("failed to delete listing: %w", err)
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("failed to delete listing")
+	}
+	
+	return nil
+}
+
+func FindProductByID(id string) (*db.Product, error) {
+    endpoint := fmt.Sprintf("/rest/v1/product_items?id=eq.%s", id)
+
+    resp, err := db.MakeDBRequest("GET", endpoint, nil, nil)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+
+    if resp.StatusCode != http.StatusOK {
+		log.Printf("listing not found or db error: status %d", resp.StatusCode)
+        return nil, fmt.Errorf("unable to retrieve listing")
+    }
+
+    var products []db.Product
+    if err := json.NewDecoder(resp.Body).Decode(&products); err != nil {
+        return nil, err
+    }
+
+    if len(products) == 0 {
+        return nil, ErrorListingNotFound
+    }
+
+    return &products[0], nil
 }

@@ -66,18 +66,14 @@ The base URL for all API requests:
 
 ```
 
----
-
-## 3. Implementation Logic
+#### Implementation Logic
 
 * **Media Handling:** This API follows a **Client-Side Upload** pattern. Before calling this endpoint, the client must upload media files to Cloudinary. The `url` and `public_id` returned by Cloudinary are then passed into this request.
 * **ID Generation:** A unique `productID` is generated using a secure random token generator, ensuring uniqueness within the `product_items` table.
 * **Price Formatting:** The backend automatically strips commas from the `price` string before converting it to an integer for database storage.
 * **Notifications:** Upon successful listing, the system triggers an asynchronous push notification to the vendor confirming that their product is live.
 
----
-
-## 4. Error Handling
+#### Error Handling
 
 | Status Code | Reason |
 | --- | --- |
@@ -87,3 +83,37 @@ The base URL for all API requests:
 | **5XX (Database)** | Database rejected the payload (details provided in response). |
 
 ---
+
+## Delete Product
+
+`DELETE [BASE_URL]/product/del/:id`
+
+**Description:** Removes a product listing and its associated media assets. This operation is restricted to the original vendor who created the listing.
+
+#### Request Parameters
+
+* `:id` (Path Parameter): The unique `product_id` of the listing to be removed.
+
+#### Logic & Workflow
+
+1. **Authorization:** Validates that the requesting user is a verified vendor.
+2. **Ownership Verification:** Confirms that the `vendor_id` associated with the listing matches the `user_id` in the request session. If they do not match, the system logs a security event and returns a `403 Forbidden` error.
+3. **Media Cleanup:**
+* Iterates through the stored `product_images` and `product_video` metadata.
+* Sends a request to **Cloudinary** to destroy the assets using their `public_id`.
+* **Resilience:** If an asset is already missing from Cloudinary, the system logs the incident but proceeds with the deletion to ensure the database record does not persist as a "dangling" reference.
+
+
+4. **Database Deletion:** Removes the product record from the `product_items` table.
+
+
+#### Response Codes
+
+| Status Code | Description |
+| --- | --- |
+| **200 OK** | Listing and all associated media were successfully deleted. |
+| **401 Unauthorized** | Missing/invalid authentication or vendor is not verified. |
+| **403 Forbidden** | The authenticated user does not own this listing. |
+| **404 Not Found** | The specified `product_id` does not exist. |
+| **500 Internal Server Error** | Server-side failure (e.g., database connectivity). |
+

@@ -127,10 +127,6 @@ func FindHostelByID(id string) (*db.EnrichedHostel, error) {
     defer resp.Body.Close()
 
     if resp.StatusCode != http.StatusOK {
-        bodyBytes, _ := io.ReadAll(resp.Body)
-
-        log.Printf("failed to get hostel: Status %d for URL %s. Response: %s", resp.StatusCode, urlPath, string(bodyBytes))
-
         return nil, fmt.Errorf("failed to get hostel")
     }
 

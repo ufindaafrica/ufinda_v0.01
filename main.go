@@ -88,12 +88,11 @@ func main() {
 	// Public endpoints
 	auth.RegisterAuth(r, cld)
 	vendorkyc.RegisterKYC(r, cld)
-	vendorproduct.RegisterVendorProduct(r, asynqClient, cld)
+	vendorproduct.RegisterVendorProduct(r, cld)
 	metrics.RegisterMetrics(r)
 	webhook.RegisterWebhooks(r, wsHub)
 	notif.RegisterNotif(r)
 	
-	// Pass the Cloudinary client and the Asynq client to the hostel registration
 	vendorhostel.RegisterHostel(r, cld)
 	userhostel.RegisterApi(r)
 

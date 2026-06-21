@@ -216,14 +216,18 @@ type Favorites struct {
 }
 
 type Product struct {
-	ID string `json:"id"`
-	SellerID string `json:"seller_id"`
-	Title string `json:"title`
-	Price int64 `json:"price"`
-	Condition string `json:"condition"`
-	IsAvailable bool `json:"is_available"`
-	CreatedAt *time.Time `json:"created_at,omitempty"`
-	UpdatedAt *time.Time `json:"updated_at,omitempty"`
+    ID            string          `json:"id"`
+    VendorID      string          `json:"vendor_id"`
+    Title         string          `json:"title"`
+    Price         int64           `json:"price"`
+    Description   string          `json:"description"`
+    Attributes    json.RawMessage `json:"attributes"`
+    ProductImages []UploadedFile  `json:"product_images"`
+    ProductVideo  *UploadedFile   `json:"product_video"`
+    IsAvailable   bool            `json:"is_available"`
+    CreatedAt     *time.Time      `json:"created_at"`
+    UpdatedAt     *time.Time      `json:"updated_at"`
+    CategoryID    *uuid.UUID         `json:"category_id"` // Matches your DB column
 }
 
 type Rating struct {
