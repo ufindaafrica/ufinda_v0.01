@@ -110,6 +110,7 @@ export default function VendorChat({ student }: VendorChatProps) {
 
             // if (storedChats.length === 0) {
                 const chatsList = await getAllChats()
+                console.log("chatList =>", chatsList)
 
                 if (chatsList[0] != "200") {
                     console.log("error getting chats", chatsList[1])

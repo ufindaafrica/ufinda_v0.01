@@ -401,7 +401,7 @@ export default function NewHostel() {
                         onSubmitEditing={() => Keyboard.dismiss()}
                     />
                 </View>
-                <View style={newHostelStyles.inputV}>
+                {/* <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Map Location" />
                     <Input
                         hint="Gwani Street"
@@ -409,7 +409,7 @@ export default function NewHostel() {
                         onChangeText={(e) => setGeoLocation(e)}
                         editable={false}
                     />
-                </View>
+                </View> */}
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Hostel type" />
                     <TouchableOpacity onPress={() => { Keyboard.dismiss(); setDrawer(true) }}>

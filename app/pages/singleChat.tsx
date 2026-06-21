@@ -389,6 +389,7 @@ export default function SingleChat() {
 
             const idString = Array.isArray(id) ? id[0] : id
             const mes = await getChatMessages({ room_id: idString })
+            console.log(mes[1])
             if (mes[0] == "200") {
                 setAllMessages(mes[1])
                 console.log(mes[1])

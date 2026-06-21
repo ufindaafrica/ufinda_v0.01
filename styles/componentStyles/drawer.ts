@@ -9,14 +9,15 @@ export const drawerStyles = StyleSheet.create({
         position: "absolute",
         top: 0,
         left: 0,
-        zIndex: 100
+        zIndex: 100,
+        // backgroundColor: 'pink'
     },
 
     animated: {
         width: "100%",
         backgroundColor: "white",
         position: "absolute",
-        bottom: 0,
+        bottom: -10,
         borderTopLeftRadius: 16,
         borderTopRightRadius: 16,
         padding: moderateScale(16)

@@ -18,18 +18,18 @@ interface DrawerProps {
 
 export default function Drawer({ title, options, onSelectOption, onCloseDrawer, selectedOption }: DrawerProps) {
 
-    const height = Dimensions.get("window").height
+    const height = Dimensions.get("screen").height
 
     const modalHeight = 160 + ((options?.length ?? 0) * 40)
 
     const translateY = useSharedValue(height)
 
     const openDrawer = () => {
-        translateY.value = withTiming(0, { duration: 500 })
+        translateY.value = withTiming(0, { duration: 200 })
     }
 
     const closeDrawer = () => {
-        translateY.value = withTiming(height, { duration: 500 }, (finished) => {
+        translateY.value = withTiming(height, { duration: 200 }, (finished) => {
             if (finished) {
                 scheduleOnRN(onCloseDrawer, false)
             }
@@ -50,7 +50,7 @@ export default function Drawer({ title, options, onSelectOption, onCloseDrawer, 
         setTimeout(() => {
             onSelectOption(item)
             closeDrawer()
-        }, 1000)
+        }, 500)
     }
 
     return (
