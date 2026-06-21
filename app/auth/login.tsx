@@ -1,3 +1,4 @@
+import BackArrow from "@/components/back";
 import ErrorModal from "@/components/errorModal";
 import Input from "@/components/input";
 import Loader from "@/components/loader";
@@ -100,6 +101,9 @@ export default function Login() {
                     extraScrollHeight={15}
                     ref={scrollRef}
                 >
+                    <View style={signupStyles.layoutPadding}>
+                        <BackArrow large backFun={() => router.replace("/onboarding")}/>
+                    </View>
                     <View style={signupStyles.layoutPadding}>
                         <Text style={[signupStyles.headerText, roboto.titleLargeBold]}>Login to your Account</Text>
                         <Text style={[signupStyles.pText, roboto.bodyMedium, signupStyles.grayText]}>Please enter your email and password to login to your account.</Text>

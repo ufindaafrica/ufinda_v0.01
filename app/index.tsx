@@ -1,5 +1,7 @@
+// SplashScreen.preventAutoHideAsync()
+
 import { useFonts as useRobotoFonts, Roboto_700Bold, Roboto_400Regular } from "@expo-google-fonts/roboto"
-import { router } from "expo-router";
+import { router, SplashScreen } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
 import Onboarding from "./onboarding";
@@ -10,6 +12,7 @@ export default function Index() {
 
   const [splashScreen, setSplashScreen] = useState(true)
   const [firstOpen, setFirstOpen] = useState(true)
+  const [appReady, setAppReady] = useState(false)
 
   const [robotoFontsLoaded] = useRobotoFonts({
     Roboto_700Bold,
@@ -28,6 +31,8 @@ export default function Index() {
         setFirstOpen(false)
       }
 
+      setAppReady(true)
+
       setTimeout(() => {
         setSplashScreen(false)
       }, 2000)
@@ -37,6 +42,10 @@ export default function Index() {
     initOnboarding();
 
   }, []);
+
+  useEffect(() => {
+    if (robotoFontsLoaded && appReady) SplashScreen.hideAsync()
+  }, [robotoFontsLoaded, appReady])
 
   useEffect(() => {
     const navigate = async () => {

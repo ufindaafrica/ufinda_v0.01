@@ -36,13 +36,16 @@ export const onboardingStyles = StyleSheet.create({
     header: {
         textAlign: "center",
         color: "#101010",
-        width: scale(240)
+        width: scale(240),
+        height: scale(50),
+        alignSelf: 'center'
     },
 
     regular: {
         textAlign: "center",
         color: "#546881",
-        width: scale(278)
+        width: scale(278),
+        marginTop: scale(16)
     },
 
     dots: {
