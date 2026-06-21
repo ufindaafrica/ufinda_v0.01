@@ -1092,7 +1092,6 @@ func (cs *SupabaseChatService) GetUserChatRoomsWithLastMessage(userID string) ([
     }
 
     var result []map[string]interface{}
-    ctx := context.Background()
 
     for _, room := range chatRooms {
         // 1. Identify Recipient
@@ -1101,48 +1100,44 @@ func (cs *SupabaseChatService) GetUserChatRoomsWithLastMessage(userID string) ([
             recipientID = room.BuyerID
         }
 
-        roomData := map[string]interface{}{
-            "id": room.ID,
-            "buyer_id": room.BuyerID,
-            "vendor_id": room.VendorID,
-        }
-
-        // 2. Fetch Current Recipient Profile (The "Fresh" data)
+        // 2. Fetch Recipient Profile
         recipient, err := cs.GetRecipientProfile(recipientID)
+        
+        // Prepare Room Data base
+        roomData := map[string]interface{}{
+            "id":        room.ID,
+            "buyer_id":  room.BuyerID,
+            "vendor_id": room.VendorID,
+            "recipient_name": "User", // Default
+            "profile_img":    nil,
+            "new_changes":    nil,
+        }
+
         if err == nil && recipient != nil {
-            // 3. Check Redis for the "Last Seen" timestamp
-            redisKey := cs.getProfileSyncKey(userID, recipientID)
-            lastSeenStr, _ := cs.RedisClient.Get(ctx, redisKey).Result()
-
-            // 4. Comparison Logic
-            isUpdated := false
-            dbTimeStr := recipient.UpdatedAt.Format(time.RFC3339)
-
-            if lastSeenStr == "" || lastSeenStr != dbTimeStr {
-                // New user or the timestamp in DB is different from Cache
-                isUpdated = true
+            // Set Name
+            if recipient.DisplayName != "" {
+                roomData["recipient_name"] = recipient.DisplayName
             }
 
+            // 3. Apply Delta Logic (The 'SendMessage' pattern)
+            delta, isUpdated := cs.CalculateProfileDelta(userID, recipientID, recipient)
+            
             if isUpdated {
-                roomData["new_changes"] = map[string]interface{}{
-                    "display_name": recipient.DisplayName,
-                    "profile_img":  recipient.ProfileImg,
-                    "phone":        recipient.Phone,
-                }
-                // Update Redis to mark this new version as "Seen"
-                cs.RedisClient.Set(ctx, redisKey, dbTimeStr, 7*24*time.Hour)
+                // If there's an update, send ONLY new_changes
+                roomData["new_changes"] = delta
             } else {
-                roomData["new_changes"] = nil
+                // If no update, send ONLY the static profile image
+                roomData["profile_img"] = recipient.ProfileImg
             }
         }
 
-        // 5. Last Message Logic
+        // 4. Last Message
         messages, err := cs.GetChatHistory(room.ID, 1, 0)
         if err == nil && len(messages) > 0 {
             roomData["last_message"] = messages[0]
         }
 
-        // 6. Unread Count Logic
+        // 5. Unread Count
         roomData["unread_count"], _ = cs.GetRoomUnreadMessageCount(room.ID, userID)
 
         result = append(result, roomData)
@@ -1150,7 +1145,6 @@ func (cs *SupabaseChatService) GetUserChatRoomsWithLastMessage(userID string) ([
 
     return result, nil
 }
-
 // -------------------------------------------------------------
 // HTTP HANDLERS
 // -------------------------------------------------------------
