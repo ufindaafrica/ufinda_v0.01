@@ -8,6 +8,7 @@ import { adsStyles } from "@/styles/componentStyles/ads";
 import { colors, globals, roboto } from "@/styles/globals";
 import { homeStyles } from "@/styles/home";
 import { EnrichedHostel } from "@/types";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
@@ -39,12 +40,17 @@ export default function Ads() {
     useEffect(() => {
         const loadVendor = async () => {
 
+            const localAds = JSON.parse(await AsyncStorage.getItem('LOCAL_ADS') || "[]")
+            setVendorHostels(localAds)
+
             const listings = await getAgentData()
             console.log(listings)
+
             if (listings[0] != "200") {
                 // router.replace("/auth/login")
                 return
             } else {
+                await AsyncStorage.setItem('LOCAL_ADS', JSON.stringify(listings?.[1]))
                 setVendorHostels(listings?.[1])
             }
         }

@@ -134,7 +134,7 @@ export default function Dashboard() {
 
                                     <View>
                                         <View style={dashboardStyles.remEntireV}>
-                                            <Text style={[roboto.headlineLargeBold]}>{`${(item?.total_hostel_rooms ?? 0) - (item?.available_rooms ?? 0)} `}</Text>
+                                            <Text style={[roboto.headlineLargeBold]}>{`${(item?.available_rooms ?? 0)} `}</Text>
                                             <Text style={[roboto.bodyMedium, dashboardStyles.remT]}>{`/ ${item?.total_hostel_rooms ?? 0} Rooms Left`}</Text>
                                         </View>
 
