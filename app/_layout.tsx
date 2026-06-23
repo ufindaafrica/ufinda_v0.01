@@ -1,11 +1,14 @@
 import { WebSocketProvider } from "@/contexts/chatSocket"
 import { Stack } from "expo-router";
-import { GestureHandlerRootView} from "react-native-gesture-handler"
+import { GestureHandlerRootView } from "react-native-gesture-handler"
 import * as Notifications from "expo-notifications"
+import { usePostJobStore } from "@/stores/postJobStore"
+import { resumePendingJobIfAny } from "@/services/postHostelJob"
+import { router } from "expo-router"
+import { useEffect } from "react"
+import JobStatusBar from "@/components/jobStatusBar";
 
-export default function RootLayout() {
-
-  Notifications.setNotificationHandler({
+Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowBanner: true,
       shouldShowList: true,
@@ -14,11 +17,23 @@ export default function RootLayout() {
     })
   })
 
+export default function RootLayout() {
+
+  const { status, progress, errorText, reset } = usePostJobStore()
+
+  useEffect(() => { resumePendingJobIfAny() }, [])
+
   return <WebSocketProvider>
-    <GestureHandlerRootView style={{ flex: 1}}>
-    <Stack
-      screenOptions={{ headerShown: false }}
-    />
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Stack
+        screenOptions={{ headerShown: false }}
+      />
+      <JobStatusBar
+    status={status}
+    progress={progress}
+    errorText={errorText}
+    onDismiss={() => { reset(); if (status === "success") router.replace("/dashboard") }}
+/>
     </GestureHandlerRootView>
-    </WebSocketProvider>
+  </WebSocketProvider>
 }

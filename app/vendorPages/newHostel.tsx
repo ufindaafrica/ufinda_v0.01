@@ -15,13 +15,7 @@ import * as WebBrowser from "expo-web-browser"
 import * as Location from "expo-location"
 import Drawer from "@/components/drawer";
 import { TextInput } from "react-native";
-import Uploader from "@/components/uploader";
-import { postHostel } from "@/services/addHostel";
-import ErrorModal from "@/components/errorModal";
-import { router } from "expo-router";
-import { getUploadSignature } from "@/services/uploadSignature";
-import Loader from "@/components/loader";
-import { uploadToCloudinary } from "@/services/uploadToCloudinary";
+import { runPostHostelJob  } from "@/services/postHostelJob";
 
 
 export default function NewHostel() {
@@ -95,127 +89,14 @@ export default function NewHostel() {
 
     }
 
-    const onContinue = async () => {
-        console.log("onContinue STARTED")
-
-        try {
-            setLoaderVisible(true)
-
-            const uploadSignature = await getUploadSignature()
-            console.log("uploadSignature:", uploadSignature)
-
-            if (uploadSignature[0] !== "200") {
-                setLoaderVisible(false)
-                seterrorModal(true)
-                setErrorText(uploadSignature[1])
-                return
-            }
-
-            setLoaderVisible(false)
-            setUploaderVisible(true)
-
-            const uploadCloudinary = await uploadToCloudinary({
-                files: [
-                    ...hostelImages.filter(item => item && "uri" in item),
-                    ...(hostelVideo && "uri" in hostelVideo ? [hostelVideo] : [])
-                ],
-                api_key: uploadSignature[1].api_key,
-                timestamp: uploadSignature[1].timestamp,
-                signature: uploadSignature[1].signature,
-                folder: uploadSignature[1].folder,
-                cloud_name: uploadSignature[1].cloud_name,
-                setUploadProgress
-            })
-
-            console.log("uploadCloudinary:", uploadCloudinary)
-
-            setUploaderVisible(false)
-            setLoaderVisible(true)
-
-            if (uploadCloudinary[0] !== "200") {
-                setLoaderVisible(false)
-                seterrorModal(true)
-                setErrorText(uploadCloudinary[1])
-                return
-            }
-
-            const imgs: any[] = []
-            const vid: any[] = []
-
-            uploadCloudinary.forEach((item, index) => {
-                if (index === 0) return
-                if (item.resource_type === "image") imgs.push({ url: item.url, public_id: item.public_id })
-                if (item.resource_type === "video") vid.push({ url: item.url, public_id: item.public_id })
-            })
-
-            const hostelData = {
-                title: title ?? "",
-                total_price: totalPrice ?? 0,
-                total_hostel_rooms: totalRooms ?? 0,
-                rent_per_year: yearlyrent ?? 0,
-                location: address ?? "",
-                ...(power && { power_supply: power}),
-                ...(kitchen && { kitchen_access: kitchen }),
-                ...(toilet && { toilet_access: toilet }),
-                ...(landlord && { landlord_resides: landlord }),
-                ...(hostelType && { room_type: hostelType }),
-                ...(roomate && { roommates_allowed: roomate }),
-                ...(desc && { description: desc }),
-                images: imgs,
-                ...(vid.length > 0 && { videos: vid }),
-                available_rooms: numberOfRooms ?? 0,
-                ...(longLat && { geolocation: longLat})
-            }
-
-            console.log("hostelData:", hostelData)
-
-            const addNewHostel = await postHostel(hostelData)
-            console.log("addNewHostel:", addNewHostel)
-
-            if (addNewHostel[0] !== "201") {
-                setLoaderVisible(false)
-                seterrorModal(true)
-                setErrorText(addNewHostel[1])
-                return
-            }
-
-            setLoaderVisible(false)
-            setCorrectModal(true)
-            setCorrectText("Hostel added successfully!")
-
-        } catch (err) {
-            console.error("onContinue FAILED:", err)
-            seterrorModal(true)
-            setErrorText(
-                err instanceof Error ? err.message : "Unexpected error"
-            )
-        } finally {
-            setLoaderVisible(false)
-            return
-        }
+    const onContinue = () => {
+        runPostHostelJob({
+            title, address, hostelType, numberOfRooms, totalRooms, roomate,
+            power, kitchen, toilet, landlord, desc, yearlyrent, totalPrice, longLat,
+            hostelImages: hostelImages.filter((item): item is Media => !!item && "uri" in item),
+            hostelVideo: hostelVideo && "uri" in hostelVideo ? hostelVideo : null,
+        })
     }
-
-    const [errorModal, seterrorModal] = useState(true)
-    const [errorText, setErrorText] = useState("")
-    const [correctModal, setCorrectModal] = useState(false)
-    const [correctText, setCorrectText] = useState("")
-    const [loaderVisible, setLoaderVisible] = useState(false)
-
-    useEffect(() => {
-        if (errorText != "") {
-            seterrorModal(true)
-        } else {
-            seterrorModal(false)
-        }
-    }, [errorText])
-
-    useEffect(() => {
-        if (correctText != "") {
-            setCorrectModal(true)
-        } else {
-            setCorrectModal(false)
-        }
-    }, [correctText])
 
     useEffect(() => {
         const getLocation = async () => {
@@ -312,16 +193,6 @@ export default function NewHostel() {
         nextInput.focus()
         scrollRef.current?.scrollToFocusedInput(nextInput, verticalScale(150))
     }
-
-    const [uploaderVisible, setUploaderVisible] = useState(false)
-    const [uploadProgress, setUploadProgress] = useState(0)
-
-    useEffect(() => {
-        if (uploadProgress >= 100) {
-            setUploaderVisible(false)
-            setLoaderVisible(true)
-        }
-    }, [uploadProgress])
 
     const [canContinue, setCanContinue] = useState(true)
 
@@ -605,7 +476,7 @@ export default function NewHostel() {
             </KeyboardAwareScrollView>
 
             {
-                drawer ? <Drawer title="Hostel Type" options={["self-contain", "single room", "one room and parlour", "two bedroom flat", "room in a flat", "3 bedroom flat"]} onCloseDrawer={setDrawer} onSelectOption={setHostelType} selectedOption={hostelType} /> : null
+                drawer ? <Drawer title="Hostel Type" options={["self-contain", "single room", "one room and parlour", "2 bedroom flat", "room in a flat", "3 bedroom flat"]} onCloseDrawer={setDrawer} onSelectOption={setHostelType} selectedOption={hostelType} /> : null
             }
 
             {
@@ -628,21 +499,6 @@ export default function NewHostel() {
                 landlordDrawer ? <Drawer title="Landlord Resides" options={["yes", "no"]} onCloseDrawer={setLandlordDrawer} onSelectOption={setLandlord} selectedOption={landlord} /> : null
             }
 
-            {
-                uploaderVisible && <Uploader uploadProgress={uploadProgress} />
-            }
-
-            {
-                errorModal ? <ErrorModal text={errorText} errorFun={() => setErrorText("")} /> : null
-            }
-
-            {
-                correctModal ? <ErrorModal correct text={correctText} errorFun={() => { setCorrectText(""); router.replace("/dashboard") }} /> : null
-            }
-
-            {
-                loaderVisible ? <Loader /> : null
-            }
         </SafeAreaView>
     )
 }

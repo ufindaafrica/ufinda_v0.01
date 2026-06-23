@@ -7,6 +7,7 @@ import { lastMessageSentTime } from "@/deps/chatTime";
 import { registerForPushNotifications } from "@/deps/registerForPushNotifications";
 import { getAgentData } from "@/services/agentInfo";
 import { getVendorInfo } from "@/services/getStudentInfo";
+import { usePostJobStore } from "@/stores/postJobStore";
 import { dashboardStyles } from "@/styles/dashboard";
 import { globals, roboto } from "@/styles/globals";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -26,54 +27,54 @@ export default function Dashboard() {
         registerForPushNotifications()
     }, [])
 
-    useEffect(() => {
-        const loadVendor = async () => {
-            // get vendor's hostel listings
-            let listings: Array<any>
+    const loadVendor = async () => {
+        // get vendor's hostel listings
+        let listings: Array<any>
 
-            const existing_listings_raw = await AsyncStorage.getItem('LISTINGS') ?? "[]"
-            const existing_listings = JSON.parse(existing_listings_raw)
-            setVendorHostels(existing_listings)
+        const existing_listings_raw = await AsyncStorage.getItem('LISTINGS') ?? "[]"
+        const existing_listings = JSON.parse(existing_listings_raw)
+        setVendorHostels(existing_listings)
 
-            try {
-                listings = await getAgentData()
-                if (listings[0] == "200") {
-                    await AsyncStorage.setItem('LISTINGS', JSON.stringify(listings?.[1]))
-                    setVendorHostels(listings?.[1])
-                }
-
-                // WEB SOCKET HERE
-
-
-            } catch {
-                return
+        try {
+            listings = await getAgentData()
+            if (listings[0] == "200") {
+                await AsyncStorage.setItem('LISTINGS', JSON.stringify(listings?.[1]))
+                setVendorHostels(listings?.[1])
             }
 
-            // now get vendor"s info
-            let vendor: any
+            // WEB SOCKET HERE
 
-            const vendor_raw = await AsyncStorage.getItem('VENDOR_INFO') ?? '{}'
-            vendor = JSON.parse(vendor_raw)
-            console.log(vendor)
 
-            if (Object.keys(vendor).length === 0) {
-                console.log("refetching vendor")
-
-                vendor = await getVendorInfo()
-                console.log(vendor)
-
-                if (vendor[0] != "200") {
-                    return
-                } else {
-                    setVendor(vendor?.[1])
-                    AsyncStorage.setItem('VENDOR_INFO', JSON.stringify(vendor?.[1]))
-                }
-            } else {
-                setVendor(vendor)
-                console.log(vendor)
-            }
+        } catch {
+            return
         }
 
+        // now get vendor"s info
+        let vendor: any
+
+        const vendor_raw = await AsyncStorage.getItem('VENDOR_INFO') ?? '{}'
+        vendor = JSON.parse(vendor_raw)
+        console.log(vendor)
+
+        if (Object.keys(vendor).length === 0) {
+            console.log("refetching vendor")
+
+            vendor = await getVendorInfo()
+            console.log(vendor)
+
+            if (vendor[0] != "200") {
+                return
+            } else {
+                setVendor(vendor?.[1])
+                AsyncStorage.setItem('VENDOR_INFO', JSON.stringify(vendor?.[1]))
+            }
+        } else {
+            setVendor(vendor)
+            console.log(vendor)
+        }
+    }
+
+    useEffect(() => {
         loadVendor()
     }, [])
 
@@ -102,6 +103,14 @@ export default function Dashboard() {
         ["Profile View", images.vendorUser, 0],
         ["Appointments", images.appointments, 0]
     ]
+
+    const jobStatus = usePostJobStore(s => s.status)
+
+    useEffect(() => {
+        if (jobStatus === "success" || jobStatus === "error") {
+            loadVendor()
+        }
+    }, [jobStatus])
 
     return (
         <SafeAreaView style={[globals.vendorContainer]}>

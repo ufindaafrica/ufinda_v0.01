@@ -96,7 +96,7 @@ export default function HostelDetails() {
 
     const importantDetails = {
         "Property Address": hostelDetails?.location ?? "",
-        "Number of Available Rooms": hostelDetails?.total_hostel_rooms ?? "",
+        "Number of Available Rooms": hostelDetails?.available_rooms ?? "",
         "Total Package": hostelDetails?.total_price?.toLocaleString() ?? "",
         "Property ID": hostelDetails?.id ?? "",
         "Kitchen": hostelDetails?.kitchen_access ?? "",
@@ -247,7 +247,7 @@ export default function HostelDetails() {
                             </View>
                             <View style={idStyles.firstTopPrelimV}>
                                 <Text style={[idStyles.regTxt, roboto.titleMediumBold]}>₦ {hostelDetails?.rent_per_year?.toLocaleString()} / year</Text>
-                                <Text style={[roboto.bodyLarge, idStyles.redTxt]}>{`${hostelDetails?.total_hostel_rooms ?? ""} rooms left`}</Text>
+                                <Text style={[roboto.bodyLarge, idStyles.redTxt]}>{`${hostelDetails?.available_rooms ?? ""} rooms left`}</Text>
                             </View>
                             {
                                 myId?.startsWith("usr") && <View style={[idStyles.firstTopPrelimV]}>
