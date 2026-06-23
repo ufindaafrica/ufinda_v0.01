@@ -12,7 +12,6 @@ import { dashboardStyles } from "@/styles/dashboard";
 import { globals, roboto } from "@/styles/globals";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
-import { getItemAsync } from "expo-secure-store";
 import { useEffect, useState } from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";

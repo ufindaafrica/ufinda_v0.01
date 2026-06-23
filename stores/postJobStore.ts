@@ -1,6 +1,6 @@
 import { create } from "zustand"
 
-type Status = "idle" | "loading" | "uploading" | "posting" | "success" | "error"
+type Status = "idle" | "loading" | "compressing" | "uploading" | "posting" | "success" | "error"
 
 type PostJobState = {
     status: Status

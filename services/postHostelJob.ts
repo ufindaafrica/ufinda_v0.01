@@ -84,8 +84,6 @@ export const runPostHostelJob = async (payload: HostelJobPayload) => {
         const uploadSignature = await getUploadSignature()
         if (uploadSignature[0] !== "200") throw new Error(uploadSignature[1])
 
-        store.setStatus("uploading")
-
         const uploadCloudinary = await hostelListingUploadToCloudinary({
             files: [...payload.hostelImages, ...(payload.hostelVideo ? [payload.hostelVideo] : [])],
             api_key: uploadSignature[1].api_key,
@@ -93,7 +91,10 @@ export const runPostHostelJob = async (payload: HostelJobPayload) => {
             signature: uploadSignature[1].signature,
             folder: uploadSignature[1].folder,
             cloud_name: uploadSignature[1].cloud_name,
-            setUploadProgress: store.setProgress,
+            onCompressionStart: () => store.setStatus("compressing"),
+            setCompressionProgress: (p: number) => store.setProgress(p),
+            onUploadStart: () => store.setStatus("uploading"),
+            setUploadProgress: (p: number) => { store.setProgress(p) },
         })
 
         if (uploadCloudinary[0] !== "200") throw new Error(uploadCloudinary[1])

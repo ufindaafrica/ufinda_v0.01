@@ -1,4 +1,5 @@
 import * as FileSystem from "expo-file-system/legacy"
+import { Image as ImageCompressor, Video as VideoCompressor } from "react-native-compressor"
 
 export type hostelListingUploadFilesType = {
     files: Array<any>,
@@ -8,6 +9,9 @@ export type hostelListingUploadFilesType = {
     folder: string,
     cloud_name: string,
     setUploadProgress?: (value: any) => void
+    onCompressionStart?: () => void
+    setCompressionProgress?: (value: number) => void
+    onUploadStart?: () => void
 }
 
 export const hostelListingUploadToCloudinary = async (data: hostelListingUploadFilesType) => {
@@ -17,12 +21,53 @@ export const hostelListingUploadToCloudinary = async (data: hostelListingUploadF
         return info.exists && info.size ? info.size : 0
     }
 
+    const compressFile = async (file: any, onProgress?: (pct: number) => void) => {
+        try {
+            if (file.type?.startsWith("image")) {
+                const compressedUri = await ImageCompressor.compress(file.uri, {
+                    compressionMethod: "auto",
+                })
+                onProgress?.(100)
+                return { ...file, uri: compressedUri }
+            }
+
+            if (file.type?.startsWith("video")) {
+                const compressedUri = await VideoCompressor.compress(
+                    file.uri,
+                    { compressionMethod: "auto" },
+                    (progress) => onProgress?.(Math.round(progress * 100))
+                )
+                return { ...file, uri: compressedUri }
+            }
+        } catch (err) {
+            console.log("compression failed, uploading original file instead", err)
+        }
+
+        onProgress?.(100)
+        return file // audio, unknown type, or compression failure — upload as-is
+    }
+
     const result: Array<any> = []
 
     let uploadedBytes = 0
 
     const validFiles = data.files.filter(f => f?.uri)
-    const sizes = await Promise.all(validFiles.map(f => getfilesize(f.uri)))
+
+    const hasMediaToCompress = validFiles.some(f => f.type?.startsWith("image") || f.type?.startsWith("video"))
+    if (hasMediaToCompress) data.onCompressionStart?.()
+
+    const compressedFiles: any[] = []
+    for (let i = 0; i < validFiles.length; i++) {
+        const compressed = await compressFile(validFiles[i], (pct) => {
+            const overall = Math.round(((i + pct / 100) / validFiles.length) * 100)
+            data.setCompressionProgress?.(overall)
+        })
+        compressedFiles.push(compressed)
+    }
+
+    data.onUploadStart?.()
+
+    const sizes = await Promise.all(compressedFiles.map(f => getfilesize(f.uri)))
     const totalBytes = sizes.reduce((sum, size) => sum + size, 0)
 
     const uploadFiles = async (file: any) => {
@@ -82,7 +127,7 @@ export const hostelListingUploadToCloudinary = async (data: hostelListingUploadF
     }
 
     try {
-        for (const file of data.files) {
+        for (const file of compressedFiles) {
             await uploadFiles(file)
         }
 

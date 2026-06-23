@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 type Props = {
-    status: "idle" | "loading" | "uploading" | "posting" | "success" | "error"
+    status: "idle" | "loading" | "compressing" | "uploading" | "posting" | "success" | "error"
     progress: number
     errorText: string
     onDismiss: () => void
@@ -17,6 +17,7 @@ export default function JobStatusBar({ status, progress, errorText, onDismiss }:
 
     const label =
         status === "loading" ? "Preparing your ad..." :
+        status === "compressing" ? `Compressing photos/video... ${progress}%` :
         status === "uploading" ? `Uploading photos/video... ${progress}%` :
         status === "posting" ? "Publishing your ad..." :
         status === "success" ? "Hostel added successfully!" :
@@ -51,7 +52,7 @@ export default function JobStatusBar({ status, progress, errorText, onDismiss }:
                 </TouchableOpacity>
             )}
 
-            {status === "uploading" && (
+            {(status === "compressing" || status === "uploading") && (
                 <View style={{ position: "absolute", bottom: 0, left: 0, height: 3, width: `${progress}%`, backgroundColor: "#22C55E" }} />
             )}
         </View>
