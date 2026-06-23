@@ -7,7 +7,9 @@ import { images } from "@/constants/images";
 import { logIn } from "@/services/logIn";
 import { fonts, globals, roboto } from "@/styles/globals";
 import { signupStyles } from "@/styles/signup";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Link, router } from "expo-router";
+import { deleteItemAsync } from "expo-secure-store";
 import { useEffect, useRef, useState } from "react";
 import { Image, Keyboard, KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
@@ -82,6 +84,24 @@ export default function Login() {
         }
     }, [errorText])
 
+    useEffect(() => {
+        const clearLocalStorage = async () => {
+            await deleteItemAsync("ACCESS_TOKEN")
+            await deleteItemAsync("REFRESH_TOKEN")
+            await deleteItemAsync('ID')
+            await deleteItemAsync('ROLE')
+            await deleteItemAsync('PROFILE')
+            await AsyncStorage.removeItem('LISTINGS')
+            await AsyncStorage.removeItem('VENDOR_INFO')
+            await AsyncStorage.removeItem('ALL_CHATS')
+            await AsyncStorage.removeItem('SAVED')
+            await AsyncStorage.removeItem('SAVED_BEFORE')
+            await AsyncStorage.removeItem('LOCAL_ADS')
+        }
+
+        clearLocalStorage()
+    }, [])
+
     return (
         <SafeAreaView style={[signupStyles.main, globals.container]}>
 
@@ -102,7 +122,7 @@ export default function Login() {
                     ref={scrollRef}
                 >
                     <View style={signupStyles.layoutPadding}>
-                        <BackArrow large backFun={() => router.replace("/onboarding")}/>
+                        <BackArrow large backFun={() => router.replace("/onboarding")} />
                     </View>
                     <View style={signupStyles.layoutPadding}>
                         <Text style={[signupStyles.headerText, roboto.titleLargeBold]}>Login to your Account</Text>

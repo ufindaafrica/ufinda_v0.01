@@ -28,7 +28,9 @@ type Chat = {
     product_id?: string,
     unread_count?: number,
     last_message?: LastMessage,
-    sender_profile_pic?: any | null
+    sender_profile_pic?: any | null,
+    recipient_name?: string,
+    profile_img?: any | null
 }
 
 type LastMessage = {
@@ -92,8 +94,6 @@ export default function VendorChat({ student }: VendorChatProps) {
             phone_number: chatMateDat?.phone ?? "",
             id: chatMateId
         }
-        console.log("final data =>", chatMateData)
-        console.log("chatmateDat => ", chatMateDat)
         
         return chatMateData
     }
@@ -115,8 +115,6 @@ export default function VendorChat({ student }: VendorChatProps) {
                 if (chatsList[0] != "200") {
                     console.log("error getting chats", chatsList[1])
                 } else {
-                    console.log("got chats")
-
                     everyChat = (chatsList[1] ?? [])
                     await AsyncStorage.setItem('ALL_CHATS', JSON.stringify(everyChat))
                 }
@@ -142,7 +140,6 @@ export default function VendorChat({ student }: VendorChatProps) {
 
     const getChatMateName = (id: string) => {
         const hostel = chatMateInfos.find(chatmate => chatmate.id == id)
-        console.log("hostel  ... =>", hostel)
         return hostel?.name ?? ""
     }
 
@@ -151,8 +148,19 @@ export default function VendorChat({ student }: VendorChatProps) {
         return picChatMate?.profile_img ?? ""
     }
 
-    const getChatMateData = (id: string) => {
-        const chatmate = chatMateInfos.find(chatmate => chatmate.id == id)
+    const getChatMateData = (id: string, vendorChatMate?: Chat) => {
+        let chatmate = chatMateInfos.find(chatmate => chatmate.id == id)
+        console.log("chatmate => ", chatmate)
+
+        if (myId?.startsWith("vnd")) {
+            chatmate = {
+                "name": vendorChatMate?.recipient_name ?? "",
+                "profile_img": vendorChatMate?.profile_img,
+                "phone_number": "",
+                "id": id
+            }
+        }
+
         return chatmate ?? {}
     }
 
@@ -182,23 +190,24 @@ export default function VendorChat({ student }: VendorChatProps) {
                     currentChats()?.map((item, idx) =>
                         <TouchableOpacity onPress={() => {
                             const chatPersonId = myId === item.buyer_id ? item.vendor_id : item.buyer_id
+                            console.log("chatmatechatmate    =>   ", getChatMateData(chatPersonId ?? ""))
                             router.push({
                                 pathname: "/pages/singleChat",
                                 params: {
                                     id: item.id,
                                     vendor_id: chatPersonId,
-                                    chatmate_data: JSON.stringify(getChatMateData(chatPersonId ?? ""))
+                                    chatmate_data: JSON.stringify(getChatMateData(chatPersonId ?? "", item))
                                 }
                             })
                         }} key={idx} style={chatStyles.padding}>
                             <View style={chatStyles.eachChatV}>
-                                <ImageBackground source={getChatMatePic(item?.vendor_id ?? "") ? { uri: getChatMatePic(item?.vendor_id ?? "") } : images.laptop} style={chatStyles.laptopV} imageStyle={chatStyles.imageV}>
+                                <ImageBackground source={getChatMatePic(item?.vendor_id ?? "") ? { uri: getChatMatePic(item?.vendor_id ?? "") } : {uri : item.profile_img ?? images.laptop}} style={chatStyles.laptopV} imageStyle={chatStyles.imageV}>
                                     {item?.sender_profile_pic ? <Image source={item?.sender_profile_pic} style={chatStyles.profileImg} /> : <View style={[chatStyles.profileImg, chatStyles.nullPic]}>
-                                        <Text style={[roboto.mediumEmphasized, colors.white]}>{myId == item?.buyer_id ? (getChatMateName(item?.vendor_id ?? "")).charAt(0) : item?.buyer_id?.charAt(0) ?? ""}</Text></View>}
+                                        <Text style={[roboto.mediumEmphasized, colors.white]}>{myId == item?.buyer_id ? (getChatMateName(item?.vendor_id ?? "")).charAt(0) : item.recipient_name?.charAt(0).toLowerCase() ?? ""}</Text></View>}
                                 </ImageBackground>
                                 <View style={chatStyles.chatRightV}>
                                     <View>
-                                        <Text style={roboto.bodyLargeBold}>{getChatMateName(item?.vendor_id ?? "")}</Text>
+                                        <Text style={roboto.bodyLargeBold}>{myId?.startsWith("vnd") ? item?.recipient_name : getChatMateName(item?.vendor_id ?? "")}</Text>
                                         <View style={chatStyles.tickV}>
                                             {
                                                 (item?.unread_count ?? 0) > 0 ? null : (item?.last_message?.sender_id ?? "") === myId && <Image source={(item?.unread_count ?? 0) > 0 ? null : item?.last_message?.is_read ? images.greenTicks : images.twoticks} style={chatStyles.tick} />
