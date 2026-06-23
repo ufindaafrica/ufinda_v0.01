@@ -36,6 +36,9 @@ export const logOut = async () => {
         await AsyncStorage.removeItem('SAVED_BEFORE')
         await AsyncStorage.removeItem('LOCAL_ADS')
 
+        const keys = await AsyncStorage.getAllKeys()
+        await AsyncStorage.multiRemove(keys)
+
         // is there a single command that will clear everything stored in expo secure store, likewise for async storage
     } catch (err: unknown) {
 

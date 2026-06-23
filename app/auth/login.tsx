@@ -97,6 +97,9 @@ export default function Login() {
             await AsyncStorage.removeItem('SAVED')
             await AsyncStorage.removeItem('SAVED_BEFORE')
             await AsyncStorage.removeItem('LOCAL_ADS')
+
+            const keys = await AsyncStorage.getAllKeys()
+            await AsyncStorage.multiRemove(keys)
         }
 
         clearLocalStorage()

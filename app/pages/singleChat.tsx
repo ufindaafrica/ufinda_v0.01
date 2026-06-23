@@ -16,6 +16,7 @@ import { chatUploadSignature } from "@/services/uploadSignature";
 import { uploadToCloudinary } from "@/services/uploadToCloudinary";
 import { colors, globals, roboto } from "@/styles/globals";
 import { singleChatStyles } from "@/styles/singleChat";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder, useAudioRecorderState } from "expo-audio";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { getItemAsync } from "expo-secure-store";
@@ -382,14 +383,22 @@ export default function SingleChat() {
 
     }
 
-    useEffect(() => {
+    useFocusEffect(useCallback(() => {
         const getMessages = async () => {
             const storedId = await getItemAsync("ID") ?? ""
             setUserId(storedId)
 
             const idString = Array.isArray(id) ? id[0] : id
+
+            //first get local messages
+            const localMes = JSON.parse(await AsyncStorage.getItem(idString) || "[]")
+            setAllMessages(localMes)
+
             const mes = await getChatMessages({ room_id: idString })
             console.log(mes[1])
+
+            await AsyncStorage.setItem(idString, JSON.stringify(mes[1]))
+
             if (mes[0] == "200") {
                 setAllMessages(mes[1])
                 console.log(mes[1])
@@ -397,7 +406,8 @@ export default function SingleChat() {
         }
 
         getMessages()
-    }, [])
+    }, []))
+
 
     useFocusEffect(useCallback(() => {
         const setId = async () => {
