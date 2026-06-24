@@ -334,6 +334,12 @@ export default function HostelDetails() {
                         </View>
                     </View>} */}
 
+                    <View style={idStyles.outerAmenitiesV}>
+                        <View style={idStyles.innerAmenitiesV}>
+                            <Text style={roboto.bodyMedium}>{hostelDetails?.description}</Text>
+                        </View>
+                    </View>
+
                     {myId?.startsWith('usr') && <View style={idStyles.outerAgentV}>
                         <Text style={roboto.bodyLargeBold}>More like this</Text>
                     </View>}
