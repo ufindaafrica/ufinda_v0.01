@@ -155,7 +155,7 @@ export default function VendorChat({ student }: VendorChatProps) {
         if (myId?.startsWith("vnd")) {
             chatmate = {
                 "name": vendorChatMate?.recipient_name ?? "",
-                "profile_img": vendorChatMate?.profile_img,
+                "profile_img": toHttps(vendorChatMate?.profile_img) ?? "",
                 "phone_number": "",
                 "id": id
             }
