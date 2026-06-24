@@ -20,7 +20,7 @@ export const appHeaderStyles = StyleSheet.create({
 
     textTouch: {
         width: scale(84),
-        height: verticalScale(30),
+        height: verticalScale(34),
         paddingVertical: moderateScale(8),
         paddingHorizontal: moderateScale(24),
         alignItems: "center",

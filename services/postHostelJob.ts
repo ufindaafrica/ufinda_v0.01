@@ -43,8 +43,8 @@ const buildAndPost = async (payload: HostelJobPayload, uploadCloudinary: any[]) 
 
     uploadCloudinary.forEach((item, index) => {
         if (index === 0) return
-        if (item.resource_type === "image") imgs.push({ url: item.url, public_id: item.public_id })
-        if (item.resource_type === "video") vid.push({ url: item.url, public_id: item.public_id })
+        if (item.resource_type === "image") imgs.push({ url: item.secure_url, public_id: item.public_id })
+        if (item.resource_type === "video") vid.push({ url: item.secure_url, public_id: item.public_id })
     })
 
     const hostelData = {

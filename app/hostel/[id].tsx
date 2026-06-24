@@ -156,7 +156,7 @@ export default function HostelDetails() {
         }
     }
 
-    const handleSaveHostel = async (hostel:EnrichedHostel) => {
+    const handleSaveHostel = async (hostel: EnrichedHostel) => {
         if (!saved) {
             const save = await saveHostel(idString)
             if (save[0] == "200") {
@@ -199,6 +199,9 @@ export default function HostelDetails() {
     }
 
     const isVideo = (img: string) => /\.(mp4|webm|mov|mkv)(\?|$)/i.test(img)
+
+    
+    const toHttps = (url?: string | null) => url ? url.replace(/^http:\/\//, "https://") : url
 
     return (
         <SafeAreaProvider>
@@ -296,7 +299,7 @@ export default function HostelDetails() {
                                     vendorId: hostelDetails?.vendor_id
                                 }
                             })} style={hostelCardStyles.agentCard}>
-                                <Image source={hostelDetails?.vendor_info?.vendor_kyc?.profile_img?.url ? { uri: hostelDetails.vendor_info?.vendor_kyc?.profile_img?.url } : images.user0} style={hostelCardStyles.agentPic} />
+                                <Image source={hostelDetails?.vendor_info?.vendor_kyc?.profile_img?.url ? { uri: toHttps(hostelDetails.vendor_info?.vendor_kyc?.profile_img?.url) } : images.user0} style={hostelCardStyles.agentPic} />
                                 <View>
                                     <Text style={[roboto.bodyMediumBold, hostelCardStyles.agentMargin]}>{`${hostelDetails?.vendor_info?.username ?? ""}`}</Text>
                                     <View style={[hostelCardStyles.stars, hostelCardStyles.agentMargin]}>

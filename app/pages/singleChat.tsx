@@ -257,7 +257,7 @@ export default function SingleChat() {
                     }
 
                     const newMessage = {
-                        content: mediaUpload?.[1]?.url ?? "",
+                        content: mediaUpload?.[1]?.secure_url ?? "",
                         message_type: "image",
                         created_at: new Date(),
                         personal: true,
@@ -334,7 +334,7 @@ export default function SingleChat() {
                     }
 
                     const newMessage = {
-                        content: mediaUpload?.[1]?.url ?? "",
+                        content: mediaUpload?.[1]?.secure_url ?? "",
                         message_type: "audio",
                         created_at: new Date(),
                         personal: true,

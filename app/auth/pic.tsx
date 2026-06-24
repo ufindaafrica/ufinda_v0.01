@@ -86,7 +86,7 @@ export default function Pic() {
         // create the json to be sent to the api
         const kycData = {
             profile_img: {
-                url: cloudinaryUpload?.[1]?.url,
+                url: cloudinaryUpload?.[1]?.secure_url,
                 public_id: cloudinaryUpload?.[1]?.public_id
             },
             ...(desc && {about_me: desc}),
