@@ -41,6 +41,9 @@ export default function MemberProfile() {
     const [name, setName] = useState("")
     const [profileImg, setProfileImg] = useState("")
 
+    
+    const toHttps = (url?: string | null) => url ? url.replace(/^http:\/\//, "https://") : url
+
     useEffect(() => {
         const userRole = async () => {
             const mode = await getRole()
@@ -61,7 +64,7 @@ export default function MemberProfile() {
                     return
                 }
             }
-            
+
             const info = (role === "user") ? await getStudentInfo() : await getVendorInfo()
 
             if (info[0] != "200") {
@@ -70,7 +73,7 @@ export default function MemberProfile() {
                 const profile = {
                     first_name: info[1]?.first_name ?? "",
                     last_name: info[1]?.last_name ?? "",
-                    img_url: info[1]?.kyc_data?.profile_img?.url ?? ""
+                    img_url: toHttps(info[1]?.kyc_data?.profile_img?.url) ?? ""
                 }
                 await setItemAsync("PROFILE", JSON.stringify(profile))
             }
@@ -78,7 +81,7 @@ export default function MemberProfile() {
             const user = info[1]
 
             setName(`${user?.first_name ?? ""} ${user?.last_name ?? ""}`)
-            setProfileImg(`${user?.kyc_data?.profile_img?.url ?? ""}`)
+            setProfileImg(`${toHttps(user?.kyc_data?.profile_img?.url) ?? ""}`)
         }
 
         getOtherInfo()

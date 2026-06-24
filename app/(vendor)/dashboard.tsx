@@ -111,11 +111,16 @@ export default function Dashboard() {
         }
     }, [jobStatus])
 
+    
+    const toHttps = (url?: string | null) => url ? url.replace(/^http:\/\//, "https://") : url
+
+
+
     return (
         <SafeAreaView style={[globals.vendorContainer]}>
             <Plus />
 
-            <VendorAppHeader firstName={vendor?.first_name} profileImg={vendor?.kyc_data?.profile_img?.url} />
+            <VendorAppHeader firstName={vendor?.first_name} profileImg={toHttps(vendor?.kyc_data?.profile_img?.url) ?? ""} />
 
             <ScrollView contentContainerStyle={dashboardStyles.scrollV} showsVerticalScrollIndicator={false}>
                 <LineBreak />

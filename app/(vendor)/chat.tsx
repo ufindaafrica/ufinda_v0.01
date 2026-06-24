@@ -90,11 +90,11 @@ export default function VendorChat({ student }: VendorChatProps) {
         const chatMateDat = chatMateId.startsWith("usr") ? chatMate?.[1] : chatMate?.[1]?.[0]?.vendor_info
         const chatMateData: ChatMate = {
             name: chatMateId.startsWith("usr") ? `${chatMateDat?.first_name ?? ""} ${chatMateDat?.last_name ?? ""}` : `${chatMateDat?.username}`,
-            profile_img: chatMateId.startsWith("usr") ? chatMateDat?.kyc_data?.profile_img?.url ?? "" : chatMateDat?.vendor_kyc?.profile_img?.url ?? "",
+            profile_img: toHttps(chatMateId.startsWith("usr") ? chatMateDat?.kyc_data?.profile_img?.url : chatMateDat?.vendor_kyc?.profile_img?.url) ?? "",
             phone_number: chatMateDat?.phone ?? "",
             id: chatMateId
         }
-        
+
         return chatMateData
     }
 
@@ -109,19 +109,19 @@ export default function VendorChat({ student }: VendorChatProps) {
             everyChat = storedChats
 
             // if (storedChats.length === 0) {
-                const chatsList = await getAllChats()
-                console.log("chatList =>", chatsList)
+            const chatsList = await getAllChats()
+            console.log("chatList =>", chatsList)
 
-                if (chatsList[0] != "200") {
-                    console.log("error getting chats", chatsList[1])
-                } else {
-                    everyChat = (chatsList[1] ?? [])
-                    await AsyncStorage.setItem('ALL_CHATS', JSON.stringify(everyChat))
-                }
+            if (chatsList[0] != "200") {
+                console.log("error getting chats", chatsList[1])
+            } else {
+                everyChat = (chatsList[1] ?? [])
+                await AsyncStorage.setItem('ALL_CHATS', JSON.stringify(everyChat))
+            }
             // }
 
             console.log("every chat log =>", everyChat)
-            
+
             // AsyncStorage.removeItem('ALL_CHATS')
 
             const peopleInChats: Array<string> = everyChat?.map((chat: any) => chat?.buyer_id === myId ? chat?.vendor_id : chat?.buyer_id) ?? []
@@ -164,6 +164,8 @@ export default function VendorChat({ student }: VendorChatProps) {
         return chatmate ?? {}
     }
 
+    const toHttps = (url?: string | null) => url ? url.replace(/^http:\/\//, "https://") : url
+
     return (
         <SafeAreaView style={[globals.container, globals.lightContainer]}>
             {
@@ -201,7 +203,17 @@ export default function VendorChat({ student }: VendorChatProps) {
                             })
                         }} key={idx} style={chatStyles.padding}>
                             <View style={chatStyles.eachChatV}>
-                                <ImageBackground source={getChatMatePic(item?.vendor_id ?? "") ? { uri: getChatMatePic(item?.vendor_id ?? "") } : {uri : item.profile_img ?? images.laptop}} style={chatStyles.laptopV} imageStyle={chatStyles.imageV}>
+                                <ImageBackground
+                                    source={
+                                        getChatMatePic(item?.vendor_id ?? "")
+                                            ? { uri: toHttps(getChatMatePic(item?.vendor_id ?? "")) }
+                                            : item.profile_img
+                                                ? { uri: toHttps(item.profile_img) }
+                                                : images.laptop
+                                    }
+                                    style={chatStyles.laptopV}
+                                    imageStyle={chatStyles.imageV}
+                                >
                                     {item?.sender_profile_pic ? <Image source={item?.sender_profile_pic} style={chatStyles.profileImg} /> : <View style={[chatStyles.profileImg, chatStyles.nullPic]}>
                                         <Text style={[roboto.mediumEmphasized, colors.white]}>{myId == item?.buyer_id ? (getChatMateName(item?.vendor_id ?? "")).charAt(0) : item.recipient_name?.charAt(0).toLowerCase() ?? ""}</Text></View>}
                                 </ImageBackground>

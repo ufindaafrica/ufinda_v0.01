@@ -71,6 +71,8 @@ export default function ProfileDetails() {
 
     }, [])
 
+    const toHttps = (url?: string | null) => url ? url.replace(/^http:\/\//, "https://") : url
+
     return (
         <SafeAreaView style={[globals.container, globals.lightContainer]}>
             <View style={[singleChatStyles.row, singleChatStyles.jCenter, globals.authContainer]}>
@@ -83,7 +85,7 @@ export default function ProfileDetails() {
             <View style={{ alignSelf: 'center' }}>
                 <View style={{ width: scale(144), height: scale(144), borderRadius: 144, borderWidth: 4, borderColor: '#8e8e93', justifyContent: 'center', alignItems: 'center' }}>
                     {
-                        vendorDetails?.vendor_kyc?.profile_img?.url ? <Image source={{ uri: vendorDetails?.vendor_kyc?.profile_img?.url }} style={{width: scale(128), height: scale(128), borderRadius: 128, resizeMode: 'cover'}} /> : <View style={{ width: scale(128), height: scale(128), borderRadius: 128, backgroundColor: '#d9d9d9' }}></View>
+                        vendorDetails?.vendor_kyc?.profile_img?.url ? <Image source={{ uri: toHttps(vendorDetails?.vendor_kyc?.profile_img?.url) ?? "" }} style={{width: scale(128), height: scale(128), borderRadius: 128, resizeMode: 'cover'}} /> : <View style={{ width: scale(128), height: scale(128), borderRadius: 128, backgroundColor: '#d9d9d9' }}></View>
                     }
                 </View>
                 <Text style={[roboto.headlineSmallBold, { alignSelf: 'center', paddingTop: moderateScale(16) }]}>{`${vendorDetails?.first_name ?? ""} ${vendorDetails?.last_name ?? ""}`}</Text>
