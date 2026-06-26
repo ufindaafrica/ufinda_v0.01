@@ -7,7 +7,9 @@ import { Button } from './ui/Buttons.js'
 import { FaDownload } from 'react-icons/fa'
 // import { useNavigate } from "react-router-dom"
 import { DOWNLOADLINK } from '../utils.js'
-
+import {
+ 
+// const DOWNLOADLINK = process.env.DOWNLOADLINK;
 
 const handleDownload = () => {
   window.open(DOWNLOADLINK, '_self');
