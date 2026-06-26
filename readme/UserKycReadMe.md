@@ -5,8 +5,10 @@ The base URL for all API requests:
 
 | Environment | URL |
 | :--- | :--- |
-| **Production** | `http://ufinda-v0-01.onrender.com` |
+| **Test** | `https://ufinda-v0-01.onrender.com` |
+| **Production** | `https://ufinda-v0-01-2prv.onrender.com` |
 | **Local Dev** | `http://localhost:8080` |
+
 -----
 
 ### GET `[BASE_URL]/kyc/user/signature`

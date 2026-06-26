@@ -6,7 +6,14 @@ This documentation provides a comprehensive overview of the uFinda Chat System, 
 
 ## 1. WebSocket API
 
-**Base URL:** `wss://ufinda-v0-01.onrender.com/ws/chat`
+### URL
+The base URL for all API requests:
+
+| Environment | URL |
+| :--- | :--- |
+| **Test** | `wss://ufinda-v0-01.onrender.com/ws/chat` |
+| **Production** | `wss://ufinda-v0-01-2prv.onrender.com/ws/chat` |
+| **Local Dev** | `ws://localhost:8080/ws/chat` |
 
 **Authentication:** Requires a valid session/token (handled via middleware).
 
@@ -58,7 +65,14 @@ Sent to the recipient when a new message arrives.
 
 ## 2. REST API Endpoints
 
-**Base URL:** `https://ufinda-v0-01.onrender.com`
+### Base URL
+The base URL for all API requests:
+
+| Environment | URL |
+| :--- | :--- |
+| **Test** | `https://ufinda-v0-01.onrender.com` |
+| **Production** | `https://ufinda-v0-01-2prv.onrender.com` |
+| **Local Dev** | `http://localhost:8080` |
 
 ### Chat Rooms
 

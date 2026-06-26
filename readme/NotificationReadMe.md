@@ -3,8 +3,9 @@
 ### Base URL (REST API)
 
 | Environment | URL |
-| --- | --- |
-| **Production** | `https://ufinda-v0-01.onrender.com` |
+| :--- | :--- |
+| **Test** | `https://ufinda-v0-01.onrender.com` |
+| **Production** | `https://ufinda-v0-01-2prv.onrender.com` |
 | **Local Dev** | `http://localhost:8080` |
 
 ---

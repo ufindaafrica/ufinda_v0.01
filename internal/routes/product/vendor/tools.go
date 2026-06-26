@@ -14,4 +14,9 @@ type CreateProductRequest struct {
     ProductVideo  *db.UploadedFile   `json:"product_video" binding:"omitempty"`
 }
 
+type updateProductRequest struct {
+    Price        *string          `json:"price"`
+    Description  *string          `json:"description,omitempty"`
+    IsAvailable   *bool            `json:"is_available,omitempty"`
+}
 const MsgServerError = "An unexpected error occurred. Please try again."

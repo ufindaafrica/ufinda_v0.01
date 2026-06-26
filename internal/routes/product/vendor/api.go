@@ -11,5 +11,6 @@ func RegisterVendorProduct(r *gin.Engine, cld *cloudinary.Cloudinary) {
 	{
 		productRoutes.POST("/list", CreateProductHandler())
 		productRoutes.DELETE("/del/:id", DeleteProductHandler(cld))
+		productRoutes.PATCH("/:id", UpdateProductHandler)
 	}
 }

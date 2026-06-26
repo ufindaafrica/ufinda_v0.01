@@ -108,7 +108,7 @@ func CreateProductHandler() gin.HandlerFunc {
 			}
 		}(getUser.ID, req.Title)
 
-        c.JSON(http.StatusAccepted, gin.H{"message": "Product listed successfully", "id": productID})
+        c.JSON(http.StatusOK, gin.H{"message": "Product listed successfully", "id": productID})
     }
 }
 
@@ -189,49 +189,79 @@ func DeleteProductHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
     }
 }
 
-// func UpdateProductHandler(c *gin.Context) {
-//     user, exists := c.Get("user")
-//     if !exists {
-//         c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
-//         return
-//     }
+func UpdateProductHandler(c *gin.Context) {
+    user, exists := c.Get("user")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+        return
+    }
 
-//     getUser, ok := user.(*db.User)
-//     if !ok {
-//         c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user"})
-//         return
-//     }
+    getUser, ok := user.(*db.User)
+    if !ok {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user"})
+        return
+    }
 
-//     if !getUser.IsVerified {
-//         productlog.LogProduct(getUser.ID, nil, fmt.Errorf("vendor not verified"))
-//         c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not verified"})
-//         return
-//     }
+    if !getUser.IsVerified {
+        productlog.LogProduct(getUser.ID, nil, fmt.Errorf("vendor not verified"))
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not verified"})
+        return
+    }
 
-//     productID := c.Param("id")
+    productID := c.Param("id")
 
-//     getListing, err := productdb.FindProductByID(productID)
-//     if err != nil {
-//         if errors.Is(err, productdb.ErrorListingNotFound) {
-//             c.JSON(http.StatusNotFound, gin.H{"error": "listing not found"})
-//         } else {
-//             productlog.LogProduct(getUser.ID, nil, err)
-//             c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
-//         }
-//         return
-//     }
+    getListing, err := productdb.FindProductByID(productID)
+    if err != nil {
+        if errors.Is(err, productdb.ErrorListingNotFound) {
+            c.JSON(http.StatusNotFound, gin.H{"error": "listing not found"})
+        } else {
+            productlog.LogProduct(getUser.ID, nil, err)
+            c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+        }
+        return
+    }
 
-//     // 3. Verify the logged-in user owns the product listing
-//     if getListing.VendorID != getUser.ID {
-//         logData := authlog.Logs["3"]
-//         formattedMessage := fmt.Sprintf(logData.Message, "user tried to delete product listing")
-//         logEntry := db.SecurityLog{
-//             Log:   formattedMessage,
-//             Level: logData.Level,
-//         }
-//         authlog.SecurityLog(logEntry)
-//         c.JSON(http.StatusForbidden, gin.H{"error": "unauthorized"})
-//         return
-//     }
+    // 3. Verify the logged-in user owns the product listing
+    if getListing.VendorID != getUser.ID {
+        logData := authlog.Logs["3"]
+        formattedMessage := fmt.Sprintf(logData.Message, "user tried to delete product listing")
+        logEntry := db.SecurityLog{
+            Log:   formattedMessage,
+            Level: logData.Level,
+        }
+        authlog.SecurityLog(logEntry)
+        c.JSON(http.StatusForbidden, gin.H{"error": "unauthorized"})
+        return
+    }
 
-// }
+    var req updateProductRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    updateData := make(map[string]interface{})
+    if req.Price != nil {
+        cleanPrice := strings.ReplaceAll(*req.Price, ",", "")
+		updateData["price"], err = strconv.ParseInt(cleanPrice, 10, 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid price format"})
+			return
+		}
+    }
+
+    if req.Description != nil {
+        updateData["description"] = req.Description
+    }
+
+    if req.IsAvailable != nil {
+        updateData["is_available"] = req.IsAvailable
+    }
+
+    if err := productdb.UpdateProduct(productID, updateData); err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "listing updated successfully"})
+}
