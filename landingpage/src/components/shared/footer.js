@@ -3,26 +3,25 @@ import Logo from '../../assets/logo.png'
 import { Link } from 'react-router-dom'
 import { FaInstagram, FaLinkedinIn, FaXTwitter, FaChevronDown } from 'react-icons/fa6'
 import { Button } from '../ui/Buttons'
-import { X_PROFILE, INSTAGRAM_PROFILE, LINKEDIN_PROFILE } from '../utils.js'
+import { X_PROFILE, INSTAGRAM_PROFILE, LINKEDIN_PROFILE } from '../../utils.js'
 import '../../styles/footer.css'
 
-const footer = () => {
-
-  // const XTwitter = process.env.X_PROFILE;
-  // const Instagram = process.env.INSTAGRAM_PROFILE;
-  // const LinkedIn = process.env.LINKEDIN_PROFILE;
 
   const handle_XTwitter = () => {
     window.open(X_PROFILE, '_blank');
-  };
-
-  const handle_INSTAGRAM = () => {
+  };                                                                                                    const handle_INSTAGRAM = () => {
     window.open(INSTAGRAM_PROFILE, '_blank');
   };
 
   const handle_Linkedin = () => {
     window.open(LINKEDIN_PROFILE, '_blank');
   };
+
+const footer = () => {
+
+  // const XTwitter = process.env.X_PROFILE;
+  // const Instagram = process.env.INSTAGRAM_PROFILE;
+  // const LinkedIn = process.env.LINKEDIN_PROFILE;
 
   return (
     <section className="footerSection">
@@ -52,9 +51,9 @@ const footer = () => {
           </Button>
         </div>
         <div className="socialLinks">
-          <FaInstagram className='socialLink' href={handle_INSTAGRAM} />
-          <FaLinkedinIn className='socialLink' href={handle_Linkedin} />
-          <FaXTwitter className='socialLink' href={handle_XTwitter} />
+ <a href={INSTAGRAM_PROFILE} className='link'> <FaInstagram className='socialLink' /></a>
+         <a href={LINKEDIN_PROFILE} className='link'> <FaLinkedinIn className='socialLink' href={LINKEDIN_PROFILE} /></a>
+         <a href={X_PROFILE} className='link'> <FaXTwitter className='socialLink' /></a>
         </div>
         {/* <div className="socialLinks">
           <Button

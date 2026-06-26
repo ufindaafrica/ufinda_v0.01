@@ -39,6 +39,10 @@
     text-align: center;
 }
 
+.link{ 
+	color: var(--color-black);
+}
+
 .sub-menu {
     display: flex;
     flex-direction: column;
@@ -57,7 +61,7 @@
     color: var(--color-grey);
     display: flex;
     gap: 56px;
-    font-size: 18px;
+    font-size: 24px;
     font-weight: 400;
 
 }
@@ -148,7 +152,7 @@
     display: none;
 }
 .socialLinks {
-    font-size: 16px;
+    font-size: 24px;
     gap: 8px;
       margin: 0 auto;
 }

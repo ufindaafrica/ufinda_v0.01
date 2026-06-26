@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import '../styles/contact.css'
 import { Button } from './ui/Buttons'
-import { FaInstagram, FaLinkedinIn, FaFacebookF } from 'react-icons/fa'
+import { X_PROFILE, INSTAGRAM_PROFILE, LINKEDIN_PROFILE } from '../utils.js'
+import { FaInstagram, FaLinkedinIn, FaXTwitter, FaChevronDown } from 'react-icons/fa6'
 
 const ContactSection = () => {
   const [showToast, setShowToast] = useState(false);
@@ -29,7 +30,7 @@ const ContactSection = () => {
       return;
     }
 
-    const recipient = 'Barry@ufinda.org';
+    const recipient = 'contact@ufinda.org';
     const encodedURI = encodeURIComponent(recipient);
     const encodedSubject = encodeURIComponent(subject);
     const encodedMessage = encodeURIComponent(message.replace(/\n/g, '%0D%0A'));
@@ -69,9 +70,9 @@ const ContactSection = () => {
             <div className="others gridspan">
               <div className="label socialLabel">Our Socials</div>
                 <div className="socials gridspan">
-                  <FaInstagram  style={{fontSize: '18px'}}/>
-                  <FaLinkedinIn  style={{fontSize: '18px'}}/>
-                  <FaFacebookF  style={{fontSize: '18px'}}/>
+                  <a href={INSTAGRAM_PROFILE} className='link'> <FaInstagram /></a>
+         <a href={LINKEDIN_PROFILE} className='link'> <FaLinkedinIn  /></a>
+         <a href={X_PROFILE} className='link'> <FaXTwitter /></a>
                 </div>
               </div>
             </div>
