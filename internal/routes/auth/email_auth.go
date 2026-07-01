@@ -462,8 +462,9 @@ func RefreshTokenHandler(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, token.ErrInvalidToken){
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
 		}
-		log.Printf("[CRITCAL] error validating token: %w", err)
+		log.Printf("[CRITCAL] error validating token: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
