@@ -23,10 +23,10 @@ export default function Index() {
 
     const initOnboarding = async () => {
 
-      const storedFirstOpen = await AsyncStorage.getItem("firstOpen")
+      const storedFirstOpen = await SecureStore.getItemAsync("firstOpen")
 
       if (storedFirstOpen == null) {
-        await AsyncStorage.setItem("firstOpen", "false")
+        await SecureStore.setItemAsync("firstOpen", "false")
       } else {
         setFirstOpen(false)
       }

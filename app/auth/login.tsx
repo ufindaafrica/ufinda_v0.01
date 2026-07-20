@@ -86,20 +86,20 @@ export default function Login() {
 
     useEffect(() => {
         const clearLocalStorage = async () => {
-            // await deleteItemAsync("ACCESS_TOKEN")
-            // await deleteItemAsync("REFRESH_TOKEN")
-            // await deleteItemAsync('ID')
-            // await deleteItemAsync('ROLE')
-            // await deleteItemAsync('PROFILE')
-            // await AsyncStorage.removeItem('LISTINGS')
-            // await AsyncStorage.removeItem('VENDOR_INFO')
-            // await AsyncStorage.removeItem('ALL_CHATS')
-            // await AsyncStorage.removeItem('SAVED')
-            // await AsyncStorage.removeItem('SAVED_BEFORE')
-            // await AsyncStorage.removeItem('LOCAL_ADS')
+            await deleteItemAsync("ACCESS_TOKEN")
+            await deleteItemAsync("REFRESH_TOKEN")
+            await deleteItemAsync('ID')
+            await deleteItemAsync('ROLE')
+            await deleteItemAsync('PROFILE')
+            await AsyncStorage.removeItem('LISTINGS')
+            await AsyncStorage.removeItem('VENDOR_INFO')
+            await AsyncStorage.removeItem('ALL_CHATS')
+            await AsyncStorage.removeItem('SAVED')
+            await AsyncStorage.removeItem('SAVED_BEFORE')
+            await AsyncStorage.removeItem('LOCAL_ADS')
 
-            // const keys = await AsyncStorage.getAllKeys()
-            // await AsyncStorage.multiRemove(keys)
+            const keys = await AsyncStorage.getAllKeys()
+            await AsyncStorage.multiRemove(keys)
         }
 
         clearLocalStorage()
