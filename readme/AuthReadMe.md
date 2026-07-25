@@ -81,16 +81,17 @@ No special headers are required.
 -----
 
 ## Resend OTP API
+
 ### POST `[BASE_URL]/auth/otp/resend`
 
 This endpoint allows a user to request a new One-Time Password (OTP) if the previous one has expired or was not received.
 
------
+---
 
 ### Request
 
 | Method | Endpoint | Description |
-| :--- | :--- | :--- |
+| --- | --- | --- |
 | `POST` | `[BASE_URL]/auth/otp/resend` | Requests a new OTP for a pending user account. |
 
 #### Body
@@ -101,30 +102,43 @@ The request body must be a JSON object containing the email address of the user.
 {
   "email": "user@example.com"
 }
+
 ```
 
 #### Headers
 
 No special headers are required.
 
------
+---
+
+### Rate Limiting Rules
+
+To prevent abuse and protect downstream messaging services, rate limits are strictly enforced on this endpoint using Redis:
+
+* **Cooldown Window:** **60 seconds** between consecutive requests per email address.
+* **Hourly Cap:** **Maximum 5 OTP requests** per hour per email address.
+
+When a rate limit threshold is exceeded, the server returns an `HTTP 429 Too Many Requests` status along with a `Retry-After` header indicating the required wait time in seconds.
+
+---
 
 ### Workflow
 
-1.  **User Status Check**: The endpoint first checks if the user's account is already active. If so, a `400` error is returned. It then verifies that a pending user account exists for the provided email.
-2.  **OTP Generation**: A new OTP is generated and its expiration time is set to 15 minutes from the current time.
-3.  **Update Database**: The pending user's record in the database is updated with the new OTP and its expiration time.
-4.  **Email Delivery**: The new OTP is sent to the user's email address.
+1. **Rate Limit Validation**: Checks Redis for active cooldowns or hourly quota exhaustion for the specified email before querying the database or sending messages.
+2. **User Status Check**: Verifies if the user account is already active (returns `400`). Ensures a pending user record exists for the provided email.
+3. **OTP Generation**: Generates a new OTP with an expiration time set to 15 minutes from creation.
+4. **Update Database**: Updates the pending user record with the new OTP and expiration timestamp.
+5. **Email Delivery**: Dispatches the OTP to the user's email address.
 
------
+---
 
 ### Responses
 
 #### Success
 
 | Status Code | Description |
-| :--- | :--- |
-| `200 OK` | The new OTP was successfully sent to the user's email. |
+| --- | --- |
+| `200 OK` | The new OTP was successfully generated and sent to the user's email. |
 
 **Body**
 
@@ -132,17 +146,37 @@ No special headers are required.
 {
   "message": "otp resent successfully"
 }
+
 ```
 
 #### Errors
 
-| Status Code | Description |
-| :--- | :--- |
-| `400 Bad Request` | The request body is invalid, or a user with the provided email is either already verified or does not exist as a pending user. |
-| `500 Internal Server Error` | An unexpected server error occurred (e.g., database connection issues, failed OTP generation, or failed email delivery). |
+| Status Code | Description | Response Headers |
+| --- | --- | --- |
+| `400 Bad Request` | The request payload is malformed, or the user with the provided email is either already verified or does not exist as a pending user. | N/A |
+| `429 Too Many Requests` | Cooldown period active (60s) or hourly limit exceeded (max 5/hr). | `Retry-After: <seconds>` |
+| `500 Internal Server Error` | An unexpected server error occurred (e.g., Redis/DB connection failures, OTP generation issues, or delivery failures). | N/A |
 
------
+##### Rate Limit Error Example (`429 Too Many Requests`)
 
+**Headers:**
+
+```http
+HTTP/1.1 429 Too Many Requests
+Content-Type: application/json
+Retry-After: 45
+
+```
+
+**Body:**
+
+```json
+{
+  "error": "Please wait 45 seconds before requesting another code",
+  "retry_after": 45
+}
+
+```
 ## Verify OTP API
 ### POST `[BASE_URL]/auth/verify-otp`
 

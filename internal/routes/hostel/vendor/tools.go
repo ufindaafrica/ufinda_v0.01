@@ -6,6 +6,16 @@ import (
 
 const MsgServerError = "An unexpected error occurred. Please try again."
 
+type HostelPriceBreakdown struct {
+	RentPerYear      int64    `json:"rent_per_year" binding:"required"`
+	AgreementAndCommission *int64 `json:"agreement_and_commission,omitempty"`
+	CautionFee *int64 	`json:"caution_fee,omitempty"`
+	ElectricityFee *int64 `json:"electricity_fee,omitempty"`
+	SecurityFee *int64 `json:"security_fee,omitempty"`
+	WasteFee *int64 `json:"waste_fee,omitempty"`
+	LegalFee *int64 `json:"legal_fee,omitempty"`
+}
+
 type UpdateHostelRequest struct {
     TotalPrice       *int64  `json:"total_price" binding:"omitempty,gt=0"`
     RentPerYear      *int64  `json:"rent_per_year" binding:"omitempty,gt=0"`
@@ -21,6 +31,7 @@ type CreateHostelRequest struct {
 	Title            string             `json:"title" binding:"required,min=5"`
 	TotalPrice       int64              `json:"total_price" binding:"required,gt=0"`
 	RentPerYear      int64              `json:"rent_per_year" binding:"required,gt=0"`
+	PriceBreakDown   HostelPriceBreakdown `json:"hostel_price_breakdown" binding:"required"`
 	TotalHostelRooms int                `json:"total_hostel_rooms" binding:"required,gt=0"`
 	AvailableRooms *int 				`json:"available_rooms" binding:"required,gt=0"`
 	Location         string             `json:"location" binding:"required"`

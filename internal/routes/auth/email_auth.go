@@ -305,7 +305,27 @@ func EmailLoginHandler(c *gin.Context) {
 func ResendOTPHandler(c *gin.Context) {
 	var otpRequest ResendOTP
 	if err := c.ShouldBindJSON(&otpRequest); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": InvalidRequest})
+		c.JSON(http.StatusBadRequest, gin.H{"error": InvalidRequest})
+		return
+	}
+
+	// ---------------------------------------------------------
+	// Rate Limiting Check (Max 5/hr, 60s cooldown)
+	// ---------------------------------------------------------
+	limiterResult, err := CheckAndSetOTPRateLimit(c.Request.Context(), otpRequest.Email)
+	if err != nil {
+		log.Printf("[ERROR] Redis rate limit failed for %s: %v", otpRequest.Email, err)
+		// Option: Fail closed or allow fallback.
+		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		return
+	}
+
+	if !limiterResult.Allowed {
+		c.Header("Retry-After", fmt.Sprintf("%d", int(limiterResult.RetryAfter.Seconds())))
+		c.JSON(http.StatusTooManyRequests, gin.H{
+			"error":       limiterResult.Reason,
+			"retry_after": int(limiterResult.RetryAfter.Seconds()),
+		})
 		return
 	}
 
@@ -316,9 +336,9 @@ func ResendOTPHandler(c *gin.Context) {
 		return
 	}
 
-	if createduser != nil  {
+	if createduser != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": MsgAccountCreated})
-		return		
+		return
 	}
 
 	// check if the user exists as a pending user
@@ -343,13 +363,13 @@ func ResendOTPHandler(c *gin.Context) {
 
 	// set expiry
 	data := map[string]interface{}{
-		"otp": otp,
+		"otp":       otp,
 		"expire_at": time.Now().Add(15 * time.Minute),
 	}
 
 	// update the pending data with the new otp
 	if err := authdb.UpdatePendingUser(pendinguser.Email, data); err != nil {
-		log.Printf("[CRITICAL] failed to update pending user record: %w", err)
+		log.Printf("[CRITICAL] failed to update pending user record: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
@@ -363,6 +383,7 @@ func ResendOTPHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "otp resent successfully"})
 }
+
 
 func LogoutHandler(c *gin.Context) {
 	// 1. Extract tokens

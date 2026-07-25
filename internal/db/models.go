@@ -66,14 +66,25 @@ type UploadedFile struct {
 	PublicID string `json:"public_id"`
 }
 
+type HostelPriceBreakdown struct {
+	RentPerYear      int64    `json:"rent_per_year" binding:"required"`
+	AgreementAndCommission *int64 `json:"agreement_and_commission,omitempty"`
+	CautionFee *int64 	`json:"caution_fee,omitempty"`
+	ElectricityFee *int64 `json:"electricity_fee,omitempty"`
+	SecurityFee *int64 `json:"security_fee,omitempty"`
+	WasteFee *int64 `json:"waste_fee,omitempty"`
+	LegalFee *int64 `json:"legal_fee,omitempty"`
+}
+
 type Hostel struct {
 	ID               string    `json:"id,omitempty"`
 	VendorID string `json:"vendor_id"`
 	Title string `json:"title"`
 	TotalPrice       int64    `json:"total_price" binding:"required"`
+	// PriceBreakDown   HostelPriceBreakdown `json:"hostel_price_breakdown"`
+	RentPerYear int64 `json:"rent_per_year" binding:"required"`
 	Location         string    `json:"location" binding:"required"`
 	RoomType         string    `json:"room_type" binding:"required"`
-	RentPerYear      int64    `json:"rent_per_year" binding:"required"`
 	LandlordResides  string      `json:"landlord_resides" binding:"required"`
 	TotalHostelRooms int       `json:"total_hostel_rooms"`
 	PowerSupply string `json:"power_supply"`

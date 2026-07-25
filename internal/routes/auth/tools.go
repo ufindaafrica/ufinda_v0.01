@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"golang.org/x/crypto/bcrypt"
 	"errors"
+	"github.com/redis/go-redis/v9"
+	"time"
+	"context"
+	"github.com/oladev/ufinda_v0.01/internal/db"
 )
 
 // <-------------------------> Begin Error Tools <---------------------------->
@@ -72,3 +76,65 @@ func CheckPasswordMatch(loginpwd string, hashedPwd string) (bool, error) {
 	return true, nil
 }
 // <-------------------------------> End Password Check Tools <-------------------------------------->
+
+
+type RateLimitResult struct {
+	Allowed   bool
+	Reason    string
+	RetryAfter time.Duration
+}
+
+func CheckAndSetOTPRateLimit(ctx context.Context, email string) (RateLimitResult, error) {
+	cooldownKey := fmt.Sprintf("otp_cooldown:%s", email)
+	countKey := fmt.Sprintf("otp_count:%s", email)
+
+	// 1. Check 60-second cooldown
+	ttl, err := db.RedisClient.TTL(ctx, cooldownKey).Result()
+	if err == nil && ttl > 0 {
+		return RateLimitResult{
+			Allowed:    false,
+			Reason:     fmt.Sprintf("Please wait %d seconds before requesting another code", int(ttl.Seconds())),
+			RetryAfter: ttl,
+		}, nil
+	}
+
+	// 2. Get hourly count (Ignore redis.Nil)
+	count, err := db.RedisClient.Get(ctx, countKey).Int()
+	if err != nil {
+		// If key doesn't exist in Redis, go-redis returns redis.Nil
+		if errors.Is(err, redis.Nil) || err.Error() == "redis: nil" {
+			count = 0
+		} else {
+			return RateLimitResult{}, fmt.Errorf("redis get count failed: %w", err)
+		}
+	}
+
+	if count >= 5 {
+		countTTL, _ := db.RedisClient.TTL(ctx, countKey).Result()
+		return RateLimitResult{
+			Allowed:    false,
+			Reason:     "Maximum OTP request limit reached for this hour. Try again later.",
+			RetryAfter: countTTL,
+		}, nil
+	}
+
+	// 3. Set 60-second cooldown
+	if err := db.RedisClient.Set(ctx, cooldownKey, "1", 60*time.Second).Err(); err != nil {
+		return RateLimitResult{}, fmt.Errorf("redis set cooldown failed: %w", err)
+	}
+
+	// 4. Increment 1-hour count
+	newCount, err := db.RedisClient.Incr(ctx, countKey).Result()
+	if err != nil {
+		return RateLimitResult{}, fmt.Errorf("redis incr failed: %w", err)
+	}
+
+	// 5. Set 1-hour expiration on first increment
+	if newCount == 1 {
+		if err := db.RedisClient.Expire(ctx, countKey, 1*time.Hour).Err(); err != nil {
+			return RateLimitResult{}, fmt.Errorf("redis expire failed: %w", err)
+		}
+	}
+
+	return RateLimitResult{Allowed: true}, nil
+}
