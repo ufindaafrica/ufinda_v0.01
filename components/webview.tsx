@@ -1,6 +1,6 @@
 import { verticalScale } from "@/deps/scale"
 import { useRef, useState } from "react"
-import { ActivityIndicator, Button, Modal, Text, TouchableOpacity, View } from "react-native"
+import { ActivityIndicator, Modal, Text, TouchableOpacity, View } from "react-native"
 import { WebView } from "react-native-webview"
 
 
@@ -16,7 +16,7 @@ export default function KycWebView({ url, onComplete, onCancel }: KycWebViewProp
     const webViewRef = useRef<WebView>(null)
 
     const handleMessage = (event: any) => {
-        console.log("WebView message:", event.nativeEvent.data)
+        console.log("WebView message: On receive message", event.nativeEvent.data)
         if (event.nativeEvent.data === "KYC_DONE") {
             setVisible(false)
             onComplete()
@@ -24,19 +24,21 @@ export default function KycWebView({ url, onComplete, onCancel }: KycWebViewProp
     }
 
     const handleNavigationStateChange = (navState: any) => {
-        console.log("WebView nav:", navState.url)
-        if (navState.url.includes('success')) {
+        console.log("WebView nav: On handleNavigationchange", navState.url)
+        if (navState.url.includes("https://www.ufinda.org/")) {
             setVisible(false)
             onComplete()
         }
+        // setVisible(false)
+        // onComplete()
     }
 
 
     return (
-        <View style={{ width: "80%", height: "80%" }}>
+        <View style={{ width: "90%", height: "95%" }}>
             <Modal visible={visible} animationType="slide" transparent={true}>
                 <View style={{ flex: 1, alignSelf: "center", width: "100%", justifyContent: "center", alignItems: 'center' }}>
-                    <View style={{width: "80%", height: "60%"}}>
+                    <View style={{width: "90%", height: "80%"}}>
                         {
                             loading && (
                                 <ActivityIndicator

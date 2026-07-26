@@ -1,22 +1,20 @@
 import BackArrow from "@/components/back";
+import ErrorModal from "@/components/errorModal";
 import Input from "@/components/input";
+import Loader from "@/components/loader";
 import Select from "@/components/select";
-import { focusNext } from "@/deps/focusNext";
+import KycWebView from "@/components/webview";
+import { toast } from "@/deps/toast";
+import { kycWebSocket } from "@/services/kycWebSocket";
+import { getVendorOtpUrl } from "@/services/vendorOtpUrl";
 import { globals, roboto } from "@/styles/globals";
 import { signupStyles } from "@/styles/signup";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Keyboard, Text, TextInput, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { getVendorOtpUrl } from "@/services/vendorOtpUrl";
-import Loader from "@/components/loader";
-import ErrorModal from "@/components/errorModal";
-import { kycWebSocket } from "@/services/kycWebSocket";
-import KycWebView from "@/components/webview";
-import { BARE_URL, getAccessToken } from "@/services/apiConstants";
-import { toast } from "@/deps/toast";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 
 export default function VendorOtp() {
@@ -73,7 +71,7 @@ export default function VendorOtp() {
             console.log(vendorOtpUrl)
 
             const parsed = new URL(vendorOtpUrl)
-            const vendorId = parsed.searchParams.get("metadata[user_id]") ?? ''
+            const vendorId = parsed.searchParams.get("reference_id") ?? ''
             console.log(vendorId)
 
             if (!vendorId) {

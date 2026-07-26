@@ -28,8 +28,9 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
             const token = await getItemAsync('ACCESS_TOKEN')
 
             if (!token) {
-                console.log("no token found, skipping connection")
-                return
+                // console.log("no token found, skipping connection")
+                console.log("no token found")
+                // return
             }
 
             console.log("connecting to websocket...")
@@ -76,7 +77,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
                 setTimeout(() => {
                     console.log("🔄 Reconnecting to websocket...")
                     connect()
-                }, 3000)
+                }, 7000)
             }
 
             wsRef.current = ws

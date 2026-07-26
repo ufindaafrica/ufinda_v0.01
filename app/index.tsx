@@ -1,12 +1,11 @@
 // SplashScreen.preventAutoHideAsync()
 
-import { useFonts as useRobotoFonts, Roboto_700Bold, Roboto_400Regular } from "@expo-google-fonts/roboto"
+import { Roboto_400Regular, Roboto_700Bold, useFonts as useRobotoFonts } from "@expo-google-fonts/roboto";
 import { router, SplashScreen } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
 import Onboarding from "./onboarding";
 import Splash from "./splash";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Index() {
 
@@ -55,6 +54,7 @@ export default function Index() {
         if (auth == null) {
           console.log("auth null")
           router.replace("/auth/login")
+          // router.replace("/auth/vendorOtp")
           // router.replace("/(tabs)/profile")
           // router.replace("/(vendor)/profile")
         } else {

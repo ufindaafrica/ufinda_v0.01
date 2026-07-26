@@ -1,12 +1,11 @@
-import { WebSocketProvider } from "@/contexts/chatSocket"
-import { Stack } from "expo-router";
-import { GestureHandlerRootView } from "react-native-gesture-handler"
-import * as Notifications from "expo-notifications"
-import { usePostJobStore } from "@/stores/postJobStore"
-import { resumePendingJobIfAny } from "@/services/postHostelJob"
-import { router } from "expo-router"
-import { useEffect } from "react"
 import JobStatusBar from "@/components/jobStatusBar";
+import { WebSocketProvider } from "@/contexts/chatSocket";
+import { resumePendingJobIfAny } from "@/services/postHostelJob";
+import { usePostJobStore } from "@/stores/postJobStore";
+import * as Notifications from "expo-notifications";
+import { router, Stack } from "expo-router";
+import { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -32,7 +31,7 @@ export default function RootLayout() {
     status={status}
     progress={progress}
     errorText={errorText}
-    onDismiss={() => { reset(); if (status === "success") router.replace("/dashboard") }}
+    onDismiss={() => { reset(); if (status === "success") {router.replace("/dashboard")} else { if (errorText.includes("vendor not verified")) router.replace("/auth/vendorOtp")}  }}
 />
     </GestureHandlerRootView>
   </WebSocketProvider>

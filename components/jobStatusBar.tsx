@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native"
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 type Props = {
@@ -24,7 +24,7 @@ export default function JobStatusBar({ status, progress, errorText, onDismiss }:
         errorText || "Something went wrong"
 
     const bg = status === "error" ? "#ead1a3" : status === "success" ? "#DCFCE7" : "#111827"
-    const fg = status === "error" ? "#be7c00" : status === "success" ? "#008000" : "#fff"
+    const fg = status === "error" ? "#000000" : status === "success" ? "#008000" : "#fff"
 
     return (
         <View style={{
@@ -48,7 +48,7 @@ export default function JobStatusBar({ status, progress, errorText, onDismiss }:
 
             {isDone && (
                 <TouchableOpacity onPress={onDismiss}>
-                    <Text style={{ color: fg, fontWeight: "600" }}>Dismiss</Text>
+                    <Text style={{ color: "#be7c00", fontWeight: "600" }}>{errorText?.includes("vendor not verified") ? "Complete the KYC" : "Dismiss"}</Text>
                 </TouchableOpacity>
             )}
 
