@@ -19,22 +19,15 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/oladev/ufinda_v0.01/internal/token"
 	"github.com/oladev/ufinda_v0.01/internal/logs/hostel"
+	"github.com/oladev/ufinda_v0.01/internal/routes/auth"
 )
 
 
 func CreateHostelHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 1. Auth & Verification
-		user, exists := c.Get("user")
-		if !exists {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
-			return
-		}
-
-		getUser := user.(*db.User)
-		if !getUser.IsVerified {
-			hostellog.LogHostel(getUser.ID, fmt.Errorf("vendor not verified"))
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not verified"})
+		getUser, _, ok := auth.CheckVendorVerified(c)
+		if !ok {
 			return
 		}
 
@@ -120,18 +113,11 @@ func UpdateHostelHandler() gin.HandlerFunc {
 		hostelID := c.Param("id")
 
 		// 1. Auth & Verification
-		user, exists := c.Get("user")
-		if !exists {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not authenticated"})
+		getUser, _, ok := auth.CheckVendorVerified(c)
+		if !ok {
 			return
 		}
 
-		getUser := user.(*db.User)
-		if !getUser.IsVerified {
-			hostellog.LogHostel(getUser.ID, fmt.Errorf("vendor not verified"))
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not verified"})
-			return
-		}
 
 		// 2. Bind JSON Input
 		var req UpdateHostelRequest
@@ -195,23 +181,11 @@ func DeleteHostelHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		hostelID := c.Param("id")
 		// 1. Verify that the user is a vendor and KYC verified
-		user, exists := c.Get("user")
-        if !exists {
-            c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not authenticated"})
-            return
-        }
-
-        getUser, ok := user.(*db.User)
-        if !ok {
-            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user"})
-            return
-        }
-
-		if !getUser.IsVerified {
-			hostellog.LogHostel(getUser.ID, fmt.Errorf("vendor not verified"))
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not verified"})
+		getUser, _, ok := auth.CheckVendorVerified(c)
+		if !ok {
 			return
 		}
+
 
 		// 2. Retrieve the existing hostel record
 		existingHostel, err := hosteldb.FindHostelByID(hostelID)
@@ -278,17 +252,11 @@ func DeleteHostelHandler(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 }
 
 func GetAllAgentsHostelHandler(c *gin.Context) {
-	user, exists := c.Get("user")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "vendor not authenticated"})
+	getUser, _, ok := auth.CheckVendorVerified(c)
+	if !ok {
 		return
 	}
 
-	getUser, ok := user.(*db.User)
-	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user type"})
-		return
-	}	
 	
 	hostels, err := hosteldb.FindVendorHostels(getUser.ID)
 	if err != nil {

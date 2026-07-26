@@ -11,6 +11,8 @@ import (
 	"github.com/oladev/ufinda_v0.01/internal/logs/auth"
 	"github.com/oladev/ufinda_v0.01/internal/db"
     "github.com/oladev/ufinda_v0.01/internal/db/auth"
+    "github.com/oladev/ufinda_v0.01/internal/db/kyc/vendor"
+    "github.com/oladev/ufinda_v0.01/internal/logs/hostel"
 )
 
 func handleAuthError(c *gin.Context, status int, message string, logEntry db.SecurityLog) {
@@ -197,4 +199,49 @@ func VendorAuthMiddleware() gin.HandlerFunc {
         c.Set("user", createdUser)
         c.Next()
     }
+}
+
+// CheckVendorVerified fetches the user from Gin context and verifies their VendorKYC status.
+// Returns the *db.User and *db.VendorKYC if verified, otherwise writes HTTP response and returns false.
+func CheckVendorVerified(c *gin.Context) (*db.User, *db.VendorKYC, bool) {
+	userVal, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		c.Abort()
+		return nil, nil, false
+	}
+
+	getUser, ok := userVal.(*db.User)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user session data"})
+		c.Abort()
+		return nil, nil, false
+	}
+
+	// Fetch vendor KYC record using user ID
+	kycRecord, err := vendorkycdb.FindVendorKYC(getUser.ID)
+	if err != nil {
+		if errors.Is(err, vendorkycdb.ErrKYCNotFound) {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": "vendor not verified",
+			})
+		} else {
+			hostellog.LogHostel(getUser.ID, fmt.Errorf("failed to fetch vendor kyc: %w", err))
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal verification check error"})
+		}
+		c.Abort()
+		return getUser, nil, false
+	}
+
+	// Verify boolean status flag
+	if !kycRecord.IsVerified {
+		hostellog.LogHostel(getUser.ID, fmt.Errorf("vendor not verified (status: %s)", kycRecord.Status))
+		c.JSON(http.StatusForbidden, gin.H{
+			"error":  "vendor not verified",
+		})
+		c.Abort()
+		return getUser, kycRecord, false
+	}
+
+	return getUser, kycRecord, true
 }
