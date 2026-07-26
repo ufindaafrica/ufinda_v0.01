@@ -56,7 +56,7 @@ func GetWidgetUrl(c *gin.Context) {
 
 	query := u.Query()
 	query.Set("widget_id", widgetID)
-
+    
 	query.Set("metadata[user_id]", getUser.ID)
     query.Set("user_data[email]", getUser.Email)
 	query.Set("metadata[role]", getUser.Role)

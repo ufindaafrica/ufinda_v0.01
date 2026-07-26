@@ -192,7 +192,8 @@ type NINData struct {
 
 type WebhookMetadata struct {
 	IpInfo IpInfo `json:"ipinfo"`
-	UserID string `json:"user_id"`
+	UserID string `json:"metadata[user_id]"` 
+    Role   string `json:"metadata[role]"`
 }
 
 type IpInfo struct {
