@@ -45,7 +45,7 @@ func DojahWebhookHandler(wsHub *hub.Hub) gin.HandlerFunc {
 		}
 		c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(rawBody))
 
-		receivedSignature := c.GetHeader("X-Dojah-Signature")
+		receivedSignature := c.GetHeader("x-dojah-signature-v2")
 		if receivedSignature == "" {
 			log.Println("Security Check 2 (HMAC) Failed: Missing x-dojah-signature header.")
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: Missing Signature"})
