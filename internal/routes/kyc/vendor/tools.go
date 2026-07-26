@@ -8,6 +8,7 @@ import (
 	"log"
     "strings"
 	"errors"
+    "fmt"
 )
 
 
@@ -28,6 +29,7 @@ type VendorKYCRequest struct {
 type VerificationResult struct {
 	UserID             string    `json:"user_id"`
 	NIN         string    `json:"nin_from_db"`  
+    Message            string          `json:"message"`
 	Status             string    `json:"verification_status"`
 	VerificationMode   string    `json:"verification_mode"`
 	VerificationLink   string    `json:"verification_url"`
@@ -51,6 +53,7 @@ func handleVerificationUpdate(payload db.DojahWebhookPayload) VerificationResult
 	return VerificationResult {
 		UserID: payload.ReferenceID,
 		NIN: entity.NIN,
+        Message: payload.Message,
 		Status: payload.VerificationStatus,
 		VerificationMode: payload.VerificationMode,
 		VerificationLink: payload.VerificationURL,
@@ -86,7 +89,7 @@ func HandleVerificationPayload(payload db.DojahWebhookPayload, h *hub.Hub) {
 		if errors.Is(err, authdb.ErrUserNotFound) {
 			log.Printf("KYC_WARNING: User %s not found in internal DB.", result.UserID)
 			finalStatus = "FAILED_USER_ID"
-			message = "Verification failed: User account ID not found or linked incorrectly."
+			message = "Verification failed: User account ID not found"
 			userLookupErr = true
 		} else {
 			log.Printf("FATAL_SYSTEM_ERROR: Failed to retrieve user %s: %v", result.UserID, err)
@@ -119,12 +122,12 @@ func HandleVerificationPayload(payload db.DojahWebhookPayload, h *hub.Hub) {
 			log.Printf("KYC_MISMATCH: Name mismatch for User %s. DB: [%s %s] vs Dojah: [%s %s]",
 				result.UserID, dbFirstName, dbLastName, dojahFirstName, dojahLastName)
 			finalStatus = "PENDING_MANUAL_REVIEW"
-			message = "Verification requires manual review due to name mismatch."
+			message = "Verification is currently pending review due to name mismatch."
 		}
 	} else if isDojahPending {
 		// Catches "pending", "Pending", or "PENDING" status directly from Dojah
 		finalStatus = "PENDING_MANUAL_REVIEW"
-		message = "Verification is currently pending review."
+		message = fmt.Sprintf("Verification is currently pending review due to %s.", result.Message)
 	}
 
 	// --- 3. Prepare and Save Final Status to Database ---

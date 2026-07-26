@@ -159,6 +159,7 @@ type DojahWebhookPayload struct {
 	NINValueSubmitted  string          `json:"value"` 
 	VerificationMode   string          `json:"verification_mode"` // e.g., "OTP" or "LIVENESS"
 	Status             bool            `json:"status"` // Overall success status of the transaction
+	Message            string          `json:"message"`
 	Metadata           WebhookMetadata `json:"metadata"`
 	Data               WebhookData     `json:"data"`
 }
