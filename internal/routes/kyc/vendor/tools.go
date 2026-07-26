@@ -5,6 +5,8 @@ import (
 	"github.com/oladev/ufinda_v0.01/internal/sockets/kyc"
 	"github.com/oladev/ufinda_v0.01/internal/db/auth"
 	"github.com/oladev/ufinda_v0.01/internal/db/kyc/vendor"
+    "github.com/oladev/ufinda_v0.01/internal/db/notification"
+    "github.com/oladev/ufinda_v0.01/internal/token"
 	"log"
     "strings"
 	"errors"
@@ -146,6 +148,8 @@ func HandleVerificationPayload(payload db.DojahWebhookPayload, h *hub.Hub) {
 		StateOfResidence:  result.ResidenceState,
 	}
 
+    kycdata.IsVerified = (finalStatus == "SUCCESS")
+
 	log.Printf("DB ACTION: Saving final status for User %s: %s", result.UserID, finalStatus)
 
 	_, findErr := vendorkycdb.FindVendorKYC(result.UserID)
@@ -154,18 +158,37 @@ func HandleVerificationPayload(payload db.DojahWebhookPayload, h *hub.Hub) {
 		if createErr := vendorkycdb.CreateVendorKyc(kycdata); createErr != nil {
 			log.Printf("FATAL_DB_ERROR: Failed to CREATE new KYC record for User %s: %v", result.UserID, createErr)
 			finalStatus = "SYSTEM_ERROR"
-			message = "Unexpected error occurred during verification process. Please contact support."
+			message = "An unexpected issue occurred while processing your verification. Our support team has been notified and is looking into it."
 		}
 	} else if findErr == nil {
 		if updateErr := vendorkycdb.UpdateVendorKyc(result.UserID, kycdata); updateErr != nil {
 			log.Printf("FATAL_DB_ERROR: Failed to UPDATE existing KYC record for User %s: %v", result.UserID, updateErr)
 			finalStatus = "SYSTEM_ERROR"
-			message = "Unexpected error occurred during verification process. Please contact support."
+			message = "An unexpected issue occurred while processing your verification. Our support team has been notified and is looking into it."
 		}
 	} else {
 		log.Printf("FATAL_DB_ERROR: Failed critical KYC lookup for User %s: %v", result.UserID, findErr)
 		finalStatus = "SYSTEM_ERROR"
-		message = "Unexpected error occurred during verification process. Please contact support."
+		message = "An unexpected issue occurred while processing your verification. Our support team has been notified and is looking into it."
+	}
+
+    // --- Trigger Support Email for Manual Review or System Errors ---
+	if finalStatus == "PENDING_MANUAL_REVIEW" || finalStatus == "SYSTEM_ERROR" {
+		go func(uid string, u *db.User, status string, msg string) {
+			userEmail := "N/A"
+			fullName := "Unknown User"
+
+			if u != nil {
+				userEmail = u.Email
+				fullName = fmt.Sprintf("%s %s", u.LastName, u.FirstName)
+			}
+
+			if err := token.SendKYCSupportAlertEmail(uid, userEmail, fullName, status, msg); err != nil {
+				log.Printf("EMAIL_ERROR: Failed to alert support for %s on user %s: %v", status, uid, err)
+			} else {
+				log.Printf("EMAIL_SUCCESS: Support team alerted via email for %s on user %s", status, uid)
+			}
+		}(result.UserID, getUser, finalStatus, message)
 	}
 
 	// --- 4. Push via WebSocket ---
@@ -176,4 +199,51 @@ func HandleVerificationPayload(payload db.DojahWebhookPayload, h *hub.Hub) {
 	}
 
 	h.SendUpdateToUser(result.UserID, update)
+
+   // --- 5. Push Notifications ---
+	// Fetch device push tokens for the user
+	deviceTokens, err := notifdb.GetPushTokens(result.UserID)
+	if err != nil {
+		log.Printf("NOTIF_ERROR: Failed to retrieve push tokens for user %s: %v", result.UserID, err)
+		return
+	}
+
+	if len(deviceTokens) == 0 {
+		log.Printf("NOTIF_INFO: No registered push tokens for user %s", result.UserID)
+		return
+	}
+
+	// Prepare notification content based on the final status
+	var title, body string
+
+	switch finalStatus {
+	case "SUCCESS":
+		title = "Verification Approved 🎉"
+		body = "Your identity verification is complete. You can now publish listings!"
+
+	case "PENDING_MANUAL_REVIEW":
+		title = "Verification Under Review ⏳"
+		body = "Your details require a quick manual check. We'll notify you as soon as the review is complete."
+
+	case "FAILED", "FAILED_USER_ID":
+		title = "Verification Unsuccessful ❌"
+		body = "We couldn't verify your details. Please check your submitted information or try again."
+
+	case "DUPLICATE_ID":
+		title = "Verification Issue ⚠️"
+		body = "This identity document is already linked to another account. Contact support if you need assistance."
+
+	default:
+		// Skip pushing alerts for internal system/database errors
+		log.Printf("NOTIF_SKIP: Skipping push notification for status: %s", finalStatus)
+		return
+	}
+
+	// Send to all registered devices for this user
+	for _, token := range deviceTokens {
+		// Pass "" for chatID since this is a platform status notification
+		if err := notifdb.SendPushNotification(token.DeviceToken, title, body, ""); err != nil {
+			log.Printf("NOTIF_ERROR: Failed to dispatch push notification to token %s: %v", token, err)
+		}
+	}
 }

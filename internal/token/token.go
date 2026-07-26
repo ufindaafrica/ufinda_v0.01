@@ -449,5 +449,88 @@ func SendWelcomeEmail(email string, userName string) error {
 	return nil
 }
 
+// SendKYCSupportAlertEmail notifies support at contact@ufinda.org for manual reviews or critical system errors.
+func SendKYCSupportAlertEmail(userID string, userEmail string, userName string, alertType string, reason string) error {
+	// --- Postmark API Key Setup ---
+	apiKey := os.Getenv("POSTMARK_SERVER_KEY")
+	if apiKey == "" {
+		return fmt.Errorf("POSTMARK_SERVER_KEY environment variable not set")
+	}
 
+	client := postmark.NewClient(apiKey, "")
 
+	supportEmail := "contact@ufinda.org"
+
+	// Customize subject and status badges depending on alert type
+	var subject, headerTitle, badgeStyle string
+	if alertType == "SYSTEM_ERROR" {
+		subject = fmt.Sprintf("CRITICAL: KYC System Error for User %s", userID)
+		headerTitle = "🚨 KYC System Error Encountered"
+		badgeStyle = "background-color: #FEE2E2; color: #991B1B;" // Red badge
+	} else {
+		subject = fmt.Sprintf("Action Required: Manual KYC Review Needed for User %s", userID)
+		headerTitle = "⚠️ KYC Manual Review Required"
+		badgeStyle = "background-color: #FEF3C7; color: #92400E;" // Yellow badge
+	}
+
+	// --- Plain Text Body ---
+	plainTextContent := fmt.Sprintf(
+		"Hello Support Team,\n\nA KYC event requires support attention.\n\nAlert Type: %s\nUser Details:\n- Name: %s\n- Email: %s\n- User ID: %s\n- Details/Reason: %s\n\nPlease check the admin logs or dashboard to resolve this issue.\n\nuFinda Automated Security System",
+		alertType,
+		userName,
+		userEmail,
+		userID,
+		reason,
+	)
+
+	// --- HTML Body ---
+	htmlContent := fmt.Sprintf(`
+		<html>
+		<head>
+			<style>
+				.container { font-family: sans-serif; padding: 20px; color: #333; }
+				.header { font-size: 20px; margin-bottom: 20px; font-weight: bold; }
+				.card { background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 6px; padding: 16px; margin: 16px 0; }
+				.field { margin-bottom: 8px; font-size: 14px; }
+				.label { font-weight: bold; color: #4B5563; }
+				.badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
+			</style>
+		</head>
+		<body>
+			<div class="container">
+				<div class="header">%s</div>
+				<p>A verification event has occurred that requires administrative attention.</p>
+				
+				<div class="card">
+					<div class="field"><span class="label">Alert Type:</span> <span class="badge" style="%s">%s</span></div>
+					<div class="field"><span class="label">User Name:</span> %s</div>
+					<div class="field"><span class="label">User Email:</span> %s</div>
+					<div class="field"><span class="label">User ID:</span> <code>%s</code></div>
+					<div class="field"><span class="label">Details/Reason:</span> %s</div>
+				</div>
+
+				<p>Please check the admin panel or application logs for more context on this transaction.</p>
+				<p>— uFinda Automated Security System</p>
+			</div>
+		</body>
+		</html>
+	`, headerTitle, badgeStyle, alertType, userName, userEmail, userID, reason)
+
+	// --- Postmark Email Configuration ---
+	emailMessage := postmark.Email{
+		From:     "uFinda Security <contact@ufinda.org>",
+		ReplyTo:  "contact@ufinda.org",
+		To:       supportEmail,
+		Subject:  subject,
+		TextBody: plainTextContent,
+		HtmlBody: htmlContent,
+		Tag:      "kyc-support-alert",
+	}
+
+	_, err := client.SendEmail(emailMessage)
+	if err != nil {
+		return fmt.Errorf("failed to send support alert email via Postmark: %w", err)
+	}
+
+	return nil
+}
