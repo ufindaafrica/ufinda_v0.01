@@ -78,6 +78,7 @@ func HandleVerificationPayload(payload db.DojahWebhookPayload, h *hub.Hub) {
     userLookupErr := false
 	var getUser *db.User
 	var err error
+    log.Printf("this is the user id: %s", result.UserID)
     getUser, err = authdb.FindCreatedUserByID(result.UserID) 
     if err != nil {
         if errors.Is(err, authdb.ErrUserNotFound) {
