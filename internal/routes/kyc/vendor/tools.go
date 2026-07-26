@@ -6,6 +6,7 @@ import (
 	"github.com/oladev/ufinda_v0.01/internal/db/auth"
 	"github.com/oladev/ufinda_v0.01/internal/db/kyc/vendor"
 	"log"
+    "strings"
 	"errors"
 )
 
@@ -68,107 +69,108 @@ func handleVerificationUpdate(payload db.DojahWebhookPayload) VerificationResult
 }
 
 func HandleVerificationPayload(payload db.DojahWebhookPayload, h *hub.Hub) {
-    // 1. Process and extract data
-    result := handleVerificationUpdate(payload) 
+	// 1. Process and extract data
+	result := handleVerificationUpdate(payload)
 
-    // Use consistent, uppercase status names for clarity
-    finalStatus := "FAILED"
-    message := "Verification incomplete or failed internal checks."
+	finalStatus := "FAILED"
+	message := "Verification incomplete or failed internal checks."
 
-    userLookupErr := false
+	userLookupErr := false
 	var getUser *db.User
 	var err error
-    log.Printf("this is the user id: %s", result.UserID)
-    getUser, err = authdb.FindCreatedUserByID(result.UserID) 
-    if err != nil {
-        if errors.Is(err, authdb.ErrUserNotFound) {
-            log.Printf("KYC_WARNING: User %s not found in internal DB. Cannot perform name match.", result.UserID)
-            // Cannot confirm identity, so fail or pend. We default to FAILED_USER_ID.
-            finalStatus = "FAILED_USER_ID"
-            message = "Verification failed: User account ID not found or linked incorrectly."
-            userLookupErr = true
-        } else {
-            // CRITICAL: Any other DB error during user retrieval is a system failure
-            log.Printf("FATAL_SYSTEM_ERROR: Failed to retrieve user %s for KYC validation: %v", result.UserID, err)
-            finalStatus = "SYSTEM_ERROR"
-            message = "Internal error during user validation. Please contact support."
-            userLookupErr = true
-        }
-    }
 
+	log.Printf("Processing KYC webhook for user_id: %s", result.UserID)
 
-    // --- 2. Custom Business Checks (Only if webhook completed and user retrieved) ---
-    if !userLookupErr && result.Status == "Completed" {
-        isNameValid := (getUser.FirstName == result.FirstName && getUser.LastName == result.LastName) || 
-               (getUser.FirstName == result.LastName && getUser.LastName == result.FirstName)
-        // Note: Use StateOfResidence for consistent checking unless you specifically need StateOfCall
-        // IsVerifiedResidence := strings.ToLower(result.ResidenceState) == "osun" && strings.ToLower(result.CountryOfCall) == "nigeria" ||
-        //  strings.ToLower(result.StateOfCall) == "osun" && strings.ToLower(result.CountryOfCall) == "nigeria"
-        
-        if isNameValid {
-            finalStatus = "SUCCESS"
-            message = "User KYC successfully verified."
-        } else {
-            // Set to PENDING if business logic determines manual review is required
-            finalStatus = "PENDING_MANUAL_REVIEW"
-            message = "Verification requires manual review. Please contact support to complete your KYC."
-        }
-    }
+	getUser, err = authdb.FindCreatedUserByID(result.UserID)
+	if err != nil {
+		if errors.Is(err, authdb.ErrUserNotFound) {
+			log.Printf("KYC_WARNING: User %s not found in internal DB.", result.UserID)
+			finalStatus = "FAILED_USER_ID"
+			message = "Verification failed: User account ID not found or linked incorrectly."
+			userLookupErr = true
+		} else {
+			log.Printf("FATAL_SYSTEM_ERROR: Failed to retrieve user %s: %v", result.UserID, err)
+			finalStatus = "SYSTEM_ERROR"
+			message = "Internal error during user validation. Please contact support."
+			userLookupErr = true
+		}
+	}
 
+	// Normalize status checks using strings.EqualFold (Case-insensitive)
+	isDojahCompleted := strings.EqualFold(result.Status, "Completed")
+	isDojahPending := strings.EqualFold(result.Status, "Pending")
 
-    // --- 3. Prepare and Save Final Status to Database ---
-    
-    // Prepare the final data structure (MUST include the determined finalStatus)
-    kycdata := db.VendorKYC {
-        UserID:           result.UserID,
-        Status:           finalStatus,
-        NIN:              result.NIN,
-        VerificationMode: result.VerificationMode,
-        VerificationLink: result.VerificationLink,
-        Gender:           result.Gender,
-        DOB:              result.DateOfBirth,
-        StateOfOrigin:    result.BirthState,
-        ResidenceLGA:     result.ResidenceLGA,
-        ResidenceAddress2: result.ResidenceAddress,
-        Nationality:      result.BirthCountry,
-        StateOfResidence: result.ResidenceState,
-    }
+	// --- 2. Custom Business Checks ---
+	if !userLookupErr && isDojahCompleted {
+		// Clean and normalize strings for name matching
+		dbFirstName := strings.ToUpper(strings.TrimSpace(getUser.FirstName))
+		dbLastName := strings.ToUpper(strings.TrimSpace(getUser.LastName))
+		dojahFirstName := strings.ToUpper(strings.TrimSpace(result.FirstName))
+		dojahLastName := strings.ToUpper(strings.TrimSpace(result.LastName))
 
-    log.Printf("DB ACTION: Saving final status for User %s: %s", result.UserID, finalStatus)
-    
-    // Try to find the existing KYC record
-    _, findErr := vendorkycdb.FindVendorKYC(result.UserID)
+		// Check standard order or swapped order
+		isNameValid := (dbFirstName == dojahFirstName && dbLastName == dojahLastName) ||
+			(dbFirstName == dojahLastName && dbLastName == dojahFirstName)
 
-    if findErr != nil && errors.Is(findErr, vendorkycdb.ErrKYCNotFound) {
-        // Record does NOT exist -> CREATE new one
-        if createErr := vendorkycdb.CreateVendorKyc(kycdata); createErr != nil {
-            log.Printf("FATAL_DB_ERROR: Failed to CREATE new KYC record for User %s: %v", result.UserID, createErr)
-            // Override status for push: System failure during DB write
-            finalStatus = "SYSTEM_ERROR" 
-            message = "Unexpected error occured during verification process. Please contact support."
-        }
-    } else if findErr == nil {
-        // Record EXISTS -> UPDATE existing one
-        // You must call a dedicated update function that uses the UserID to find and replace data
-        if updateErr := vendorkycdb.UpdateVendorKyc(result.UserID, kycdata); updateErr != nil {
-            log.Printf("FATAL_DB_ERROR: Failed to UPDATE existing KYC record for User %s: %v", result.UserID, updateErr)
-            // Override status for push: System failure during DB write
-            finalStatus = "SYSTEM_ERROR"
-            message = "Unexpected error occured during verification process. Please contact support."
-        }
-    } else {
-        // Critical DB error on lookup (not just 'Not Found')
-        log.Printf("FATAL_DB_ERROR: Failed critical KYC lookup for User %s: %v", result.UserID, findErr)
-        finalStatus = "SYSTEM_ERROR"
-        message = "Unexpected error occured during verification process. Please contact support."
-    }
+		if isNameValid {
+			finalStatus = "SUCCESS"
+			message = "User KYC successfully verified."
+		} else {
+			log.Printf("KYC_MISMATCH: Name mismatch for User %s. DB: [%s %s] vs Dojah: [%s %s]",
+				result.UserID, dbFirstName, dbLastName, dojahFirstName, dojahLastName)
+			finalStatus = "PENDING_MANUAL_REVIEW"
+			message = "Verification requires manual review due to name mismatch."
+		}
+	} else if isDojahPending {
+		// Catches "pending", "Pending", or "PENDING" status directly from Dojah
+		finalStatus = "PENDING_MANUAL_REVIEW"
+		message = "Verification is currently pending review."
+	}
 
-    // 4. PUSH FINAL STATUS VIA WEBSOCKET (Guaranteed delivery to un-stick the client)
-    update := hub.KYCStatusUpdate{
-        UserID:      result.UserID,
-        FinalStatus: finalStatus,
-        Message:     message,
-    }
-    
-    h.SendUpdateToUser(result.UserID, update)
+	// --- 3. Prepare and Save Final Status to Database ---
+	kycdata := db.VendorKYC{
+		UserID:            result.UserID,
+		Status:            finalStatus,
+		NIN:               result.NIN,
+		VerificationMode:  result.VerificationMode,
+		VerificationLink:  result.VerificationLink,
+		Gender:            result.Gender,
+		DOB:               result.DateOfBirth,
+		StateOfOrigin:     result.BirthState,
+		ResidenceLGA:      result.ResidenceLGA,
+		ResidenceAddress2: result.ResidenceAddress,
+		Nationality:       result.BirthCountry,
+		StateOfResidence:  result.ResidenceState,
+	}
+
+	log.Printf("DB ACTION: Saving final status for User %s: %s", result.UserID, finalStatus)
+
+	_, findErr := vendorkycdb.FindVendorKYC(result.UserID)
+
+	if findErr != nil && errors.Is(findErr, vendorkycdb.ErrKYCNotFound) {
+		if createErr := vendorkycdb.CreateVendorKyc(kycdata); createErr != nil {
+			log.Printf("FATAL_DB_ERROR: Failed to CREATE new KYC record for User %s: %v", result.UserID, createErr)
+			finalStatus = "SYSTEM_ERROR"
+			message = "Unexpected error occurred during verification process. Please contact support."
+		}
+	} else if findErr == nil {
+		if updateErr := vendorkycdb.UpdateVendorKyc(result.UserID, kycdata); updateErr != nil {
+			log.Printf("FATAL_DB_ERROR: Failed to UPDATE existing KYC record for User %s: %v", result.UserID, updateErr)
+			finalStatus = "SYSTEM_ERROR"
+			message = "Unexpected error occurred during verification process. Please contact support."
+		}
+	} else {
+		log.Printf("FATAL_DB_ERROR: Failed critical KYC lookup for User %s: %v", result.UserID, findErr)
+		finalStatus = "SYSTEM_ERROR"
+		message = "Unexpected error occurred during verification process. Please contact support."
+	}
+
+	// --- 4. Push via WebSocket ---
+	update := hub.KYCStatusUpdate{
+		UserID:      result.UserID,
+		FinalStatus: finalStatus,
+		Message:     message,
+	}
+
+	h.SendUpdateToUser(result.UserID, update)
 }
