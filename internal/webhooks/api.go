@@ -4,20 +4,23 @@ import (
 	"github.com/gin-gonic/gin"
 	"os"
 	"log"
-	"fmt"
+	// "fmt"
 	"github.com/oladev/ufinda_v0.01/internal/sockets/kyc"
 )
 
 func RegisterWebhooks(r *gin.Engine, wsHub *hub.Hub) {
-	// Define a group for webhook endpoints
 	webhookGroup := r.Group("/dojah")
-	DojahWebhookIP := os.Getenv("DOJAH_WEBHOOK_IP")
-	if DojahWebhookIP == "" {
-		log.Fatalf("IP not set")
+
+	// Read IP from env, fallback to defaults
+	dojahWebhookIP := os.Getenv("DOJAH_WEBHOOK_IP")
+	if dojahWebhookIP == "" {
+		dojahWebhookIP = "20.112.64.208"
 	}
 
-	// Apply the IP filter middleware only to the webhook handler
-	webhookGroup.POST("/webhook", IPFilterMiddleware(DojahWebhookIP), DojahWebhookHandler(wsHub))
+	// Include local loopback addresses so Ngrok works during development
+	allowedIPs := []string{dojahWebhookIP, "::1", "127.0.0.1"}
 
-	log.Println(fmt.Sprintf("Dojah Webhook Registered at /dojah/webhook with IP Whitelist: %s", DojahWebhookIP))
+	webhookGroup.POST("/webhook", IPFilterMiddleware(allowedIPs...), DojahWebhookHandler(wsHub))
+
+	log.Printf("Dojah Webhook registered at /dojah/webhook with allowed IPs: %v", allowedIPs)
 }

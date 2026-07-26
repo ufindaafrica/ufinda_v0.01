@@ -77,7 +77,7 @@ func main() {
 	}
 
 	r := gin.Default()
-	r.SetTrustedProxies([]string{"10.0.0.0/8"})
+	r.SetTrustedProxies(nil)
 
 	config := cors.DefaultConfig()
 	// config.AllowOrigins = []string{"https://ufinda.org","http://localhost:3000","http://127.0.0.1:3000"}
