@@ -48,7 +48,7 @@ func handleVerificationUpdate(payload db.DojahWebhookPayload) VerificationResult
 
 	// return the needed payload
 	return VerificationResult {
-		UserID: payload.Metadata.UserID,
+		UserID: payload.ReferenceID,
 		NIN: entity.NIN,
 		Status: payload.VerificationStatus,
 		VerificationMode: payload.VerificationMode,
