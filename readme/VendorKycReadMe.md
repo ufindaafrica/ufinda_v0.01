@@ -137,42 +137,46 @@ None.
 
 ### 2\. Mini-KYC: Update Vendor Profile
 
-### POST `[BASE_URL]/kyc/vendor`
+#### POST `[BASE_URL]/kyc/vendor`
 
-This endpoint allows vendors/agents to submit or update their onboarding details. Like the student KYC, this endpoint has been migrated from multipart forms to a **JSON-based workflow**. The vendor is responsible for uploading their profile image to Cloudinary on the client side and providing the metadata in the request.
+This endpoint handles the complete onboarding and profile lifecycle for vendors and agents. It functions as an **upsert** operation (Create or Update): if a KYC record already exists for the authenticated user, it performs a partial update; otherwise, it initializes a new KYC entry.
 
 ---
 
-#### Request
+#### Request Details
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
-| `POST` | `[BASE_URL]/kyc/vendor` | Creates or updates an onboarding record for the authenticated vendor. |
+| `POST` | `[BASE_URL]/kyc/vendor` | Creates or partially updates the KYC profile for the authenticated vendor. |
 
 #### Headers
 
-| Header | Value | Description |
-| --- | --- | --- |
-| `Authorization` | `Bearer <access_token>` | **Required**. |
-| `Content-Type` | `application/json` | **Required**. |
+| Header | Value | Required | Description |
+| --- | --- | --- | --- |
+| `Authorization` | `Bearer <access_token>` | Yes | Valid JWT token containing user identity. |
+| `Content-Type` | `application/json` | Yes | Request payload must be JSON formatted. |
 
-#### Expected Payload (Body)
+#### Request Body Schema
 
-The request body uses pointers to allow for partial updates. If a field is omitted from the JSON, the existing database value remains unchanged.
+All properties are **optional pointers**. Passed values overwrite stored values, while omitted fields (`null` or unassigned) remain unchanged during updates.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `residence_address` | `string` | The physical address of the vendor/agent. |
-| `state_of_residence` | `string` | The physical state of the vendor/agent. |
-| `residence_lga` | `string` | The physical lga of the vendor/agent. |
-| `about_me` | `string` | A professional bio or description of the agency. |
-| `profile_img` | `object` | Cloudinary metadata object (URL and Public ID). |
+| `residence_address` | `string` | Street address of the vendor/agent. |
+| `state_of_residence` | `string` | State of residence. |
+| `residence_lga` | `string` | Local Government Area (LGA) of residence. |
+| `nationality` | `string` | Country of origin/nationality. |
+| `about_me` | `string` | Professional bio or business summary. |
+| `profile_img` | `object` / `string` | Cloudinary metadata object or direct image URL pointer. |
 
-**Example JSON Payload:**
+#### Example Payload
 
 ```json
 {
-  "address": "12, Admiralty Way, Lekki Phase 1, Lagos",
+  "residence_address": "12 Admiralty Way, Lekki Phase 1",
+  "state_of_residence": "Lagos State",
+  "residence_lga": "Eti-Osa",
+  "nationality": "Nigerian",
   "about_me": "Specializing in luxury student apartments and off-campus housing.",
   "profile_img": {
     "url": "https://res.cloudinary.com/demo/image/upload/v5678/vendor_profile.jpg",
@@ -184,45 +188,53 @@ The request body uses pointers to allow for partial updates. If a field is omitt
 
 ---
 
-#### Workflow Logic
+#### Handler Processing Logic
 
-The backend follows a **"Check then Act"** pattern to handle the transition between initial onboarding and profile maintenance.
-
-1. **Identity Verification**: Extracts the `UserID` from the secure JWT context.
-2. **Payload Parsing**: Uses `ShouldBindJSON` to map the request to a struct. Pointers ensure that only provided fields are processed.
-3. **State Detection**:
-* Queries the `vendor_kyc` table for an existing entry.
-* **If Found**: Triggers an **Update (PATCH)** operation.
-* **If Not Found**: Triggers a **Creation (POST)** operation.
+1. **Authentication:** Checks for the `user` object in the Gin context. Returns `401 Unauthorized` if absent or invalid.
+2. **Body Binding:** Uses `ShouldBindJSON` to map incoming fields to `VendorKYCRequest`.
+3. **Database Check & Branching:**
+* Queries `vendorkycdb.FindVendorKYC(getUser.ID)`.
+* **If record exists:** Evaluates each non-nil field and dynamically builds a map to run `UpdateVendorKyc`.
+* **If record is not found (`ErrKYCNotFound`):** Instantiates a `db.VendorKYC` record, populates provided fields, and calls `CreateVendorKyc`.
 
 
-4. **Data Persistence**: Communicates with PostgREST to save the data. Any failures at this stage are logged to the `kyc_log` table for auditing.
+4. **Audit Logging:** Any internal query errors during state checks or writes are pushed to `kyclog.LogKYC` before returning a `500` error.
 
 ---
 
-#### Responses
+#### HTTP Responses
 
-#### Success `200 OK`
+##### `200 OK` (Success)
 
-**Body:**
+Returned when the creation or update operation completes successfully.
 
+* **On Creation:**
 ```json
 {
-  "message": "kyc created successfully" 
-  // or "kyc updated successfully"
+  "message": "KYC created successfully"
 }
 
 ```
 
-#### Errors
 
-| Status Code | Description |
-| --- | --- |
-| `400 Bad Request` | **Binding Error**: The JSON structure is invalid or data types do not match. |
-| `401 Unauthorized` | **Auth Error**: No valid bearer token provided. |
-| `500 Internal Server Error` | **System Error**: Occurs if the database is unreachable or the `kyc_log` entry fails. |
+* **On Update:**
+```json
+{
+  "message": "KYC updated successfully"
+}
 
------
+```
+
+##### Error Responses
+
+| Status Code | Error Response | Cause |
+| --- | --- | --- |
+| `401 Unauthorized` | `{"error": "user not authenticated"}` | Missing, expired, or unparsed JWT token. |
+| `400 Bad Request` | `{"error": "invalid user"}` | Context user object is malformed. |
+| `400 Bad Request` | `{"error": "invalid request"}` | Malformed JSON body or invalid data type mismatch. |
+| `500 Internal Server Error` | `{"error": "<MsgServerError>"}` | Unexpected database failure (logged internally to `kyc_log`). |
+
+---------
 
 ## 🌐 Real-Time Status via WebSocket
 
@@ -309,6 +321,9 @@ Returns a unified object representing the vendor's public and private profile da
       "public_id": "kyc/vendor_sam_pic"
     },
     "residence_address": "45 Ikorodu Road, Lagos",
+    "state_of_residence": "Lagos State",
+    "residence_lga": "Eti-Osa",
+    "nationality": "Nigeria",
     "about_me": "Leading agent for off-campus housing near Unilag and Yabatech."
   }
 }
@@ -327,95 +342,5 @@ Returns a unified object representing the vendor's public and private profile da
 | `403 Forbidden` | **Role Mismatch**: The authenticated user does not have `vendor` or `agent` privileges. |
 | `404 Not Found` | **Not Found**: No vendor profile matches the provided authentication token. |
 | `500 Internal Server Error` | **Database Failure**: Internal error during record lookup. |
-
----
-
-## PATCH: Update Vendor Profile
-
-**URL:** `[BASE_URL]/kyc/vendor`
-
-**Method:** `PATCH`
-
-**Auth:** Required (JWT Bearer Token)
-
-This endpoint allows vendors to partially update their profile information. It handles updates across two separate backend layers: the core identity (Username) and the KYC details (Address).
-
----
-
-### Request Body
-
-The request accepts a JSON object. All fields are **optional**. Only the fields provided will be updated in the database.
-
-| Field | Type | Description |
-| --- | --- | --- |
-| `username` | `string` | The vendor's unique display name (Max 30 characters). |
-| `residence_address` | `string` | The vendor's physical or business address. |
-
-**Example Payload:**
-
-```json
-{
-  "username": "GreenGarden_01",
-  "address": "123 Tech Avenue, Lagos"
-}
-
-```
-
----
-
-### Architecture & Caching Impact
-
-When this endpoint is successfully called, the backend updates the `updated_at` timestamp for the vendor. This change triggers the synchronization flow for all connected clients (Buyers):
-
-1. **WebSocket Sync:** The next message sent by this vendor will include a `new_changes` payload. The mobile client will use this to update the local chat header and cache.
-2. **REST Sync:** The next time a buyer calls `GET /chat/rooms` with a `last_sync` timestamp, this vendor’s updated info will be returned in the `new_changes` block.
-
----
-
-### Responses
-
-#### 200 OK
-
-The profile was updated successfully.
-
-```json
-{
-  "message": "profile updated successfully"
-}
-
-```
-
-#### 400 Bad Request
-
-Occurs if the JSON is malformed or the username violates constraints (e.g., not unique or too long).
-
-```json
-{
-  "error": "invalid request"
-}
-
-```
-
-#### 401 Unauthorized
-
-Occurs if the `Authorization` header is missing or the token is expired.
-
-```json
-{
-  "error": "user not authenticated"
-}
-
-```
-
-#### 500 Internal Server Error
-
-Occurs if there is a database failure during the update process.
-
-```json
-{
-  "error": "Internal server error"
-}
-
-```
 
 ---
