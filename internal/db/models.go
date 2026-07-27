@@ -305,6 +305,7 @@ type VendorKYCExtra struct {
 	ResidenceLGA *string		`json:"residence_lga"`
 	Nationality *string `json:"nationality"`
 	AboutMe    *string          `json:"about_me"`
+	IsVerified bool	`json:"is_verified"`
     ProfileImg *UploadedFile   `json:"profile_img"`
 }
 

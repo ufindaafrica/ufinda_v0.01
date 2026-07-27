@@ -324,6 +324,7 @@ Returns a unified object representing the vendor's public and private profile da
     "state_of_residence": "Lagos State",
     "residence_lga": "Eti-Osa",
     "nationality": "Nigeria",
+    "is_veried": true|false,
     "about_me": "Leading agent for off-campus housing near Unilag and Yabatech."
   }
 }
