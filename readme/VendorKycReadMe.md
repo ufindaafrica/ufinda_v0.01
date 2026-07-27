@@ -163,6 +163,7 @@ The request body uses pointers to allow for partial updates. If a field is omitt
 | Field | Type | Description |
 | --- | --- | --- |
 | `residence_address` | `string` | The physical address of the vendor/agent. |
+| `residence_` | `string` | The physical address of the vendor/agent. |
 | `about_me` | `string` | A professional bio or description of the agency. |
 | `profile_img` | `object` | Cloudinary metadata object (URL and Public ID). |
 

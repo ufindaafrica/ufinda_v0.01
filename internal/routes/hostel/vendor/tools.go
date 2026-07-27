@@ -31,7 +31,7 @@ type CreateHostelRequest struct {
 	Title            string             `json:"title" binding:"required,min=5"`
 	TotalPrice       int64              `json:"total_price" binding:"required,gt=0"`
 	RentPerYear      int64              `json:"rent_per_year" binding:"required,gt=0"`
-	PriceBreakDown   HostelPriceBreakdown `json:"hostel_price_breakdown" binding:"required"`
+	// PriceBreakDown   HostelPriceBreakdown `json:"hostel_price_breakdown" binding:"required"`
 	TotalHostelRooms int                `json:"total_hostel_rooms" binding:"required,gt=0"`
 	AvailableRooms *int 				`json:"available_rooms" binding:"required,gt=0"`
 	Location         string             `json:"location" binding:"required"`
