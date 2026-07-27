@@ -10,7 +10,6 @@ import (
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/cloudinary/cloudinary-go/v2/api"
 	"strings"
-	"github.com/oladev/ufinda_v0.01/internal/db/auth"
 	"log"
     "github.com/oladev/ufinda_v0.01/internal/db/kyc/vendor"
 	"errors"
@@ -105,15 +104,33 @@ func CreateOnboardVendorKycHandler() gin.HandlerFunc {
 
         if isKYCFound {
             updateData := make(map[string]interface{})
-            
-            if req.Address != nil {
-                updateData["residence_address1"] = req.Address
+                
+            if req.ResidenceAddress != nil {
+                updateData["residence_address"] = req.ResidenceAddress
             }
+
             if req.AboutMe != nil {
                 updateData["about_me"] = req.AboutMe
             }
+
             if req.ProfileImg != nil {
                 updateData["profile_img"] = req.ProfileImg
+            }
+
+            if req.StateOfResidence != nil {
+                updateData["state_of_residence"] = req.StateOfResidence
+            }
+
+            if req.ResidenceLGA != nil {
+                updateData["residence_lga"] = req.ResidenceLGA
+            }
+
+            if req.Nationality != nil {
+                updateData["nationality"] = req.Nationality
+            }
+
+            if req.AboutMe != nil {
+                updateData["about_me"] = req.AboutMe
             }
 
             opErr = vendorkycdb.UpdateVendorKyc(getUser.ID, updateData)
@@ -124,15 +141,26 @@ func CreateOnboardVendorKycHandler() gin.HandlerFunc {
                 UserID: getUser.ID,
             }
             
-            // Dereference pointers if they exist
-            if req.Address != nil {
-                kycData.ResidenceAddress1 = *req.Address
+            if req.ResidenceAddress != nil {
+                kycData.ResidenceAddress = *req.ResidenceAddress
             }
             if req.AboutMe != nil {
                 kycData.AboutMe = *req.AboutMe
             }
             if req.ProfileImg != nil {
                 kycData.ProfileImg = req.ProfileImg
+            }
+
+            if req.Nationality != nil {
+                kycData.Nationality = *req.Nationality
+            }
+
+            if req.StateOfResidence != nil {
+                kycData.StateOfResidence = *req.StateOfResidence
+            }
+
+            if req.ResidenceLGA != nil {
+                kycData.ResidenceLGA = *req.ResidenceLGA
             }
 
             opErr = vendorkycdb.CreateVendorKyc(kycData)
@@ -217,54 +245,4 @@ func GetVendorProfileHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, profile)
-}
-
-func UpdateVendorProfileHandler(c *gin.Context) {
-    user, exists := c.Get("user")
-    if !exists {
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
-        return
-    }
-
-    getUser, ok := user.(*db.User)
-    if !ok {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user type"})
-        return
-    }
-
-    var req updateVendorRequest
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
-        return
-    }
-
-    if req.UserName != nil {
-        updates := map[string]interface{}{
-            "username": *req.UserName,
-        }
-        if err := authdb.UpdateCreatedUser(getUser.ID, updates); err != nil {
-            kyclog.LogKYC(getUser.ID, err)
-            c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
-            return
-        }
-    }
-
-	kycUpdates := make(map[string]interface{})
-    if req.Address != nil {
-        kycUpdates["residence_address1"] = req.Address
-    }
-
-	if req.ProfileImg != nil {
-		kycUpdates["profile_img"] = req.ProfileImg
-	}
-
-	if len(kycUpdates) > 0 {
-		if err := vendorkycdb.UpdateVendorKyc(getUser.ID, kycUpdates); err != nil {
-            kyclog.LogKYC(getUser.ID, err)
-            c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
-            return
-        }
-	}
-
-    c.JSON(http.StatusOK, gin.H{"message": "profile updated successfully"})
 }

@@ -16,16 +16,13 @@ import (
 
 const MsgServerError = "An unexpected error occurred. Please try again."
 
-type updateVendorRequest struct {
-    UserName *string   `json:"username"`
-    Address *string     `json:"residence_address"`
-    ProfileImg *db.UploadedFile   `json:"profile_img"`
-}
-
 type VendorKYCRequest struct {
-    Address    *string          `json:"residence_address"`
-    AboutMe    *string          `json:"about_me"`
-    ProfileImg *db.UploadedFile `json:"profile_img"`
+    ResidenceAddress *string     `json:"residence_address"`
+	StateOfResidence *string 	`json:"state_of_residence"`
+	ResidenceLGA *string		`json:"residence_lga"`
+	Nationality *string `json:"nationality"`
+	AboutMe    *string          `json:"about_me"`
+    ProfileImg *db.UploadedFile   `json:"profile_img"`
 }
 
 type VerificationResult struct {
@@ -35,15 +32,10 @@ type VerificationResult struct {
 	Status             string    `json:"verification_status"`
 	VerificationMode   string    `json:"verification_mode"`
 	VerificationLink   string    `json:"verification_url"`
+	DateOfBirth        string    `json:"date_of_birth"`
 	FirstName          string    `json:"first_name"`
 	LastName           string    `json:"last_name"`
-    ResidenceAddress   string  `json:"residence_AddressLine1"`
-    ResidenceLGA       string     `json:"residence_lga"`
 	Gender             string    `json:"gender"`
-	DateOfBirth        string    `json:"date_of_birth"`
-	BirthState         string    `json:"birth_state"`
-	BirthCountry       string    `json:"birth_country"`
-	ResidenceState     string    `json:"residence_state"`
 	StateOfCall string
 	CountryOfCall string
 }
@@ -61,13 +53,8 @@ func handleVerificationUpdate(payload db.DojahWebhookPayload) VerificationResult
 		VerificationLink: payload.VerificationURL,
 		FirstName: entity.FirstName,
 		LastName: entity.LastName,
-        ResidenceLGA: entity.ResidenceLGA,
 		Gender: entity.Gender,
 		DateOfBirth: entity.DateOfBirth,
-		BirthState: entity.BirthState,
-		BirthCountry: entity.BirthCountry,
-        ResidenceAddress: entity.ResidenceAddress,
-		ResidenceState: entity.ResidenceState,
 		StateOfCall: payload.Metadata.IpInfo.StateOfCall,
 		CountryOfCall: payload.Metadata.IpInfo.CountryOfCall,
 	}
@@ -141,11 +128,6 @@ func HandleVerificationPayload(payload db.DojahWebhookPayload, h *hub.Hub) {
 		VerificationLink:  result.VerificationLink,
 		Gender:            result.Gender,
 		DOB:               result.DateOfBirth,
-		StateOfOrigin:     result.BirthState,
-		ResidenceLGA:      result.ResidenceLGA,
-		ResidenceAddress2: result.ResidenceAddress,
-		Nationality:       result.BirthCountry,
-		StateOfResidence:  result.ResidenceState,
 	}
 
     kycdata.IsVerified = (finalStatus == "SUCCESS")

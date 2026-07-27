@@ -155,12 +155,11 @@ type DojahWebhookPayload struct {
 	ReferenceID        string          `json:"reference_id"` // This is your User ID
 	VerificationStatus string          `json:"verification_status"`
 	VerificationURL    string          `json:"verification_url"`
-	
+	Metadata			WebhookMetadata	`json:"metadata"`
 	NINValueSubmitted  string          `json:"value"` 
 	VerificationMode   string          `json:"verification_mode"` // e.g., "OTP" or "LIVENESS"
 	Status             bool            `json:"status"` // Overall success status of the transaction
 	Message            string          `json:"message"`
-	Metadata           WebhookMetadata `json:"metadata"`
 	Data               WebhookData     `json:"data"`
 }
 
@@ -179,11 +178,6 @@ type NINEntity struct {
 	LastName        string `json:"last_name"`
 	DateOfBirth     string `json:"date_of_birth"` 
 	NIN             string `json:"nin"`          
-	BirthState      string `json:"birth_state"`
-	BirthCountry    string `json:"birth_country"`
-	ResidenceState  string `json:"residence_state"`
-	ResidenceAddress string `json:"residence_AddressLine1"`
-	ResidenceLGA 	string `json:"residence_lga"`
 	Gender          string `json:"gender"`
 }
 
@@ -193,8 +187,6 @@ type NINData struct {
 
 type WebhookMetadata struct {
 	IpInfo IpInfo `json:"ipinfo"`
-	UserID string `json:"metadata[user_id]"` 
-    Role   string `json:"metadata[role]"`
 }
 
 type IpInfo struct {
@@ -214,11 +206,9 @@ type VendorKYC struct {
 	VerificationLink string `json:"verification_link"`
 	Gender string `json:"gender"`
 	DOB string `json:"dob"`
-	StateOfOrigin string `json:"state_of_origin"`
 	Nationality string `json:"nationality"`
 	ResidenceLGA string `json:"residence_lga"`
-	ResidenceAddress1 string `json:"residence_address1"`
-	ResidenceAddress2 string `json:"residence_address2"`
+	ResidenceAddress string `json:"residence_address"`
 	StateOfResidence string `json:"state_of_residence"`
 }
 
@@ -310,45 +300,12 @@ type VendorProfileInfo struct {
 }
 
 type VendorKYCExtra struct {
-	ProfileImg *UploadedFile `json:"profile_img"`
-	AboutMe    string        `json:"about_me"`
-
-	Address1 *string `json:"-"`
-	Address2 *string `json:"-"`
-
-	ResidenceAddress string `json:"residence_address"`
-}
-
-func (k *VendorKYCExtra) UnmarshalJSON(data []byte) error {
-    // 1. Define a shadow struct that HAS the tags Supabase uses
-    type Shadow struct {
-        ProfileImg *UploadedFile `json:"profile_img"`
-        AboutMe    string        `json:"about_me"`
-        Addr1      *string       `json:"residence_address1"` // Explicitly map DB name
-        Addr2      *string       `json:"residence_address2"` // Explicitly map DB name
-    }
-
-    var s Shadow
-    if err := json.Unmarshal(data, &s); err != nil {
-        return err
-    }
-
-    // 2. Transfer values to your real struct
-    k.ProfileImg = s.ProfileImg
-    k.AboutMe = s.AboutMe
-    k.Address1 = s.Addr1
-    k.Address2 = s.Addr2
-
-    // 3. The Logic: Pick the best address
-    if s.Addr1 != nil && *s.Addr1 != "" {
-        k.ResidenceAddress = *s.Addr1
-    } else if s.Addr2 != nil && *s.Addr2 != "" {
-        k.ResidenceAddress = *s.Addr2
-    } else {
-        k.ResidenceAddress = "" // Fallback if both are nil/empty
-    }
-
-    return nil
+	ResidenceAddress *string     `json:"residence_address"`
+	StateOfResidence *string 	`json:"state_of_residence"`
+	ResidenceLGA *string		`json:"residence_lga"`
+	Nationality *string `json:"nationality"`
+	AboutMe    *string          `json:"about_me"`
+    ProfileImg *UploadedFile   `json:"profile_img"`
 }
 
 type GeoLocationField struct {
