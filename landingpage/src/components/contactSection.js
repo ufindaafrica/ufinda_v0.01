@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 import '../styles/contact.css'
+import { FaInstagram, FaLinkedinIn, FaXTwitter, FaFacebook } from 'react-icons/fa6'
 import { Button } from './ui/Buttons'
-import { X_PROFILE, INSTAGRAM_PROFILE, LINKEDIN_PROFILE } from '../utils.js'
-import { FaInstagram, FaLinkedinIn, FaXTwitter, FaChevronDown } from 'react-icons/fa6'
+import { X_PROFILE, INSTAGRAM_PROFILE, LINKEDIN_PROFILE, FACEBOOK_PROFILE } from '../utils.js'
 
 const ContactSection = () => {
   const [showToast, setShowToast] = useState(false);
@@ -35,7 +35,6 @@ const ContactSection = () => {
     const encodedSubject = encodeURIComponent(subject);
     const encodedMessage = encodeURIComponent(message.replace(/\n/g, '%0D%0A'));
     const emailLink = `mailto:${encodedURI}?subject=${encodedSubject}&body=${encodedMessage}`;
-    // window.location.href = emailLink;
 
     const link = document.createElement('a');
     link.href = emailLink;
@@ -61,7 +60,7 @@ const ContactSection = () => {
           <div className='forminfo'>
             <div className="others">
               <div className="label">Call Us</div>
-              <div className="value">+234 808 154 0710 <br/>+234 906 791 4516</div>
+              <div className="value">+234 906 791 4516 <br/>+234 901 923 0321</div>
             </div>
             <div className="others">
               <div className="label">Email</div>
@@ -71,8 +70,9 @@ const ContactSection = () => {
               <div className="label socialLabel">Our Socials</div>
                 <div className="socials gridspan">
                   <a href={INSTAGRAM_PROFILE} className='link'> <FaInstagram /></a>
-         <a href={LINKEDIN_PROFILE} className='link'> <FaLinkedinIn  /></a>
-         <a href={X_PROFILE} className='link'> <FaXTwitter /></a>
+                  <a href={LINKEDIN_PROFILE} className='link'> <FaLinkedinIn  /></a>
+                  <a href={X_PROFILE} className='link'> <FaXTwitter /></a>
+                  <a href={FACEBOOK_PROFILE} className='link'> <FaFacebook /></a>
                 </div>
               </div>
             </div>

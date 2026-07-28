@@ -60,7 +60,7 @@
 .socialLinks {
     color: var(--color-grey);
     display: flex;
-    gap: 56px;
+    gap: 32px;
     font-size: 24px;
     font-weight: 400;
 

@@ -59,6 +59,7 @@
     color: var(--color-grey);
     display: flex;
     gap: 16px;
+    margin-left: 0;
 }
 
 /* ====== RESPONSE ======*/
