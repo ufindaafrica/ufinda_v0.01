@@ -6,6 +6,7 @@ import * as Notifications from "expo-notifications";
 import { router, Stack } from "expo-router";
 import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -22,7 +23,8 @@ export default function RootLayout() {
 
   useEffect(() => { resumePendingJobIfAny() }, [])
 
-  return <WebSocketProvider>
+  return <SafeAreaProvider>
+    <WebSocketProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Stack
         screenOptions={{ headerShown: false }}
@@ -35,4 +37,5 @@ export default function RootLayout() {
 />
     </GestureHandlerRootView>
   </WebSocketProvider>
+  </SafeAreaProvider>
 }

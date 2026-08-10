@@ -3,6 +3,7 @@ import { moderateScale, scale, verticalScale } from "@/deps/scale";
 import { roboto } from "@/styles/globals";
 import { Tabs } from "expo-router";
 import { Image, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 
 const TabIcon = ({ focused, activeImg, inactiveImg, iconTitle }: any) => {
@@ -30,17 +31,20 @@ const TabIcon = ({ focused, activeImg, inactiveImg, iconTitle }: any) => {
 }
 
 export default function _Layout() {
+    const insets = useSafeAreaInsets()
+
     return (
         <Tabs
             screenOptions={{
                 headerShown: false,
                 tabBarShowLabel: false,
                 tabBarStyle: {
-                    height: verticalScale(68),
+                    height: verticalScale(68) + insets.bottom,
                     justifyContent: "center",
                     alignItems: "center",
                     paddingHorizontal: moderateScale(16),
                     paddingVertical: moderateScale(12),
+                    paddingBottom: insets.bottom > 0 ? insets.bottom : moderateScale(12),
                     alignContent: "center"
                 },
                 tabBarItemStyle: {

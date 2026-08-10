@@ -2,6 +2,7 @@ import { images } from "@/constants/images";
 import { moderateScale, scale, verticalScale } from "@/deps/scale";
 import { Tabs } from "expo-router";
 import { Image, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 
 const TabIcon = ({ focused, activeImg, inactiveImg, iconTitle }: any) => {
@@ -24,6 +25,8 @@ const TabIcon = ({ focused, activeImg, inactiveImg, iconTitle }: any) => {
 }
 
 export default function _Layout() {
+    const insets = useSafeAreaInsets()
+
     return (
         <Tabs
             screenOptions={{
@@ -35,7 +38,7 @@ export default function _Layout() {
                     borderRadius: moderateScale(36),
                     elevation: 1,
                     position: "absolute",
-                    bottom: moderateScale(16),
+                    bottom: moderateScale(16) + insets.bottom,
                     marginLeft: moderateScale(16)
                 },
                 tabBarItemStyle: {

@@ -3,19 +3,6 @@ import { StyleSheet } from "react-native";
 
 
 export const dashboardStyles = StyleSheet.create({
-    plusV: {
-        backgroundColor: "#d9ecd9",
-        width: scale(64),
-        height: scale(64),
-        borderRadius: 45,
-        justifyContent: "center",
-        alignItems: "center",
-        position: "absolute",
-        bottom: moderateScale(16),
-        right: moderateScale(16),
-        zIndex: 2,
-        elevation: 2
-    },
 
     plusImg: {
         width: scale(35),
@@ -87,4 +74,20 @@ export const dashboardStyles = StyleSheet.create({
         color: '#008000',
         alignSelf: 'flex-end'
     }
+})
+
+export const plusVStyles = (insets: {bottom: number}) => StyleSheet.create({
+    plusV: {
+        backgroundColor: "#d9ecd9",
+        width: scale(64),
+        height: scale(64),
+        borderRadius: 45,
+        justifyContent: "center",
+        alignItems: "center",
+        position: "absolute",
+        bottom: moderateScale(16) + insets.bottom,
+        right: moderateScale(16),
+        zIndex: 2,
+        elevation: 2
+    },
 })
