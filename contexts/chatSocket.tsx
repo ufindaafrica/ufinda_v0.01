@@ -17,6 +17,9 @@ const WebSocketContext = createContext<WebSocketContextType>({
 
 export const WebSocketProvider = ({ children }: { children: React.ReactNode }) => {
 
+    const URL = __DEV__ ? "ufinda-v0-01.onrender.com" : "ufinda-v0-01-2prv.onrender.com"
+
+
     const wsRef = useRef<WebSocket | null>(null)
     const messageHandlersRef = useRef<Map<string, (msg: any) => void>>(new Map())
 
@@ -35,7 +38,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
 
             console.log("connecting to websocket...")
 
-            const ws = new WebSocket(`wss://ufinda-v0-01.onrender.com/ws/chat?token=${token}`)
+            const ws = new WebSocket(`wss://${URL}/ws/chat?token=${token}`)
 
             ws.onopen = () => {
                 console.log("✅ Connected")
