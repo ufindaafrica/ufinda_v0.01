@@ -1,22 +1,23 @@
 import { images } from "@/constants/images";
-import { moderateScale, scale, verticalScale } from "@/deps/scale";
-import { roboto } from "@/styles/globals";
-import { Dimensions, Image, Text, TouchableOpacity, View } from "react-native";
-import Animated, { useAnimatedStyle, withTiming, useSharedValue } from "react-native-reanimated";
-import RadioButton from "./radioButton";
-import { useEffect, useState } from "react";
-import { scheduleOnRN } from "react-native-worklets";
+import { verticalScale } from "@/deps/scale";
 import { drawerStyles } from "@/styles/componentStyles/drawer";
+import { roboto } from "@/styles/globals";
+import { useEffect, useState } from "react";
+import { Dimensions, Image, Text, TouchableOpacity, View } from "react-native";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import { scheduleOnRN } from "react-native-worklets";
+import RadioButton from "./radioButton";
 
 interface DrawerProps {
     title: string,
     options: string[],
     onSelectOption: (value: any) => void,
     onCloseDrawer: (value: any) => void,
-    selectedOption: string
+    selectedOption: string,
+    optionless?: boolean,
 }
 
-export default function Drawer({ title, options, onSelectOption, onCloseDrawer, selectedOption }: DrawerProps) {
+export default function Drawer({ title, options, onSelectOption, onCloseDrawer, selectedOption, optionless }: DrawerProps) {
 
     const height = Dimensions.get("screen").height
 
@@ -62,7 +63,11 @@ export default function Drawer({ title, options, onSelectOption, onCloseDrawer, 
                 <Text style={[roboto.titleMediumBold, drawerStyles.titleTxt]}>{title}</Text>
                 <View style={drawerStyles.drawerPadding}>
                     {
-                        options?.map((item, idx) => <View key={idx} style={drawerStyles.optionsRow}>
+                        options?.map((item, idx) => optionless ? <View key={idx} style={drawerStyles.optionsRow}>
+                            <TouchableOpacity style={{width: "100%", height: "100%",justifyContent: "center", alignItems: "center"}} onPress={() => select(item)}>
+                                <Text style={[roboto.titleSmall, {textAlign: "center"}]}>{item}</Text>
+                            </TouchableOpacity>
+                        </View> : <View key={idx} style={drawerStyles.optionsRow}>
                             <Text style={roboto.titleSmall}>{item}</Text>
                             <TouchableOpacity onPress={() => {() => {setButton(item); select(item)}}}>
                                 <RadioButton selected={item === button ? true : false} onSelect={() => {setButton(item), select(item)}}/>

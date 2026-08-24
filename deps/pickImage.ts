@@ -33,10 +33,15 @@ import { toast } from "./toast"
 
 // }
 
-export const pickMedia = async (type: "image" | "video") => {
+export const pickMedia = async (type: "image" | "video", uploadMethod: "camera" | "gallery") => {
     let error = ""
 
-    const selectedImage = await ImagePicker.launchCameraAsync({
+    const selectedImage = uploadMethod === "camera" ? await ImagePicker.launchCameraAsync({
+        mediaTypes: [`${type}s`],
+        allowsEditing: false,
+        quality: 0.4,
+        videoQuality: ImagePicker.UIImagePickerControllerQualityType.VGA640x480
+    }) : await ImagePicker.launchImageLibraryAsync({
         mediaTypes: [`${type}s`],
         allowsEditing: false,
         quality: 0.4,

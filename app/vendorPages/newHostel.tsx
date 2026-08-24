@@ -1,3 +1,4 @@
+import Drawer from "@/components/drawer";
 import HostelLabel from "@/components/hostelLabel";
 import Input from "@/components/input";
 import LineBreak from "@/components/lineBreak";
@@ -5,17 +6,15 @@ import Select from "@/components/select";
 import { images } from "@/constants/images";
 import { pickMedia } from "@/deps/pickImage";
 import { moderateScale, verticalScale } from "@/deps/scale";
+import { runPostHostelJob } from "@/services/postHostelJob";
 import { colors, globals, roboto } from "@/styles/globals";
 import { newHostelStyles } from "@/styles/newHostel";
+import * as Location from "expo-location";
+import * as WebBrowser from "expo-web-browser";
 import { useEffect, useRef, useState } from "react";
-import { Alert, Image, Keyboard, Platform, Text, ToastAndroid, TouchableOpacity, View } from "react-native";
+import { Alert, Image, Keyboard, Platform, Text, TextInput, ToastAndroid, TouchableOpacity, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaView } from "react-native-safe-area-context";
-import * as WebBrowser from "expo-web-browser"
-import * as Location from "expo-location"
-import Drawer from "@/components/drawer";
-import { TextInput } from "react-native";
-import { runPostHostelJob  } from "@/services/postHostelJob";
 
 
 export default function NewHostel() {
@@ -57,9 +56,9 @@ export default function NewHostel() {
 
     const [hostelVideo, setHostelVideo] = useState<Media | Error | null>(null)
 
-    const getMedia = async (type: "image" | "video", idx: number = 0) => {
+    const getMedia = async (type: "image" | "video", idx: number = 0, mode: "camera" | "gallery") => {
 
-        const media = await pickMedia(type)
+        const media = await pickMedia(type, mode)
 
         if ("uri" in media) {
             if (type === "image") {
@@ -84,6 +83,10 @@ export default function NewHostel() {
                 Alert.alert("", message)
             }
         }
+
+        setCurrentUploadIdx(null)
+        setCurrentType(null)
+        setRawOption("")
 
         return
 
@@ -133,6 +136,28 @@ export default function NewHostel() {
     const [powerDrawer, setPowerDrawer] = useState(false)
     const [toiletDrawer, setToiletDrawer] = useState(false)
     const [landlordDrawer, setLandlordDrawer] = useState(false)
+    
+    const [uploadDrawer, setUploadDrawer] = useState(false)
+    const [uploadOption, setUploadOption] = useState<"camera" | "gallery" | null>(null)
+    const [rawOption, setRawOption] = useState("")
+
+    useEffect(() => {
+        if (rawOption != "") {
+            launchUpload(currentType, currentUploadIdx ?? 0)
+        }
+    }, [rawOption])
+
+    const launchUpload = (type: any, index: number) => {
+        if (rawOption === "Use Camera") {
+            getMedia(type, index, "camera")
+        } else if (rawOption === "Choose from Gallery") {
+            getMedia(type, index, "gallery") }
+    }
+
+    const [currentType, setCurrentType] = useState<'image' |'video' | null>(null)
+    const [currentUploadIdx, setCurrentUploadIdx] = useState<number | null>(null)
+
+    // getMedia("image", idx)
 
     // const [topAdView, setTopAdView] = useState(false)
     // const [top7View, setTop7View] = useState(false)
@@ -178,6 +203,8 @@ export default function NewHostel() {
     // useEffect(() => {
     //     clickAdView("top")
     // }, [])
+
+    // getMedia("image", idx)
 
     const availableRoomsRef = useRef<TextInput | null>(null)
     const totalRoomsRef = useRef<TextInput | null>(null)
@@ -243,7 +270,9 @@ export default function NewHostel() {
                     <View style={newHostelStyles.hostelImgV}>
                         {
                             Array.from(hostelImages).map((item, idx) => <TouchableOpacity key={idx} style={newHostelStyles.addHostelV} onPress={() => {
-                                getMedia("image", idx)
+                                setCurrentUploadIdx(idx)
+                                setCurrentType("image")
+                                setUploadDrawer(true)
                             }}>
                                 {item === null ? <Image source={images.plus} style={newHostelStyles.plusImg} /> : <Image source={{ uri: "uri" in item ? item.uri : images.plus }} style={newHostelStyles.hostelImg} />}
                             </TouchableOpacity>)
@@ -257,7 +286,9 @@ export default function NewHostel() {
                 <View style={newHostelStyles.inputV}>
                     <HostelLabel label="Add videos" />
                     <TouchableOpacity style={newHostelStyles.addHostelV} onPress={() => {
-                        getMedia("video")
+                        setCurrentType("video")
+                        setCurrentUploadIdx(0)
+                        setUploadDrawer(true)
                     }}>
                         {hostelVideo === null ? <Image source={images.plus} style={newHostelStyles.plusImg} /> : <Image source={{ uri: "uri" in hostelVideo ? hostelVideo.uri : images.plus }} style={newHostelStyles.hostelImg} />}
                     </TouchableOpacity>
@@ -497,6 +528,10 @@ export default function NewHostel() {
 
             {
                 landlordDrawer ? <Drawer title="Landlord Resides" options={["yes", "no"]} onCloseDrawer={setLandlordDrawer} onSelectOption={setLandlord} selectedOption={landlord} /> : null
+            }
+
+            {
+                uploadDrawer ? <Drawer optionless title="Upload Media" options={["Use Camera", "Choose from Gallery"]} onCloseDrawer={setUploadDrawer} onSelectOption={setRawOption} selectedOption={rawOption} /> : null
             }
 
         </SafeAreaView>
