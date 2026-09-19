@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"errors"
 	"context"
+	"strings"
 	"time"
 	"log"
 	"github.com/cloudinary/cloudinary-go/v2"
@@ -43,6 +44,11 @@ func CreateHostelHandler() gin.HandlerFunc {
 			}
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
+		}
+
+
+		if strings.Contains(req.RoomType, "room and parlour") {
+			req.RoomType = "room and parlor"
 		}
 
 		// 3. Generate Unique Hostel ID
