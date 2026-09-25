@@ -1,0 +1,71 @@
+### Variables
+@baseUrl = http://localhost:8080/auth
+@contentType = application/json
+
+### 1. Register a Vendor (Username is MANDATORY)
+# @name createVendor
+POST {{baseUrl}}/email/signup
+Content-Type: {{contentType}}
+
+{
+    "email": "timap34592@onbap.com",
+    "password": "SecurePassword123!",
+    "role": "vendor",
+    "last_name": "Qundus",
+    "first_name": "Olalekan",
+    "username": "MyTech",
+    "phone": "+2348011223344"
+}
+    "access_token": "",
+
+
+###
+
+### 2. Register a Student (Username is NULL/Optional)
+# @name createStudent
+POST {{baseUrl}}/email/signup
+Content-Type: {{contentType}}
+
+{
+    "email": "alt.x7-6oxupvc0@yopmail.com",
+    "password": "StudentPassword456!",
+    "role": "user",
+    "last_name": "Doe",
+    "first_name": "John",
+    "username": null,
+    "phone": "+2349055667788"
+}
+
+###
+
+### 3. Register a Student with a Username (Optional but valid)
+# @name createStudentWithHandle
+POST {{baseUrl}}/signup
+Content-Type: {{contentType}}
+
+{
+    "email": "student.handle@test.com",
+    "password": "Password789!",
+    "role": "user",
+    "last_name": "Makinde",
+    "first_name": "Seyi",
+    "username": "Seyi_Student_2026",
+    "phone": "+2347033445566"
+}
+
+###
+
+### 4. Test Error Case: Vendor missing Username
+# This should return a 400 or Database Error because of our CHECK constraint
+POST {{baseUrl}}/email/signup
+Content-Type: {{contentType}}
+
+{
+    "email": "dulcea8@sharebot.net",
+    "password": "Password123!",
+    "role": "vendor",
+    "last_name": "UPhoneix",
+    "first_name": "BBd",
+    "username": "techCoder",
+    "phone": "+2348000000000"
+}

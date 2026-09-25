@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Supabase Auth Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <button id="login">Login with Email</button>
+  <pre id="output"></pre>
+
+  <script>
+    const { createClient } = supabase;
+
+    const SUPABASE_URL="https://snjrxzhameuohspuvtuo.supabase.co"
+    const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNuanJ4emhhbWV1b2hzcHV2dHVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5MDc3OTMsImV4cCI6MjA2NzQ4Mzc5M30.GKtzura6XBELlbAx9mnV9QO0rtPuWm9OD5AU936aWcg"
+
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    document.getElementById("login").onclick = async () => {
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: "lekanmojibola@gmail.com",
+        password: "mojibola0534"
+      });
+
+      if (error) {
+        console.error("Login error:", error);
+        document.getElementById("output").innerText = `Login failed: ${error.message}`;
+        return;
+      }
+
+      const token = data.session.access_token;
+      console.log("ID Token:", token);
+      document.getElementById("output").innerText = token;
+    };
+  </script>
+</body>
+</html>

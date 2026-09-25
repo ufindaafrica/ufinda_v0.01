@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>uFinda Dynamic Phone Verification</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    input {
+      margin: 5px 0;
+      padding: 8px;
+      width: 250px;
+    }
+    button {
+      padding: 8px 12px;
+      margin-top: 10px;
+    }
+    #otpSection {
+      margin-top: 15px;
+    }
+    pre {
+      background: #f4f4f4;
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 20px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <h2>uFinda Phone Verification</h2>
+
+  <!-- Input for phone number -->
+  <label>Phone Number (include country code):</label><br>
+  <input type="text" id="phone" placeholder="+15555550123"><br>
+  <button id="sendCode">Send Verification Code</button>
+
+  <!-- OTP input, hidden by default -->
+  <div id="otpSection" style="display:none;">
+    <label>Enter OTP:</label><br>
+    <input type="text" id="otp" placeholder="123456"><br>
+    <button id="verifyCode">Verify Code</button>
+  </div>
+
+  <pre id="output"></pre>
+
+  <!-- Supabase JS client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    // Initialize your Supabase client
+    const SUPABASE_URL = "https://tgpstscqtkvnimxzixas.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRncHN0c2NxdGt2bmlteHppeGFzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA5Mjk2ODMsImV4cCI6MjA2NjUwNTY4M30.IeqFIZksULtLGdZ1zGygCTjamAzAWXyHJ7GLUcw7gm4";
+
+    const supabaseClient = supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY
+    );
+
+    const phoneInput = document.getElementById('phone');
+    const otpSection = document.getElementById('otpSection');
+    const otpInput = document.getElementById('otp');
+    const output = document.getElementById('output');
+
+    // Send verification code
+    document.getElementById('sendCode').addEventListener('click', async () => {
+      const phone = phoneInput.value.trim();
+      if (!phone) {
+        output.textContent = 'Please enter a phone number.';
+        return;
+      }
+
+      output.textContent = 'Sending code...';
+
+      const { error } = await supabaseClient.auth.signInWithOtp({
+        phone: phone
+      });
+
+      if (error) {
+        output.textContent = 'Error sending code: ' + error.message;
+      } else {
+        output.textContent = 'Verification code sent. Enter it below.';
+        otpSection.style.display = 'block';
+      }
+    });
+
+    // Verify OTP
+    document.getElementById('verifyCode').addEventListener('click', async () => {
+      const phone = phoneInput.value.trim();
+      const otp = otpInput.value.trim();
+
+      if (!otp) {
+        output.textContent = 'Please enter the OTP.';
+        return;
+      }
+
+      output.textContent = 'Verifying code...';
+
+      const { data, error } = await supabaseClient.auth.verifyOtp({
+        phone: phone,
+        token: otp,
+        type: 'sms'
+      });
+
+      if (error) {
+        output.textContent = 'Error verifying code: ' + error.message;
+      } else {
+        console.log('Session:', data.session);
+        output.textContent = 'Verification successful!\n\nAccess Token:\n' + data.session.access_token;
+      }
+    });
+  </script>
+</body>
+</html>
