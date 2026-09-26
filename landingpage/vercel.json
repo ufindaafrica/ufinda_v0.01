@@ -1,0 +1,13 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/booking-page",
+      "destination": "/booking-page.html"
+    },
+    {
+      "source": "/((?!booking-page|static|.*\\.).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
