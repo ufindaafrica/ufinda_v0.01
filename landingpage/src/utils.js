@@ -11,4 +11,3 @@ export const LINKEDIN_PROFILE = ''
 
 export const FACEBOOK_PROFILE = 'https://www.facebook.com/profile.php?id=61591458990537'
 
-//export const DOWNLOADLINK = 'https://expo.dev/artifacts/eas/q_ru--Az6grpITvP2VfUun9QDvug-_YkytfIiCl3W7I.apk'

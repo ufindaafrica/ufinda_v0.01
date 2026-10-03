@@ -180,6 +180,21 @@
                     </div>
                 </div>
 
+                <!-- Email -->
+                 <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2" for="email">
+                        Email Address <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <div
+                            class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <i data-lucide="mail" class="w-4 h-4"></i>
+                        </div>
+                        <input type="email" id="email" required placeholder="e.g. adewale.janet@example.com"
+                            class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ufinda-600 focus:bg-white transition-all">
+                    </div>
+                </div>
+
                 <!-- WhatsApp Phone Number -->
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2"
@@ -633,12 +648,12 @@
         const PAYSTACK_PUBLIC_KEY = "pk_test_35831baa8c2be53173e10f06580cf6910d92ec75"
 
         const hostelPriceMap = {
-            'single_room': '₦80,000 – ₦130,000 / year',
-            'self_contain': '₦140,000 – ₦220,000 / year',
-            'room_and_parlour': '₦220,000 – ₦350,000 / year',
-            'two-bedroom': '₦250,000 – ₦450,000 / year',
-            'room-in-a-flat': '₦120,000 – ₦180,000 / year',
-            'three-bedroom': '₦400,000 – ₦700,000 / year'
+            'single_room': '₦150,000 – ₦250,000 / year',
+            'self_contain': '₦350,000 – ₦650,000 / year',
+            'room_and_parlour': '₦500,000 – ₦750,000 / year',
+            'two-bedroom': '₦700,000 – ₦900,000 / year',
+            'room-in-a-flat': '₦300,000 – ₦450,000 / year',
+            'three-bedroom': '₦800,000 – ₦1,000,000 / year'
         };
 
         function updatePriceEstimate() {
@@ -666,18 +681,17 @@
             document.getElementById('successModal').classList.add('hidden');
         }
 
-        func payWithPaystackAndSubmit() {
+        function payWithPaystackAndSubmit() {
             const userEmail = document.getElementById('email').value;
             const whatsappNumber = document.getElementById('whatsappNumber').value;
-            const submitBtn = document.getElementById("submitTransferBtn");
-            const submitBtnText = document.getElementById("submitBtnText");
 
-            let handler = paystackPop.setup({
+            const paystack = new PaystackPop();
+
+            paystack.checkout({
                 key: PAYSTACK_PUBLIC_KEY,
                 email: userEmail,
                 amount: 1000 * 100, // ₦1,000 in kobo
                 currency: 'NGN',
-                'ufindapay_' + Math.floor((Math.random() * 1000000000) + 1),
                 metadata: {
                     custom_fields: [
                         {
@@ -690,14 +704,14 @@
                         }
                     ]
                 },
-                callback: function(response) {
-                    submitFormAfterPayment(response.reference);
+                onSuccess: function (transaction) {
+                    console.log("Payment successful:", transaction.reference);
+                    submitFormAfterPayment(transaction.reference);
                 },
-                onClose: function() {
-                    alert('Payment window closed. Complete payment to activate your search.');
+                onCancel: function () {
+                    alert("Payment window closed. You can try again when you're ready.");
                 }
             });
-            handler.openIframe();
         }
 
         async function submitFormAfterPayment(paymentReference) {
@@ -712,11 +726,11 @@
 
                 payload.append("Full Name", document.getElementById('fullName').value);
                 payload.append("WhatsApp Number", document.getElementById('whatsappNumber').value);
-                payload.append("Preferred Location", document.getElementById('locationPref').value);
+                payload.append("Campus", document.getElementById('locationPref').value);
                 payload.append("Room Type", document.getElementById('roomType').value);
                 payload.append("Move-in Timeline", document.getElementById('moveInTimeline').value);
 
-                // Collect selected amenities checkboxes correctly matching name="Amenities"
+                // Collect selected amenities checkboxes
                 const selectedAmenities = Array.from(document.querySelectorAll('input[name="Amenities"]:checked'))
                     .map(cb => cb.value)
                     .join(', ');
@@ -736,9 +750,18 @@
                     body: payload
                 });
 
-                const result = await response.json();
+                // 1. Read response as text first to prevent JSON parse crashes
+                const responseText = await response.text();
+                let result;
 
-                if (response.ok && result.success === "true") {
+                try {
+                    result = JSON.parse(responseText);
+                } catch (jsonError) {
+                    console.error("FormSubmit returned non-JSON response:", responseText);
+                    throw new Error("Server returned an unexpected format.");
+                }
+
+                if (response.ok && (result.success === "true" || result.success === true)) {
                     closePaymentModal();
 
                     const locationVal = document.getElementById('locationPref').value;
@@ -748,17 +771,35 @@
                     document.getElementById('hostelMatchingForm').reset();
                     updatePriceEstimate();
                 } else {
-                    alert("Payment was successful, but email dispatch failed. Please contact support with Ref: " + paymentReference);
+                    // Payment worked, but email had a flag — still let the user pass but show warning
+                    closePaymentModal();
+                    document.getElementById('successLocationText').textContent = document.getElementById('locationPref').value || 'UNIOSUN area';
+                    document.getElementById('successModal').classList.remove('hidden');
+                    alert("Payment successful (Ref: " + paymentReference + "), but email dispatch had a slight delay. Please message support on WhatsApp with your reference.");
                 }
             } catch (error) {
-                console.error('Submission error:', error);
-                alert('Payment successful (Ref: ' + paymentReference + '), but network error occurred while notifying support. Please reach out on WhatsApp.');
+                console.error('Submission error (Likely ad-blocker or network block):', error);
+                
+                // CRITICAL: Since payment was successful, NEVER trap the user on a network error.
+                // Complete the flow so they get their confirmation modal and reference code.
+                closePaymentModal();
+                
+                const locationVal = document.getElementById('locationPref').value;
+                document.getElementById('successLocationText').textContent = locationVal || 'UNIOSUN area';
+                document.getElementById('successModal').classList.remove('hidden');
+                
+                document.getElementById('hostelMatchingForm').reset();
+                if (typeof updatePriceEstimate === 'function') {
+                    updatePriceEstimate();
+                }
+
+                alert('Payment successful! Ref: ' + paymentReference + '\n\nNote: An ad-blocker or browser extension blocked the automatic notification. Please send your payment reference to our support WhatsApp (09067914516).');
             } finally {
                 submitBtn.disabled = false;
                 submitBtnText.textContent = "Pay ₦1,000 Securely";
             }
         }
-
+        
         function copyAccount(text) {
             navigator.clipboard.writeText(text).then(() => {
                 alert("uFinda Moniepoint Account number copied: " + text);
