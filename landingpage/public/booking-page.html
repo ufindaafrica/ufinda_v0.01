@@ -690,17 +690,20 @@
             paystack.checkout({
                 key: PAYSTACK_PUBLIC_KEY,
                 email: userEmail,
+                phone: whatsappNumber,
                 amount: 1000 * 100, // ₦1,000 in kobo
                 currency: 'NGN',
                 metadata: {
                     custom_fields: [
                         {
-                            field_name: "full name",
+                            display_name: "Full Name",
+                            variable_name: "full_name",
                             value: document.getElementById("fullName").value
                         },
                         {
-                            field_name: "whatsapp number",
-                            value: whatsappNumber,
+                            display_name: "WhatsApp Number",
+                            variable_name: "whatsapp_number",
+                            value: whatsappNumber
                         }
                     ]
                 },
