@@ -34,6 +34,7 @@ var upgrader = websocket.Upgrader{
 		}
 		allowedOrigins := []string{
 			"https://ufinda-v0-01.onrender.com",
+			"https://ufinda-v0-01-2prv.onrender.com",
 		}
 		for _, allowed := range allowedOrigins {
 			if origin == allowed {
