@@ -1,4 +1,4 @@
-import { React } from 'react'
+import React from 'react';
 import '../styles/heroSection.css'
 import Image from '../assets/Hero.png'
 import { Button } from './ui/Buttons.js'
