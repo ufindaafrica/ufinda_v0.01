@@ -196,13 +196,10 @@ This endpoint allows an authenticated and verified **Vendor** to partially updat
 
 | Field Name | Type | Description |
 | --- | --- | --- |
-| `total_price` | `number` | The total annual price (must be > 0). |
-| `rent_per_year` | `number` | The cost of rent per year. |
-| `total_hostel_rooms` | `number` | Total number of rooms. |
 | `landlord_resides` | `string` | `yes` or `no`. |
 | `roommates_allowed` | `string` | `yes` or `no`. |
 | `description` | `string` | Min 10 characters if provided. |
-| `room_type` | `string` | Category of the room. |
+| `power_supply` | `string` | `yes` or `no`. |
 
 #### Headers
 

@@ -17,14 +17,10 @@ type HostelPriceBreakdown struct {
 }
 
 type UpdateHostelRequest struct {
-    TotalPrice       *int64  `json:"total_price" binding:"omitempty,gt=0"`
-    RentPerYear      *int64  `json:"rent_per_year" binding:"omitempty,gt=0"`
-    TotalHostelRooms *int    `json:"total_hostel_rooms" binding:"omitempty,gt=0"`
     LandlordResides  *string `json:"landlord_resides" binding:"omitempty"`
     RoommatesAllowed *string `json:"roommates_allowed" binding:"omitempty"`
 	PowerSupply		 *string `json:"power_supply"`
     Description      *string `json:"description" binding:"omitempty"`
-    RoomType         *string `json:"room_type" binding:"omitempty"`
 }
 
 type CreateHostelRequest struct {
