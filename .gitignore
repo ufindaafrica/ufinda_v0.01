@@ -11,3 +11,4 @@ bin/
 # Temporary files
 *.tmp
 *.log
+.env*

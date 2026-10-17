@@ -374,3 +374,23 @@ func DeleteResetToken(token string) error {
 
 	return nil
 }
+
+func ActivateBookingFee(data db.BookingFee) (error) {
+    url := fmt.Sprintf("/rest/v1/booking_fee")
+
+    resp, err := db.MakeDBRequest("POST", url, data, nil)
+    if err != nil {
+		log.Printf("[CRITICAL] DB Error [BOOKING_FEE]: %v", err)
+        return fmt.Errorf("error connecting to db")
+    }
+    defer resp.Body.Close()
+    
+    if resp.StatusCode != http.StatusCreated {
+        bodyBytes, _ := io.ReadAll(resp.Body)
+        bodyString := string(bodyBytes)
+        log.Printf("[CRITICAL] failed to create booking fee. Status: %d, Response Body: %s", resp.StatusCode, bodyString)
+        return fmt.Errorf("failed to create booking fee")
+    }
+
+    return nil
+}

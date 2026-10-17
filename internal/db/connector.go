@@ -22,15 +22,15 @@ var RedisClient *redis.Client
 
 func InitDB() {
 	supabaseURL := os.Getenv("SUPABASE_URL")
-	supabaseKey := os.Getenv("SUPABASE_ANON_KEY")
+	// supabaseKey := os.Getenv("SUPABASE_ANON_KEY")
 	serviceKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-	if supabaseURL == "" || supabaseKey == "" {
+	if supabaseURL == "" {
 		panic("❌ SUPABASE_URL and SUPABASE_ANON_KEY required")
 	}
 
 	BaseURL = supabaseURL
-	APIKey = supabaseKey
+	// APIKey = supabaseKey
 	ServiceRoleKey = serviceKey
 
 	// Test database connection

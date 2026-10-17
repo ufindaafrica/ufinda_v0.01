@@ -16,19 +16,20 @@ import (
 	"github.com/oladev/ufinda_v0.01/internal/routes/kyc/vendor"
 	"github.com/oladev/ufinda_v0.01/internal/routes/hostel/vendor"
 	"github.com/oladev/ufinda_v0.01/internal/routes/hostel/user"
-	"github.com/oladev/ufinda_v0.01/internal/webhooks"
+	"github.com/oladev/ufinda_v0.01/internal/webhooks/dojah"
 	"github.com/oladev/ufinda_v0.01/internal/sockets/kyc"
 	"github.com/oladev/ufinda_v0.01/internal/sockets/chat"
 	"github.com/oladev/ufinda_v0.01/internal/routes/metrics"
 	"github.com/oladev/ufinda_v0.01/internal/routes/product/vendor"
 	"github.com/oladev/ufinda_v0.01/internal/routes/notification"
+	"github.com/oladev/ufinda_v0.01/internal/webhooks/paystack"
 )
 
 var wsHub = hub.NewHub()
 
 func main() {
-	if _, err := os.Stat(".env"); err == nil {
-        if err := godotenv.Load(); err != nil {
+	if _, err := os.Stat(".env.backend-devt"); err == nil {
+        if err := godotenv.Load(".env.backend-devt"); err != nil {
             log.Println("Warning: Could not load .env file")
         }
     }
@@ -90,7 +91,8 @@ func main() {
 	vendorkyc.RegisterKYC(r, cld)
 	vendorproduct.RegisterVendorProduct(r, cld)
 	metrics.RegisterMetrics(r)
-	webhook.RegisterWebhooks(r, wsHub)
+	dojahwebhook.RegisterDojahWebhooks(r, wsHub)
+	paystackwebhook.RegisterPaystackWebhook(r)
 	notif.RegisterNotif(r)
 	
 	vendorhostel.RegisterHostel(r, cld)

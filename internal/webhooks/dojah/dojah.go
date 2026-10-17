@@ -1,4 +1,4 @@
-package webhook
+package dojahwebhook
 
 import (
 	"bytes"
@@ -53,7 +53,7 @@ func DojahWebhookHandler(wsHub *hub.Hub) gin.HandlerFunc {
 		}
 
 		if!VerifyDojahSignature(receivedSignature) { 
-			log.Println("Security Check 2 (HMAC) Failed: Invalid HMAC signature computed.")
+			log.Println("Security Check 2 (HMAC) Failed: Invalid HMAC signature computed for dojah.")
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: Invalid Signature"})
 			return
 		}
@@ -62,7 +62,7 @@ func DojahWebhookHandler(wsHub *hub.Hub) gin.HandlerFunc {
 		var payload db.DojahWebhookPayload
 		if err := json.Unmarshal(rawBody, &payload); err!= nil {
 			log.Printf("Parsing Error: Failed to unmarshal payload: %v", err)
-			c.Status(http.StatusOK) 
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payload format"})
 			return
 		}
 

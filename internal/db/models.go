@@ -366,3 +366,10 @@ type MetricLog struct {
 	UpdatedAt *time.Time `json:"updated_at,omitempty"`
 }
 
+type BookingFee struct {
+	ID *uuid.UUID `json:"id,omitempty"`
+	Email string `json:"email"`
+	Amount int64  `json:"amount"`
+	IsPaid *bool `json:"is_paid,omitempty"`
+	Ref string `json:"payment_ref"`
+}
