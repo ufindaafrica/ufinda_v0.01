@@ -54,10 +54,10 @@ func PaystackWebhookHandler(c *gin.Context) {
 	mac.Write(body)
 	expectedSignature := hex.EncodeToString(mac.Sum(nil))
 
-	log.Printf("[DEBUG] Header Signature: %s", paystackSignature)
-	log.Printf("[DEBUG] Computed Signature: %s", expectedSignature)
-	log.Printf("[DEBUG] Secret Key Used: %s (Length: %d)", paystackSecret[:10], len(paystackSecret))
-	log.Printf("[DEBUG] Raw Body String: %s", string(body))
+	// log.Printf("[DEBUG] Header Signature: %s", paystackSignature)
+	// log.Printf("[DEBUG] Computed Signature: %s", expectedSignature)
+	// log.Printf("[DEBUG] Secret Key Used: %s (Length: %d)", paystackSecret[:10], len(paystackSecret))
+	// log.Printf("[DEBUG] Raw Body String: %s", string(body))
 	if !hmac.Equal([]byte(paystackSignature), []byte(expectedSignature)) {
 		log.Println("Security Error: Invalid webhook signature attempt")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid signature"})
