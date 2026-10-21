@@ -178,7 +178,7 @@ This endpoint allows an authenticated and verified **Vendor** to partially updat
 
 ---
 
-### Request
+#### Request
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
@@ -196,13 +196,12 @@ This endpoint allows an authenticated and verified **Vendor** to partially updat
 
 | Field Name | Type | Description |
 | --- | --- | --- |
-| `total_price` | `number` | The total annual price (must be > 0). |
-| `rent_per_year` | `number` | The cost of rent per year. |
-| `total_hostel_rooms` | `number` | Total number of rooms. |
 | `landlord_resides` | `string` | `yes` or `no`. |
 | `roommates_allowed` | `string` | `yes` or `no`. |
 | `description` | `string` | Min 10 characters if provided. |
-| `room_type` | `string` | Category of the room. |
+| `power_supply` | `string` | Description of power availability or state. |
+| `is_available` | `boolean` | Sets the listing availability (`true`/`false`). |
+| `available_rooms` | `integer` | Number of rooms currently available (`>=0`). |
 
 #### Headers
 
@@ -213,16 +212,20 @@ This endpoint allows an authenticated and verified **Vendor** to partially updat
 
 ---
 
-### Workflow
+#### Workflow
 
-1.  **Ownership Check**: Retrieves the hostel and confirms the `VendorID` matches the logged-in user.
-2.  **JSON Binding**: Parses the request body into a pointer-based struct to distinguish between "missing fields" and "zero values."
-3.  **Partial Update Map**: Dynamically builds a map of only the fields provided by the client.
-4.  **Atomic Update**: Performs a `PATCH` operation on the database for the specific columns identified.
+1. **Ownership Check**: Retrieves the hostel and confirms the `VendorID` matches the logged-in user.
+2. **JSON Binding**: Parses the request body into a pointer-based struct to distinguish between missing fields and zero values.
+3. **Availability & Room Calculation**:
+* If `available_rooms` is set to `0`, `is_available` is automatically set to `false`.
+* If `is_available` is explicitly set to `false` without specifying room count, `available_rooms` defaults to `0`.
+
+4. **Partial Update Map**: Dynamically builds a map of only the fields provided by the client.
+5. **Atomic Update**: Performs a `PATCH` operation on the database for the specific columns identified.
 
 ---
 
-### Responses
+#### Responses
 
 #### Success
 
@@ -234,7 +237,7 @@ This endpoint allows an authenticated and verified **Vendor** to partially updat
 
 | Status Code | Description |
 | --- | --- |
-| `400 Bad Request` | Invalid JSON or failed validation (e.g., price is negative). |
+| `400 Bad Request` | Invalid JSON or failed validation (e.g., negative room count). |
 | `403 Forbidden` | User does not own this hostel listing. |
 | `404 Not Found` | Hostel ID does not exist. |
 

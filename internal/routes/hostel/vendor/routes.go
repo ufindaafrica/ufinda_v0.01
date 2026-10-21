@@ -155,17 +155,24 @@ func UpdateHostelHandler() gin.HandlerFunc {
 
 		// 4. Build the Update Map
 		updateFields := make(map[string]interface{})
-
-		if req.TotalPrice != nil {
-			updateFields["total_price"] = *req.TotalPrice
-		}
-		if req.RentPerYear != nil { updateFields["rent_per_year"] = *req.RentPerYear }
-		if req.TotalHostelRooms != nil { updateFields["total_hostel_rooms"] = *req.TotalHostelRooms }
+	
 		if req.LandlordResides != nil { updateFields["landlord_resides"] = *req.LandlordResides }
 		if req.RoommatesAllowed != nil { updateFields["roommates_allowed"] = *req.RoommatesAllowed }
 		if req.Description != nil { updateFields["description"] = *req.Description }
 		if req.PowerSupply != nil { updateFields["power_supply"] = *req.PowerSupply }
-		if req.RoomType != nil { updateFields["room_type"] = *req.RoomType }
+		if req.AvailableRooms != nil {
+			if *req.AvailableRooms == 0 {
+				updateFields["is_available"] = false
+			}
+			updateFields["available_rooms"] = *req.AvailableRooms
+		}
+		if req.IsAvailable != nil {
+			if !*req.IsAvailable && req.AvailableRooms == nil {
+				updateFields["available_rooms"] = 0
+			}
+			updateFields["is_available"] = *req.IsAvailable
+		}
+
 
 		// 5. Perform Atomic Update
 		if len(updateFields) == 0 {
