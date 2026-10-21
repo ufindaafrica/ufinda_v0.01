@@ -343,13 +343,18 @@ func ResendOTPHandler(c *gin.Context) {
 
 	// check if the user exists as a pending user
 	pendinguser, err := authdb.FindPendingUser(otpRequest.Email)
-	if err != nil && errors.Is(err, authdb.ErrGettingUser) {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err != nil {
+		if errors.Is(err, authdb.ErrUserNotFound) || errors.Is(err, ErrUserNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Pending user not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
 
-	if errors.Is(err, ErrUserNotFound) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	// 🛡️ Safety check to prevent nil pointer panics
+	if pendinguser == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Pending user not found"})
 		return
 	}
 
