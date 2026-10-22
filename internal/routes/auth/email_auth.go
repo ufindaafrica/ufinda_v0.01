@@ -24,97 +24,113 @@ import (
 func EmailSignUpHandler(c *gin.Context) {
 	var req SignupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": InvalidRequest})
+		log.Printf("[DEBUG][SignUp] ShouldBindJSON failed for payload: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   InvalidRequest,
+			"details": err.Error(), // Expose exact validation error in dev/debug
+		})
 		return
 	}
 
-	// check if user is already created and email already verified
+	log.Printf("[INFO][SignUp] Attempting signup for email: %s, role: %s", req.Email, req.Role)
+
+	// 1. Check Created User
 	isCreatedUser, err := authdb.FindCreatedUserByEmail(req.Email)
-	if err != nil && errors.Is(err, ErrGettingUser) {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+	if err != nil {
+		if !errors.Is(err, authdb.ErrUserNotFound) && !errors.Is(err, ErrUserNotFound) {
+			log.Printf("[ERROR][SignUp] DB error checking created user for %s: %v", req.Email, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+			return
+		}
 	}
 
 	if isCreatedUser != nil {
-		log.Println("ERROR: THIS IS WHAT IS HAPPENING: %v", isCreatedUser)
+		log.Printf("[WARN][SignUp] User already created for email: %s, details: %+v", req.Email, isCreatedUser)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "user already created, please login"})
-		return		
-	}
-
-	// check if the user exists as a pending user
-	isPendingUser, err := authdb.FindPendingUser(req.Email)
-	if err != nil && errors.Is(err, ErrGettingUser) {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
+	// 2. Check Pending User
+	isPendingUser, err := authdb.FindPendingUser(req.Email)
+	if err != nil {
+		if !errors.Is(err, authdb.ErrUserNotFound) && !errors.Is(err, ErrUserNotFound) {
+			log.Printf("[ERROR][SignUp] DB error checking pending user for %s: %v", req.Email, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+			return
+		}
+	}
+
 	if isPendingUser != nil {
+		log.Printf("[WARN][SignUp] Pending signup record already exists for email: %s", req.Email)
 		c.JSON(http.StatusBadRequest, gin.H{"error": MsgAccountExists})
 		return
 	}
 
-	// hash the user password
+	// 3. Hash Password
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Printf("[ERROR] failed to hash password")
+		log.Printf("[ERROR][SignUp] Failed to hash password for %s: %v", req.Email, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
 
-	// generate otp
+	// 4. Generate OTP
 	otp, err := token.GenerateOTP()
 	if err != nil {
-		log.Printf("[CRITICAL] error generating otp: %v", err)
+		log.Printf("[CRITICAL][SignUp] Error generating OTP for %s: %v", req.Email, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
 
 	var pendingUserName *string
 	if req.UserName != nil && strings.TrimSpace(*req.UserName) != "" {
-    cleanName := strings.ToLower(strings.TrimSpace(*req.UserName))
-    pendingUserName = &cleanName
-	} else {
-		pendingUserName = nil
+		cleanName := strings.ToLower(strings.TrimSpace(*req.UserName))
+		pendingUserName = &cleanName
 	}
-	pendinguser := db.PendingUser {
-		Email: req.Email,
-		Password: string(hashedPwd),
-		OTP: otp,
-		Role: req.Role,
+
+	pendinguser := db.PendingUser{
+		Email:     req.Email,
+		Password:  string(hashedPwd),
+		OTP:       otp,
+		Role:      req.Role,
 		FirstName: req.FirstName,
-		UserName: pendingUserName,
-		LastName: req.LastName,
-		Phone: req.Phone,
+		UserName:  pendingUserName,
+		LastName:  req.LastName,
+		Phone:     req.Phone,
 		ExpiresAt: time.Now().Add(15 * time.Minute),
 	}
 
-	// create a pending user
+	// 5. Insert Pending User
 	if err := authdb.InsertPendingUser(&pendinguser); err != nil {
-		// List of friendly errors we defined above
+		log.Printf("[ERROR][SignUp] InsertPendingUser failed for %s: %v", req.Email, err)
+
 		userFriendlyErrors := []string{
 			"vendors must provide a valid username",
 			"this email is already registered",
 			"this username is already taken",
 		}
 
+		errStr := strings.ToLower(err.Error())
 		for _, msg := range userFriendlyErrors {
-			if strings.Contains(err.Error(), msg) {
+			if strings.Contains(errStr, msg) {
+				log.Printf("[WARN][SignUp] Returning 400 due to constraint: %s", msg)
 				c.JSON(http.StatusBadRequest, gin.H{"error": msg})
 				return
 			}
 		}
 
-		// If it's not a known user error, send a 500
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "An unexpected error occurred"})
 		return
 	}
 
+	// 6. Send OTP
 	if err := token.SendOTP(req.Email, otp); err != nil {
-		log.Printf("[CRITICAL] failed to send otp for user: %s: %v", req.Email, err)
+		log.Printf("[CRITICAL][SignUp] Failed to send OTP email to %s: %v", req.Email, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
 
+	log.Printf("[SUCCESS][SignUp] OTP successfully sent to %s", req.Email)
 	c.JSON(http.StatusCreated, gin.H{"message": "OTP sent to your email, please verify."})
 }
 
