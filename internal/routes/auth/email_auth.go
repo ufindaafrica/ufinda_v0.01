@@ -36,6 +36,7 @@ func EmailSignUpHandler(c *gin.Context) {
 	}
 
 	if isCreatedUser != nil {
+		log.Println("ERROR: THIS IS WHAT IS HAPPENING: %v", isCreatedUser)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "user already created, please login"})
 		return		
 	}
