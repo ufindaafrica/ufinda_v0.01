@@ -24,10 +24,10 @@ import (
 func EmailSignUpHandler(c *gin.Context) {
 	var req SignupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Printf("[DEBUG][SignUp] ShouldBindJSON failed for payload: %v", err)
+		log.Printf("[DEBUG][SignUp] ShouldBindJSON failed: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   InvalidRequest,
-			"details": err.Error(), // Expose exact validation error in dev/debug
+			"details": err.Error(),
 		})
 		return
 	}
@@ -38,14 +38,14 @@ func EmailSignUpHandler(c *gin.Context) {
 	isCreatedUser, err := authdb.FindCreatedUserByEmail(req.Email)
 	if err != nil {
 		if !errors.Is(err, authdb.ErrUserNotFound) && !errors.Is(err, ErrUserNotFound) {
-			log.Printf("[ERROR][SignUp] DB error checking created user for %s: %v", req.Email, err)
+			log.Printf("[ERROR][SignUp] DB error checking created user: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 			return
 		}
 	}
 
 	if isCreatedUser != nil {
-		log.Printf("[WARN][SignUp] User already created for email: %s, details: %+v", req.Email, isCreatedUser)
+		log.Printf("[WARN][SignUp] User already created for email: %s", req.Email)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "user already created, please login"})
 		return
 	}
@@ -54,7 +54,7 @@ func EmailSignUpHandler(c *gin.Context) {
 	isPendingUser, err := authdb.FindPendingUser(req.Email)
 	if err != nil {
 		if !errors.Is(err, authdb.ErrUserNotFound) && !errors.Is(err, ErrUserNotFound) {
-			log.Printf("[ERROR][SignUp] DB error checking pending user for %s: %v", req.Email, err)
+			log.Printf("[ERROR][SignUp] DB error checking pending user: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 			return
 		}
@@ -69,7 +69,7 @@ func EmailSignUpHandler(c *gin.Context) {
 	// 3. Hash Password
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Printf("[ERROR][SignUp] Failed to hash password for %s: %v", req.Email, err)
+		log.Printf("[ERROR][SignUp] Failed to hash password: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
@@ -77,15 +77,28 @@ func EmailSignUpHandler(c *gin.Context) {
 	// 4. Generate OTP
 	otp, err := token.GenerateOTP()
 	if err != nil {
-		log.Printf("[CRITICAL][SignUp] Error generating OTP for %s: %v", req.Email, err)
+		log.Printf("[CRITICAL][SignUp] Error generating OTP: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
 
+	// 5. Username Validation (Disallow Spaces)
 	var pendingUserName *string
 	if req.UserName != nil && strings.TrimSpace(*req.UserName) != "" {
-		cleanName := strings.ToLower(strings.TrimSpace(*req.UserName))
+		rawUserName := *req.UserName
+
+		if strings.Contains(rawUserName, " ") {
+			log.Printf("[WARN][SignUp] Username rejected due to spaces: '%s'", rawUserName)
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "username cannot contain spaces, please use letters, numbers, underscores, or hyphens",
+			})
+			return
+		}
+
+		cleanName := strings.ToLower(strings.TrimSpace(rawUserName))
 		pendingUserName = &cleanName
+	} else {
+		pendingUserName = nil
 	}
 
 	pendinguser := db.PendingUser{
@@ -100,7 +113,7 @@ func EmailSignUpHandler(c *gin.Context) {
 		ExpiresAt: time.Now().Add(15 * time.Minute),
 	}
 
-	// 5. Insert Pending User
+	// 6. Insert Pending User
 	if err := authdb.InsertPendingUser(&pendinguser); err != nil {
 		log.Printf("[ERROR][SignUp] InsertPendingUser failed for %s: %v", req.Email, err)
 
@@ -113,7 +126,6 @@ func EmailSignUpHandler(c *gin.Context) {
 		errStr := strings.ToLower(err.Error())
 		for _, msg := range userFriendlyErrors {
 			if strings.Contains(errStr, msg) {
-				log.Printf("[WARN][SignUp] Returning 400 due to constraint: %s", msg)
 				c.JSON(http.StatusBadRequest, gin.H{"error": msg})
 				return
 			}
@@ -123,9 +135,9 @@ func EmailSignUpHandler(c *gin.Context) {
 		return
 	}
 
-	// 6. Send OTP
+	// 7. Send OTP
 	if err := token.SendOTP(req.Email, otp); err != nil {
-		log.Printf("[CRITICAL][SignUp] Failed to send OTP email to %s: %v", req.Email, err)
+		log.Printf("[CRITICAL][SignUp] Failed to send OTP email: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
