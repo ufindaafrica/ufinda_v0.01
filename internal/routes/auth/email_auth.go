@@ -354,7 +354,9 @@ func ResendOTPHandler(c *gin.Context) {
 
 	// 🛡️ Safety check to prevent nil pointer panics
 	if pendinguser == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Pending user not found"})
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "No pending registration found for this email. Please sign up to create an account.",
+		})
 		return
 	}
 
