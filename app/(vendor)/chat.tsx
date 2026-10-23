@@ -214,6 +214,7 @@ export default function VendorChat({ student }: VendorChatProps) {
                                     style={chatStyles.laptopV}
                                     imageStyle={chatStyles.imageV}
                                 >
+
                                     {item?.sender_profile_pic ? <Image source={item?.sender_profile_pic} style={chatStyles.profileImg} /> : <View style={[chatStyles.profileImg, chatStyles.nullPic]}>
                                         <Text style={[roboto.mediumEmphasized, colors.white]}>{myId == item?.buyer_id ? (getChatMateName(item?.vendor_id ?? "")).charAt(0) : item.recipient_name?.charAt(0).toLowerCase() ?? ""}</Text></View>}
                                 </ImageBackground>

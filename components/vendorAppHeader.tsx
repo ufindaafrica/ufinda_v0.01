@@ -1,16 +1,18 @@
 import { images } from "@/constants/images";
+import { moderateScale } from "@/deps/scale";
 import { vendorAppHeader } from "@/styles/componentStyles/vendorAppHeader";
-import { roboto } from "@/styles/globals";
+import { colors, roboto } from "@/styles/globals";
 import { router } from "expo-router";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
 type VendorAppHeaderProps = {
     firstName: string,
+    lastName?: string,
     profileImg: string
 }
 
 
-export default function VendorAppHeader ({ firstName, profileImg } : VendorAppHeaderProps) {
+export default function VendorAppHeader ({ firstName, lastName, profileImg } : VendorAppHeaderProps) {
 
     return (
         <View style={vendorAppHeader.main}>

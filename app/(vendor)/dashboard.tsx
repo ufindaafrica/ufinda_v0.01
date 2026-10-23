@@ -5,13 +5,14 @@ import VendorAppHeader from "@/components/vendorAppHeader";
 import { images } from "@/constants/images";
 import { lastMessageSentTime } from "@/deps/chatTime";
 import { registerForPushNotifications } from "@/deps/registerForPushNotifications";
-import { getAgentData } from "@/services/agentInfo";
+import { getAgentData, getAgentInfo } from "@/services/agentInfo";
 import { getVendorInfo } from "@/services/getStudentInfo";
 import { usePostJobStore } from "@/stores/postJobStore";
 import { dashboardStyles } from "@/styles/dashboard";
 import { globals, roboto } from "@/styles/globals";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import { getItemAsync } from "expo-secure-store";
 import { useEffect, useState } from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
@@ -59,6 +60,9 @@ export default function Dashboard() {
             console.log("refetching vendor")
 
             vendor = await getVendorInfo()
+            // vendor = await getAgentInfo()
+            // const id = await getItemAsync("ID") ?? ""
+            // vendor = await getAgentInfo(id)
             console.log(vendor)
 
             if (vendor[0] != "200") {

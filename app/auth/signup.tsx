@@ -279,11 +279,14 @@ export default function SignUp() {
                         role === "vendor" ? <View style={signupStyles.formPadding}>
                             <Input
                                 ref={usernameRef}
-                                label="Username"
+                                label="Username (only letters, underscores, or hyphens)"
                                 hint="topnotch_vendor"
                                 returnKeyType="next"
                                 onSubmitEditing={() => focusNext(passwordRef)}
-                                onChangeText={(text) => { setUsername(text) }} />
+                                onChangeText={(text) => {
+                                    setUsername(text.replace(/[^a-zA-Z_-]/g, ''));
+                                }}
+                                value={username} />
                         </View> : null
                     }
 

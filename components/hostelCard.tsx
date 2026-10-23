@@ -71,6 +71,8 @@ export default function HostelCard({ hostel, isSaved, reload, coords }: HostelCa
 
     // console.log(hostel.hostel_images)
 
+    // console.log(hostel)
+
     
     const toHttps = (url?: string | null) => url ? url.replace(/^http:\/\//, "https://") : url
 
