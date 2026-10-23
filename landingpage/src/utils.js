@@ -2,7 +2,7 @@ export const BACKEND_URI = 'https://ufinda-v0-01.onrender.com';
 
 export const TEST_URL = 'https://clement-nonderisive-oxymoronically.ngrok-free.dev'
 
-export const DOWNLOADLINK = 'https://expo.dev/artifacts/eas/bWJko7y68qn9OyX4LxOwXtOTiEthY4Pf6hkWvxl_qQY.apk'
+export const DOWNLOADLINK = 'https://expo.dev/artifacts/eas/6D6Cqkug6neVN5N6CyMgrSRm6yxle8Nk7lopJbFCLJo.apk'
 export const X_PROFILE = 'https://x.com/uFindaApp'
 
 export const INSTAGRAM_PROFILE = 'https://www.instagram.com/ufinda_app/'
