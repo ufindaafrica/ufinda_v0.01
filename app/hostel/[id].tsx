@@ -213,7 +213,7 @@ export default function HostelDetails() {
                             <BackArrow backFun={() => router.back()} large />
                             <Text style={roboto.titleLargeBold}>{hostelDetails?.title ?? ""}</Text>
                         </View>
-                        {myId?.startsWith("usr") ? <Image source={images.more} style={idStyles.moreImg} /> : <TouchableOpacity onPress={() => router.push('/vendorPages/updateHostel')} style={idStyles.firstHeaderV}>
+                        {myId?.startsWith("usr") ? <Image source={images.more} style={idStyles.moreImg} /> : <TouchableOpacity onPress={() => hostelDetails?.id && router.push({ pathname: "/vendorPages/updateHostel", params: { id: String(hostelDetails?.id), hostel: JSON.stringify(hostelDetails) } })} style={idStyles.firstHeaderV}>
                             <Text style={[roboto.titleLarge, colors.darkBurntOrange]}>Update</Text>
                             <View style={{width: moderateScale(16)}}></View>
                             <Image source={images.pencil} style={idStyles.moreImg} />

@@ -9,160 +9,112 @@ import { getStudentInfo, getVendorInfo } from "@/services/getStudentInfo";
 import { globals, roboto } from "@/styles/globals";
 import { idStyles } from "@/styles/id";
 import { signupStyles } from "@/styles/signup";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { getItem, getItemAsync } from "expo-secure-store";
 import { useEffect, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaProvider, SafeAreaView, useSafeAreaFrame } from "react-native-safe-area-context";
 
 
 export default function UpdateHostel() {
 
-    const [firstName, setFirstName] = useState("")
-    const [lastName, setLastName] = useState("")
-    const [email, setEmail] = useState("")
-    const [address, setAddress] = useState("")
-    const [lga, setLga] = useState("")
-    const [matricNo, setMatricNo] = useState("")
-    const [faculty, setFaculty] = useState("")
-    const [dept, setDept] = useState("")
-    const [level, setLevel] = useState("")
+    const { id, hostel } = useLocalSearchParams()
+    const idString = Array.isArray(id) ? id[0] : id
+    const hostelDets = JSON.parse(Array.isArray(hostel) ? hostel[0] : hostel)
 
-    const [mode, setMode] = useState("")
+    console.log(hostelDets)
 
-    useEffect(() => {
-        const getMode = async () => {
-            const role = await getItemAsync("ROLE") ?? await getItemAsync("MODE")
-            if (role) setMode(role)
-            else setMode("user")
-        }
-        getMode()
-    }, [])
+    const [landlordResides, setLandlordResides] = useState(hostelDets?.landlord_resides)
+    const [roommatesAllowed, setRoommatesAllowed] = useState(hostelDets?.roommates_allowed)
+    const [description, setDescription] = useState(hostelDets?.description)
+    const [powerSupply, setPowerSupply] = useState(hostelDets?.power_supply)
+    const [availableRooms, setAvailableRooms] = useState(hostelDets?.available_rooms.toString())
+    const [isAvailable, setIsAvailable] = useState(Number(availableRooms) > 0 ? true : false)
+
 
     const [loaderVisible, setLoaderVisible] = useState(false)
 
-    const getUserInfo = async () => {
-        if (!mode) return
+    
 
-        setLoaderVisible(true)
-
-        let info = []
-
-        if (mode === "user") {
-            info = await getStudentInfo()
-
-            if (info[0] != "200") {
-                setLoaderVisible(false)
-                toast(info[1])
-            }
-        } else {
-            info = await getVendorInfo()
-
-            if (info[0] != "200") {
-                setLoaderVisible(false)
-                toast(info[1])
-            }
-        }
-
-        setFirstName(info[1]?.first_name ?? "")
-        setLastName(info[1]?.last_name ?? "")
-        setEmail(info[1]?.email ?? "")
-        setAddress(info[1]?.kyc_data?.address ?? "")
-        setLevel(info[1]?.kyc_data?.level ?? "")
-        setMatricNo(info[1]?.kyc_data?.matric ?? "")
-        setFaculty(info[1]?.kyc_data?.faculty ?? "")
-        setDept(info[1]?.kyc_data?.dept ?? "")
-
-        setLoaderVisible(false)
-    }
-
-    useEffect(() => {
-        const setInfo = async () => {
-            await getUserInfo()
-        }
-
-        setInfo()
-    }, [mode])
 
     return (
         <SafeAreaProvider style={[globals.container, globals.lightContainer]}>
             <SafeAreaView style={[globals.container, globals.lightContainer]}>
-                <View style={[idStyles.headerV, { paddingBottom: 0 }]}>
-                    <View style={idStyles.firstHeaderV}>
-                        <BackArrow backFun={() => router.back()} large />
-                        <Text style={roboto.titleLargeBold}>Personal Information</Text>
-                    </View>
-                </View>
-                <LineBreak />
-                <ScrollView style={{ flex: 1 }}>
-                    <View style={[signupStyles.firstInputLine, signupStyles.layoutPadding, { paddingHorizontal: moderateScale(16) }]}>
-                        <View style={signupStyles.eachName}>
-                            <Input
-                                label="First Name:"
-                                value={firstName}
-                                editable={false} />
+                <KeyboardAvoidingView
+                    style={{ flex: 1 }}
+                    behavior={Platform.OS === "ios" ? "padding" : undefined}
+                >
+                        <View style={[idStyles.headerV, { paddingBottom: 0 }]}>
+                            <View style={idStyles.firstHeaderV}>
+                                <BackArrow backFun={() => router.back()} large />
+                                <Text style={roboto.titleLargeBold}>Update Hostel</Text>
+                            </View>
                         </View>
-                        <View style={signupStyles.eachName}>
-                            <Input
-                                label="Last Name:"
-                                value={lastName}
-                                editable={false} />
-                        </View>
-                    </View>
-                    <View style={[signupStyles.formPadding, { paddingHorizontal: moderateScale(16) }]}>
-                        <Input
-                            label="Email:"
-                            value={email}
-                            editable={false} />
-                    </View>
-                    <View style={[signupStyles.formPadding, { paddingHorizontal: moderateScale(16) }]}>
-                        <Input
-                            label="Address:"
-                            value={address}
-                            editable={false} />
-                    </View>
-                    {
-                        mode != "user" && <View style={[signupStyles.formPadding, { paddingHorizontal: moderateScale(16) }]}>
-                            <Input
-                                label="LGA:"
-                                value={lga}
-                                editable={false} />
-                        </View>
-                    }
-                    {mode === "user" && <View style={[signupStyles.formPadding, { paddingHorizontal: moderateScale(16) }]}>
-                        <Input
-                            label="Matric No:"
-                            value={matricNo}
-                            editable={false} />
-                    </View>}
-                    {mode === "user" && <View style={[signupStyles.formPadding, { paddingHorizontal: moderateScale(16) }]}>
-                        <Input
-                            label="Faculty:"
-                            value={faculty}
-                            editable={false} />
-                    </View>}
-                    {mode === "user" && <View style={[signupStyles.formPadding, { paddingHorizontal: moderateScale(16) }]}>
-                        <Input
-                            label="Department:"
-                            value={dept}
-                            editable={false} />
-                    </View>}
-                    {mode === "user" && <View style={[signupStyles.formPadding, { paddingHorizontal: moderateScale(16) }]}>
-                        <Input
-                            label="Level:"
-                            value={level}
-                            editable={false} />
-                    </View>}
+                        <LineBreak />
+                        <KeyboardAwareScrollView
+                        contentContainerStyle={{
+                            flexGrow: 1, paddingBottom: 40
+                        }}
+                        style={{ flex: 1 }}
+                        keyboardShouldPersistTaps="handled"
+                        showsVerticalScrollIndicator={false}
+                        enableOnAndroid={true}
+                        extraScrollHeight={15}
+                    >
+                        <ScrollView style={{ flex: 1 }}>
+                            <View style={[signupStyles.formPadding, { paddingHorizontal: moderateScale(16) }]}>
+                                <Input
+                                    label="Number of Available Rooms:"
+                                    value={availableRooms}
+                                    editable={true}
+                                    onChangeText={(text) => setAvailableRooms(text)}
+                                    keyboardType="number-pad" />
+                            </View>
+                            <View style={[signupStyles.formPadding, { paddingHorizontal: moderateScale(16) }]}>
+                                <Input
+                                    label="Landlord Resides:"
+                                    value={landlordResides}
+                                    editable={true}
+                                    onChangeText={(text) => setLandlordResides(text)} />
+                            </View>
+                            <View style={[signupStyles.formPadding, { paddingHorizontal: moderateScale(16) }]}>
+                                <Input
+                                    label="Roommates Allowed:"
+                                    value={roommatesAllowed}
+                                    editable={true}
+                                    onChangeText={(text) => setRoommatesAllowed(text)} />
+                            </View>
+                            <View style={[signupStyles.formPadding, { paddingHorizontal: moderateScale(16) }]}>
+                                <Input
+                                    label="Power Supply:"
+                                    value={powerSupply}
+                                    editable={true}
+                                    onChangeText={(text) => setPowerSupply(text)} />
+                            </View>
+                            <View style={[signupStyles.formPadding, { paddingHorizontal: moderateScale(16) }]}>
+                                <Input
+                                    label="Description:"
+                                    value={description}
+                                    editable={true}
+                                    multilineInput={true}
+                                    onChangeText={(text) => setDescription(text)}
+                                    returnKeyType="next"
+                                    submitBehavior="newline"
+                                />
+                            </View>
 
-                    <View style={{ padding: moderateScale(16), paddingTop: moderateScale(24) }}>
-                        <Select text="Continue" selected selectFun={() => router.back()} />
-                    </View>
-                </ScrollView>
-                {
-                    loaderVisible ? <Loader /> : null
-                }
+
+                            <View style={{ padding: moderateScale(16), paddingTop: moderateScale(24) }}>
+                                <Select text="Update Hostel" selected selectFun={() => router.back()} />
+                            </View>
+                        </ScrollView>
+                        {
+                            loaderVisible ? <Loader /> : null
+                        }
+                    </KeyboardAwareScrollView>
+                </KeyboardAvoidingView>
             </SafeAreaView>
         </SafeAreaProvider>
     )
 }
-
