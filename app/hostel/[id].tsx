@@ -6,13 +6,13 @@ import { router, useLocalSearchParams } from "expo-router";
 import { Image, Text, TouchableOpacity, View, ScrollView, Linking } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
-import { roboto } from "@/styles/globals";
+import { colors, roboto } from "@/styles/globals";
 import { hostelCardStyles } from "@/styles/hostelCard";
 import { thumbnailStyles } from "@/styles/componentStyles/thumbnail";
 import HostelCard from "@/components/hostelCard";
 import { EnrichedHostel } from "@/types";
 import { getHostelDetails } from "@/services/hostelDetails";
-import { scale } from "@/deps/scale";
+import { moderateScale, scale } from "@/deps/scale";
 import { Image as ExpoImage } from "expo-image"
 import Media from "@/components/media";
 import { removeSavedHostel, saveHostel } from "@/services/saveHostel";
@@ -213,7 +213,12 @@ export default function HostelDetails() {
                             <BackArrow backFun={() => router.back()} large />
                             <Text style={roboto.titleLargeBold}>{hostelDetails?.title ?? ""}</Text>
                         </View>
-                        <Image source={images.more} style={idStyles.moreImg} />
+                        {myId?.startsWith("usr") ? <Image source={images.more} style={idStyles.moreImg} /> : <TouchableOpacity onPress={() => router.push('/vendorPages/updateHostel')} style={idStyles.firstHeaderV}>
+                            <Text style={[roboto.titleLarge, colors.darkBurntOrange]}>Update</Text>
+                            <View style={{width: moderateScale(16)}}></View>
+                            <Image source={images.pencil} style={idStyles.moreImg} />
+                            </TouchableOpacity>
+                            }
                     </View>
 
                     <View style={idStyles.swipeV}>

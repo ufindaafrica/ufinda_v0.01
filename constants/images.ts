@@ -95,5 +95,7 @@ export const images = {
     stop: require("../assets/images/stop.png"),
     audioStatic: require("../assets/images/audioStatic.png"),
     audio: require("../assets/images/audio.gif"),
-    sort: require("../assets/images/sort.png")
+    sort: require("../assets/images/sort.png"),
+    pencil: require("../assets/images/pencil.png"),
+    edit: require("../assets/images/edit.png")
 }
