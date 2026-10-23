@@ -12,7 +12,7 @@ import { signupStyles } from "@/styles/signup";
 import { router, useLocalSearchParams } from "expo-router";
 import { getItem, getItemAsync } from "expo-secure-store";
 import { useEffect, useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
+import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaProvider, SafeAreaView, useSafeAreaFrame } from "react-native-safe-area-context";
 
@@ -35,6 +35,45 @@ export default function UpdateHostel() {
 
     const [loaderVisible, setLoaderVisible] = useState(false)
 
+    
+    const validateBooleanInput = (text: string) => {
+        return (text.replace(/\s/g, '').toLowerCase() === "yes" || text.replace(/\s/g, '').toLowerCase() === "no")
+    }
+
+    const validateDescLength = (text: string) => {
+        return (text.length >= 10)
+    }
+
+    const updateHostel = () => {
+        if (hostelDets?.landlord_resides == landlordResides && hostelDets?.roommates_allowed == roommatesAllowed && hostelDets?.description == description && hostelDets?.power_supply == powerSupply && hostelDets?.available_rooms == Number(availableRooms)) {
+            toast("no changes")
+            router.back()
+            return
+        }
+
+        if (!validateBooleanInput(landlordResides)) {
+            toast("Landlord Resides should be yes or no")
+            return
+        }
+
+        if (!validateBooleanInput(roommatesAllowed)) {
+            toast("Roommates Allowed should be yes or no")
+            return
+        }
+
+        if (!validateBooleanInput(powerSupply)) {
+            toast("Power Supply should be yes or no")
+            return
+        }
+
+        if (!validateDescLength(description)) {
+            toast("Description is too short.")
+            return
+        }
+
+        
+
+    }
     
 
 
@@ -68,29 +107,33 @@ export default function UpdateHostel() {
                                     label="Number of Available Rooms:"
                                     value={availableRooms}
                                     editable={true}
-                                    onChangeText={(text) => setAvailableRooms(text)}
-                                    keyboardType="number-pad" />
+                                    onChangeText={(text) => {setAvailableRooms(text)}}
+                                    keyboardType="number-pad"
+                                    onSubmitEditing={() => Keyboard.dismiss()} />
                             </View>
                             <View style={[signupStyles.formPadding, { paddingHorizontal: moderateScale(16) }]}>
                                 <Input
                                     label="Landlord Resides:"
                                     value={landlordResides}
                                     editable={true}
-                                    onChangeText={(text) => setLandlordResides(text)} />
+                                    onChangeText={(text) => setLandlordResides(text)}
+                                    onSubmitEditing={() => Keyboard.dismiss()} />
                             </View>
                             <View style={[signupStyles.formPadding, { paddingHorizontal: moderateScale(16) }]}>
                                 <Input
                                     label="Roommates Allowed:"
                                     value={roommatesAllowed}
                                     editable={true}
-                                    onChangeText={(text) => setRoommatesAllowed(text)} />
+                                    onChangeText={(text) => setRoommatesAllowed(text)}
+                                    onSubmitEditing={() => Keyboard.dismiss()} />
                             </View>
                             <View style={[signupStyles.formPadding, { paddingHorizontal: moderateScale(16) }]}>
                                 <Input
                                     label="Power Supply:"
                                     value={powerSupply}
                                     editable={true}
-                                    onChangeText={(text) => setPowerSupply(text)} />
+                                    onChangeText={(text) => setPowerSupply(text)}
+                                    onSubmitEditing={() => Keyboard.dismiss()} />
                             </View>
                             <View style={[signupStyles.formPadding, { paddingHorizontal: moderateScale(16) }]}>
                                 <Input
@@ -106,7 +149,7 @@ export default function UpdateHostel() {
 
 
                             <View style={{ padding: moderateScale(16), paddingTop: moderateScale(24) }}>
-                                <Select text="Update Hostel" selected selectFun={() => router.back()} />
+                                <Select text="Update Hostel" selected selectFun={() => updateHostel()} />
                             </View>
                         </ScrollView>
                         {
