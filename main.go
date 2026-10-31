@@ -23,6 +23,7 @@ import (
 	"github.com/oladev/ufinda_v0.01/internal/routes/product/vendor"
 	"github.com/oladev/ufinda_v0.01/internal/routes/notification"
 	"github.com/oladev/ufinda_v0.01/internal/webhooks/paystack"
+	"github.com/oladev/ufinda_v0.01/internal/routes/payment"
 )
 
 var wsHub = hub.NewHub()
@@ -78,8 +79,7 @@ func main() {
 	}
 
 	r := gin.Default()
-	r.SetTrustedProxies([]string{"10.0.0.0/8"})
-
+	r.SetTrustedProxies([]string{"0.0.0.0/0", "::/0"})
 	config := cors.DefaultConfig()
 	// config.AllowOrigins = []string{"https://ufinda.org","http://localhost:3000","http://127.0.0.1:3000"}
 	config.AllowAllOrigins = true
@@ -94,9 +94,9 @@ func main() {
 	dojahwebhook.RegisterDojahWebhooks(r, wsHub)
 	paystackwebhook.RegisterPaystackWebhook(r)
 	notif.RegisterNotif(r)
-	
 	vendorhostel.RegisterHostel(r, cld)
 	userhostel.RegisterApi(r)
+	payment.RegisterPayment(r)
 
 	// hub connection
 	r.GET("/ws", func(c *gin.Context) {

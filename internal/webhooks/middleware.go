@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-func IPFilterMiddleware(webhookIp string) gin.HandlerFunc {
+func IPFilterMiddleware(allowedIPs []string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Extract the IP address. For Ngrok setups, this is typically the direct connection IP.
 		clientIP := c.ClientIP()
@@ -17,11 +17,20 @@ func IPFilterMiddleware(webhookIp string) gin.HandlerFunc {
 			return
 		}
 
-		if clientIP != webhookIp {
-			log.Printf("SECURITY REJECTED: Request from unwhitelisted IP: %s (Expected: %s).", clientIP , webhookIp)
+		isAllowed := false
+		for _, ip := range allowedIPs {
+			if clientIP == ip {
+				isAllowed = true
+				break
+			}
+		}
+
+		if !isAllowed {
+			log.Printf("SECURITY REJECTED: Request from unwhitelisted IP: %s (Expected one of: %v).", clientIP, allowedIPs)
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden: IP not whitelisted"})
 			return
 		}
+		
 		log.Printf("Security Check 1 (IP Whitelist) passed for %s", clientIP )
 
 		c.Next()

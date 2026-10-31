@@ -18,6 +18,7 @@ type User struct {
 	Phone        string    `json:"phone" binding:"required"`
 	IsVerified bool `json:"is_verified"`
 	Rating int`json:"rating,omitempty"`
+	IsBetaUser bool `json:"is_beta_user"`
 	AuthProvider string     `json:"auth_provider"`
 	CreatedAt    *time.Time `json:"created_at,omitempty"`
 	UpdatedAt    *time.Time `json:"updated_at,omitempty"`

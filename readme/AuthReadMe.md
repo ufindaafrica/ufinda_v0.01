@@ -81,338 +81,400 @@ No special headers are required.
 -----
 
 ## Resend OTP API
-### POST `[BASE_URL]/auth/otp/resend`
 
-This endpoint allows a user to request a new One-Time Password (OTP) if the previous one has expired or was not received.
+### POST `[BASE_URL]/auth/resend-otp`
 
------
+This endpoint generates and dispatches a fresh one-time password (OTP) to a pending user's email address. It ensures that the user has not already completed registration (preventing conflict with active accounts) and updates the pending record with a new 15-minute expiration timestamp.
+
+---
 
 ### Request
 
 | Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `[BASE_URL]/auth/otp/resend` | Requests a new OTP for a pending user account. |
+| --- | --- | --- |
+| `POST` | `[BASE_URL]/auth/resend-otp` | Generates and sends a new OTP for account verification. |
 
 #### Body
-
-The request body must be a JSON object containing the email address of the user.
 
 ```json
 {
   "email": "user@example.com"
 }
+
 ```
 
 #### Headers
 
-No special headers are required.
+* `Content-Type: application/json`
 
------
+---
 
 ### Workflow
 
-1.  **User Status Check**: The endpoint first checks if the user's account is already active. If so, a `400` error is returned. It then verifies that a pending user account exists for the provided email.
-2.  **OTP Generation**: A new OTP is generated and its expiration time is set to 15 minutes from the current time.
-3.  **Update Database**: The pending user's record in the database is updated with the new OTP and its expiration time.
-4.  **Email Delivery**: The new OTP is sent to the user's email address.
+1. **Input Validation**: The endpoint binds and validates the JSON request body.
+2. **Active Account Check**: It queries the database to see if an active user account already exists for the email address. If found, it returns an `ACCOUNT_ALREADY_EXISTS` error (`409`).
+3. **Pending Account Lookup**: It verifies that the user exists in the pending registration store. If not found, it returns a `USER_NOT_FOUND` error (`404`).
+4. **OTP Generation**: A new cryptographic OTP is generated.
+5. **Expiration & Record Update**: It updates the pending user record with the new OTP and a fresh expiration time set to 15 minutes in the future.
+6. **Email Dispatch**: It sends the new OTP via email to the user (`200 OK`).
 
------
+---
 
 ### Responses
 
-#### Success
+All responses follow the unified envelope standard (See [RESPONSES.md](https://www.google.com/search?q=./RESPONSES.md)).
 
-| Status Code | Description |
-| :--- | :--- |
-| `200 OK` | The new OTP was successfully sent to the user's email. |
-
-**Body**
+#### Success (`200 OK`)
 
 ```json
 {
+  "status": "success",
   "message": "otp resent successfully"
 }
+
 ```
 
-#### Errors
+#### Error Responses
 
-| Status Code | Description |
-| :--- | :--- |
-| `400 Bad Request` | The request body is invalid, or a user with the provided email is either already verified or does not exist as a pending user. |
-| `500 Internal Server Error` | An unexpected server error occurred (e.g., database connection issues, failed OTP generation, or failed email delivery). |
+| HTTP Status | Error `code` | Default Message | Scenario |
+| --- | --- | --- | --- |
+| `404 Not Found` | `USER_NOT_FOUND` | No account found with this email. Please sign up to continue. | Email address does not exist in pending records. |
+| `409 Conflict` | `ACCOUNT_ALREADY_EXISTS` | An account with this email already exists. Please log in. | User is already fully registered and verified. |
+| `500 Internal Server Error` | `SERVER_ERROR` | An unexpected error occurred. Please try again. | JSON binding error, OTP generation failure, database update error, or email dispatch failure. |
 
------
+----
 
 ## Verify OTP API
+
 ### POST `[BASE_URL]/auth/verify-otp`
 
-This endpoint verifies a user's email address using a one-time password (OTP). A pending user account is converted into a fully active user account upon successful verification, and the user is immediately logged in.
+This endpoint verifies a user's email address using a one-time password (OTP). Upon successful verification, a pending user account is converted into a fully active user account.
 
------
+If the user is a student who has not yet paid their onboarding fee, the endpoint returns a payment required status (`402`) with the user's details so the mobile app can immediately launch the Paystack checkout flow.
+
+---
 
 ### Request
 
 | Method | Endpoint | Description |
-| :--- | :--- | :--- |
+| --- | --- | --- |
 | `POST` | `[BASE_URL]/auth/verify-otp` | Verifies a pending user's account with an OTP. |
 
 #### Body
-
-The request body must be a JSON object containing the user's email and the OTP received via email.
 
 ```json
 {
   "email": "user@example.com",
   "otp": "123456"
 }
+
 ```
 
 #### Headers
 
-No special headers are required.
+* `Content-Type: application/json`
 
------
+---
 
 ### Workflow
 
-1.  **Input Validation**: The endpoint validates the request body.
-2.  **User Status Check**: It checks if a **fully created and verified user** with the email exists, returning an error if true. It then verifies that a **pending account** exists for the provided email, returning an error if not found.
-3.  **OTP Validation**: The provided OTP is matched against the one stored in the pending user record. If the OTP is incorrect or has expired, the request is denied.
-4.  **Account Creation**: Upon successful OTP verification, a new unique `UserID` is generated, and an active user account is created in the database using the details from the pending account.
-5.  **Token Generation**: Access and Refresh JWTs are generated for the newly created user.
-6.  **Cleanup**: The pending user record is deleted from the database.
+1. **Input Validation**: The endpoint validates the JSON request body.
+2. **Duplicate Check**: It checks if an active user account already exists. If so, it returns an `ACCOUNT_ALREADY_EXISTS` error (`409`).
+3. **Pending Account Lookup**: It looks up the pending user record. If not found, it returns a `USER_NOT_FOUND` error (`404`).
+4. **OTP & Expiration Check**: It verifies that the OTP matches and has not expired. Mismatches or expired codes return `400 Bad Request` (`INVALID_OTP` / `OTP_EXPIRED`).
+5. **Account Provisioning**: A unique `UserID` is generated, and the user is moved from the pending store to the active database table.
+6. **Cleanup & Notification**: The pending user record is deleted, and a welcome email is dispatched asynchronously.
+7. **Payment & Authorization Check**:
+* **Vendors/Agents** or **Students who have paid their booking fee** receive JWT authentication tokens immediately (`200 OK`).
+* **Students who have NOT paid their booking fee** receive a `402 Payment Required` response containing their `id` and `role` to trigger the Paystack onboarding flow.
 
------
+
+
+---
 
 ### Responses
 
-#### Success
+All responses follow the unified envelope standard (See [RESPONSES.md](https://www.google.com/search?q=./RESPONSES.md)).
 
-| Status Code | Description |
-| :--- | :--- |
-| `200 OK` | The email verification was successful. The user's account is now active, and login tokens are provided. |
-
-**Body**
+#### Success (`200 OK`) — Fully Authenticated Users (Agents & Paid Students)
 
 ```json
 {
+  "status": "success",
   "message": "verification successful",
-  "access_token": "eyJhbGciOiJIUzI1Ni...",
-  "refresh_token": "eyJhbGciOiJIUzI1Ni...",
-  "id": "usr-895659",
-  "role": "user"|"vendor"
+  "data": {
+    "is_paid": true,
+    "access_token": "eyJhbGciOiJIUzI1Ni...",
+    "refresh_token": "eyJhbGciOiJIUzI1Ni...",
+    "id": "usr-895659",
+    "role": "vendor"
+  }
 }
+
 ```
 
-#### Errors
+#### Payment Required (`402 Payment Required`) — Unpaid Students
 
-| Status Code | Description |
-| :--- | :--- |
-| `400 Bad Request` | The request body is invalid, the user is **already created/verified**, or a pending account with the provided email **does not exist** (`ErrorPendingUserNotFound`). |
-| `403 Forbidden` | The provided OTP is **invalid** or has **expired**. |
-| `500 Internal Server Error` | An unexpected server error occurred (e.g., database issues, failure to generate a unique ID, or failure to create a new user record). |
+```json
+{
+  "status": "error",
+  "code": "PAYMENT_REQUIRED",
+  "message": "Verification successful. Onboarding payment required.",
+  "data": {
+    "is_paid": false,
+    "id": "usr-895659",
+    "role": "user"
+  }
+}
+
+```
+
+#### Error Responses
+
+| HTTP Status | Error `code` | Default Message | Scenario |
+| --- | --- | --- | --- |
+| `400 Bad Request` | `BAD_REQUEST` | Invalid request payload. Please check your input. | Malformed JSON structure. |
+| `400 Bad Request` | `INVALID_OTP` | The OTP entered is incorrect. Please check and try again. | OTP string mismatch. |
+| `400 Bad Request` | `OTP_EXPIRED` | Your OTP has expired. Please request a new code. | Code past its expiration timestamp. |
+| `404 Not Found` | `USER_NOT_FOUND` | No account found with this email. Please sign up to continue. | Email not found in pending records. |
+| `409 Conflict` | `ACCOUNT_ALREADY_EXISTS` | An account with this email already exists. Please log in. | User already verified and active. |
+| `500 Internal Server Error` | `SERVER_ERROR` | An unexpected error occurred. Please try again. | Database failure or ID generation error. |
+
 -----
 
 ## Email Login API
-### POST `[BASE_URL]/auth/email/login`
 
-This endpoint allows a user to log in with their email and password. It validates user credentials, generates a new access and refresh token pair, and implements a security mechanism to prevent brute-force attacks.
+### POST `[BASE_URL]/auth/login`
 
------
+This endpoint authenticates an existing user using their email address and password. It includes a Redis-based rate limiter that tracks failed login attempts and enforces a temporary lockout after 5 consecutive failures.
+
+Upon successful authentication, the endpoint checks the user's payment status, beta status, and role. Vendors, beta users, and users who have paid their booking fee receive JWT authentication tokens immediately. Unpaid students receive a payment required status (`402`) to trigger the Paystack onboarding flow.
+
+---
 
 ### Request
 
 | Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `[BASE_URL]/auth/email/login` | Authenticates a user and issues new tokens. |
+| --- | --- | --- |
+| `POST` | `[BASE_URL]/auth/login` | Authenticates a user with email and password credentials. |
 
 #### Body
-
-The request body must be a JSON object containing the user's login credentials.
 
 ```json
 {
   "email": "user@example.com",
-  "password": "yourpassword123"
+  "password": "SecurePassword123!"
 }
+
 ```
 
 #### Headers
 
-No special headers are required.
+* `Content-Type: application/json`
 
------
+---
 
-### Security and Rate Limiting
+### Workflow
 
-The endpoint employs a Redis-based rate-limiting system to prevent brute-force login attempts.
+1. **Input Validation**: The endpoint binds and validates the JSON request body against the login schema. If binding fails, it returns a `BAD_REQUEST` error (`400`).
+2. **User Lookup**: It queries the database for an active user account matching the provided email address. If the email is not found, it returns a `USER_NOT_FOUND` error (`404`).
+3. **Rate Limiting Check**: It checks Redis for the current count of failed login attempts for the email. If attempts have reached or exceeded 5, it logs a security event and returns a `429 Too Many Requests` status with the remaining lockout duration.
+4. **Password Verification**: It compares the provided password hash against the stored user password.
+* **On Mismatch**: It increments the Redis failed attempt counter (setting a 15-minute TTL on the first failure) and returns a `401 Unauthorized` error.
+* **On Match**: It clears the login attempt counter from Redis.
 
-  * **Failed Attempts Counter**: Each failed login attempt for a specific email address increments a counter stored in Redis.
-  * **Account Lockout**: After **5 failed attempts**, the account is temporarily locked. Subsequent login attempts will receive a `429 Too Many Requests` error.
-  * **Timeout**: The lockout automatically expires after **20 minutes**, at which point the counter is reset.
-  * **Reset on Success**: A successful login clears the failed attempt counter, allowing the user to try again if they've made failed attempts in the past.
 
------
+5. **Fee & Role Evaluation**: It checks whether the user is a beta user, a vendor, or has paid their onboarding/booking fee.
+6. **Token Generation or Payment Prompt**:
+* **Authorized Users (Vendors, Beta Users, & Paid Students)**: Generates and returns JWT access and refresh tokens along with user metadata (`200 OK`).
+* **Unpaid Students**: Returns a `402 Payment Required` response (`PAYMENT_REQUIRED`) to initiate the payment checkout flow.
+
+
+
+---
 
 ### Responses
 
-#### Success
+All responses follow the unified envelope standard (See [RESPONSES.md](https://www.google.com/search?q=./RESPONSES.md)).
 
-| Status Code | Description |
-| :--- | :--- |
-| `200 OK` | The login was successful. The response body contains the new access and refresh tokens. |
-
-**Body**
+#### Success (`200 OK`) — Authenticated Users (Vendors, Beta, & Paid Students)
 
 ```json
 {
-  "access_token": "eyJhbGciOiJIUzI1Ni...",
-  "refresh_token": "eyJhbGciOiJIUzI1Ni...",
-  "id": "usr-xxxx",
-  "role": "user"|"vendor"
+  "status": "success",
+  "message": "success",
+  "data": {
+    "access_token": "eyJhbGciOiJIUzI1Ni...",
+    "refresh_token": "eyJhbGciOiJIUzI1Ni...",
+    "role": "vendor",
+    "id": "usr-895659"
+  }
 }
+
 ```
 
-#### Errors
+#### Payment Required (`402 Payment Required`) — Unpaid Students
 
-| Status Code | Description |
-| :--- | :--- |
-| `400 Bad Request` | The request body is invalid or malformed. |
-| `401 Unauthorized` | The user could not be authenticated due to an invalid email or password. |
-| `429 Too Many Requests` | The account is locked due to too many failed login attempts. The response includes the remaining lockout time. |
-| `500 Internal Server Error` | An unexpected server error occurred (e.g., database connection issues, error validating password). |
+```json
+{
+  "status": "error",
+  "code": "PAYMENT_REQUIRED",
+  "message": "An onboarding fee is required to activate your account.",
+}
 
------
+```
+
+#### Too Many Requests (`429 Too Many Requests`) — Rate Limit Exceeded
+
+```json
+{
+  "error": "Too many login attempts. Please try again in 10 minutes"
+}
+
+```
+
+#### Error Responses
+
+| HTTP Status | Error `code` | Default Message | Scenario |
+| --- | --- | --- | --- |
+| `400 Bad Request` | `BAD_REQUEST` | Invalid request payload. Please check your input. | Malformed JSON structure or validation failure. |
+| `401 Unauthorized` | `UNAUTHORIZED` | Unauthorized access. Please log in again. | Incorrect password provided. |
+| `404 Not Found` | `USER_NOT_FOUND` | No account found with this email. Please sign up to continue. | Email address does not exist in active records. |
+| `402 Payment Required` | `PAYMENT_REQUIRED` | An onboarding fee is required to activate your account. | Student login successful, but booking fee is unpaid. |
+| `429 Too Many Requests` | `RATE_LIMIT_EXCEEDED` | Too many login attempts. Please try again in X minutes | 5 consecutive failed login attempts reached. |
+| `500 Internal Server Error` | `SERVER_ERROR` | An unexpected error occurred. Please try again. | Database failure, Redis error, or token generation failure. |
+
+----
 
 ## Logout API
-### GET `[BASE_URL]/auth/logout`
 
-This endpoint allows a user to securely log out by invalidating their access and refresh tokens. Both tokens are added to a blacklist, making them unusable for future requests.
+### POST `[BASE_URL]/auth/logout`
 
------
+This endpoint terminates the user's current active session by invalidating and blacklisting both their access and refresh tokens in Redis. It performs a soft check on the access token and a strict check on the refresh token, safely handling already blacklisted tokens for security auditing.
+
+---
 
 ### Request
 
 | Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `[BASE_URL]/auth/logout` | Revokes the current session's tokens and logs the user out. |
+| --- | --- | --- |
+| `POST` | `[BASE_URL]/auth/logout` | Revokes access and refresh tokens to log the user out. |
 
 #### Headers
 
-This endpoint requires two headers to be provided.
+* `Authorization: Bearer <access_token>`
+* `X-Refresh-Token: Refresh <refresh_token>` *(Required)*
 
-| Header | Example Value | Description |
-| :--- | :--- | :--- |
-| `Authorization` | `Bearer <access_token>` | The user's current access token. |
-| `X-Refresh-Token` | `Refresh <refresh_token>` | The user's current refresh token. |
-
-#### Body
-
-No request body is required.
-
------
+---
 
 ### Workflow
 
-1.  **Token Extraction**: The access token and refresh token are extracted from the `Authorization` and `X-Refresh-Token` headers, respectively.
-2.  **Token Validation**: Both tokens are validated to ensure they are legitimate and not expired. If a token is invalid, the request is logged and a `401` error is returned.
-3.  **Token Revocation**: Upon successful validation, the unique ID (JTI) of both tokens is added to a Redis-based blacklist. The blacklist entries are set to expire at the same time as their corresponding tokens, ensuring a self-cleaning mechanism.
-4.  **Client-Side Cleanup**: After a successful logout, the client application is expected to delete the tokens from its local storage.
+1. **Token Extraction**: The endpoint extracts the `Authorization` and `X-Refresh-Token` headers. If the refresh token header is missing, it returns a `BAD_REQUEST` error (`400`).
+2. **Access Token Validation**: It performs a "soft" validation of the access token. Even if expired, the logout process continues to ensure the session's refresh token is properly revoked.
+3. **Refresh Token Validation**: It validates the refresh token to identify the session. If the token is invalid or the session has expired, it returns an `UNAUTHORIZED` error (`401`).
+4. **Blacklist Check**: It checks if the refresh token JTI is already blacklisted in Redis. If already blacklisted, it logs a security warning and returns a success response (`200 OK`).
+5. **TTL Calculation**: It computes the remaining expiration durations for both tokens to set precise time-to-live (TTL) bounds in the Redis blacklist store.
+6. **Token Revocation**: It revokes both tokens in Redis and returns a success response (`200 OK`).
 
------
+---
 
 ### Responses
 
-#### Success
+All responses follow the unified envelope standard (See [RESPONSES.md](https://www.google.com/search?q=./RESPONSES.md)).
 
-| Status Code | Description |
-| :--- | :--- |
-| `200 OK` | The tokens were successfully revoked and the user is logged out. |
-
-**Body**
+#### Success (`200 OK`) — Logged Out Successfully
 
 ```json
 {
+  "status": "success",
   "message": "Logged out successfully"
 }
+
 ```
 
-#### Errors
+#### Success (`200 OK`) — Already Logged Out (Blacklisted Token Reuse)
 
-| Status Code | Description |
-| :--- | :--- |
-| `400 Bad Request` | The `X-Refresh-Token` header was not provided. |
-| `401 Unauthorized` | Either of the `token` is invalid. |
-| `500 Internal Server Error` | An unexpected server error occurred (e.g there was a failure to connect to the database). |
+```json
+{
+  "status": "success",
+  "message": "Already logged out",
+}
+
+```
+
+#### Error Responses
+
+| HTTP Status | Error `code` | Default Message | Scenario |
+| --- | --- | --- | --- |
+| `400 Bad Request` | `BAD_REQUEST` | Invalid request payload. Please check your input. | Missing `X-Refresh-Token` header. |
+| `401 Unauthorized` | `UNAUTHORIZED` | Unauthorized access. Please log in again. | Invalid or expired refresh token. |
+| `500 Internal Server Error` | `SERVER_ERROR` | An unexpected error occurred. Please try again. | Redis blacklist check failure or token revocation error. |
 
 -----
 
 ## Refresh Token API
+
 ### POST `[BASE_URL]/auth/token/refresh`
 
-This endpoint allows a client to obtain a new access token and refresh token pair using a valid refresh token. This process, known as token rotation, enhances security by invalidating the old refresh token after a successful refresh.
+This endpoint issues a fresh pair of access and refresh tokens using a valid, non-expired refresh token. It implements token rotation security by checking if the incoming refresh token has been blacklisted, logging security events if reused, and revoking the old refresh token upon issuing a new pair.
 
------
+---
 
 ### Request
 
 | Method | Endpoint | Description |
-|:---|:---|:---|
-| `POST` | `[BASE_URL]/auth/refresh` | Requests a new pair of access and refresh tokens. |
+| --- | --- | --- |
+| `POST` | `[BASE_URL]/auth/token/refresh` | Rotates and issues new access and refresh tokens. |
 
 #### Headers
 
-This endpoint requires a single header.
+* `X-Refresh-Token: Refresh <refresh_token>` *(Required)*
 
-| Header | Example Value | Description |
-|:---|:---|:---|
-| `X-Refresh-Token` | `Refresh <refresh_token>` | The user's current refresh token. |
-
-#### Body
-
-No request body is required.
-
------
+---
 
 ### Workflow
 
-1.  **Token Extraction**: The refresh token is extracted from the `X-Refresh-Token` header.
-2.  **Token Validation**: The token is validated to ensure it's a legitimate and active refresh token.
-3.  **Blacklist Check**: The token's unique ID (JTI) is checked against a blacklist to ensure it hasn't been used before.
-4.  **Token Rotation**: Upon successful validation, the server generates a new access token and a new refresh token. The old refresh token is then immediately added to a Redis-based blacklist, making it unusable for any future requests.
-5.  **Session Management**: This process effectively revokes the old refresh token and provides the client with a new one, improving session security by detecting and preventing token reuse.
+1. **Header Check**: The endpoint checks for the `X-Refresh-Token` header. If missing, it returns a `BAD_REQUEST` error (`400`).
+2. **Token Validation**: It validates the cryptographic signature and expiration of the refresh token. If invalid, it returns an `UNAUTHORIZED` error (`401`).
+3. **Blacklist & Reuse Detection**: It checks Redis to see if the refresh token JTI has already been used or blacklisted.
+* **If Blacklisted**: It logs a security audit event and rejects the request with an `UNAUTHORIZED` error (`401`) to protect against token reuse/compromise.
 
------
+
+4. **Token Generation**: It generates a brand new access and refresh token pair for the user.
+5. **Old Token Revocation**: It revokes the old refresh token by adding its JTI to the Redis blacklist with its remaining time-to-live.
+6. **Success Response**: It returns the new token pair along with user metadata (`200 OK`).
+
+---
 
 ### Responses
 
-#### Success
+All responses follow the unified envelope standard (See [RESPONSES.md](https://www.google.com/search?q=./RESPONSES.md)).
 
-| Status Code | Description |
-|:---|:---|
-| `200 OK` | A new access token and refresh token pair were successfully generated and returned. |
-
-**Body**
+#### Success (`200 OK`) — Tokens Refreshed Successfully
 
 ```json
 {
-  "access_token": "eyJhbGciOiJIUzI1Ni...",
-  "refresh_token": "eyJhbGciOiJIUzI1Ni...",
-  "role": "vendor"|"user",
-  "id": "9jfiojeokde9r04or-o885" 
+  "status": "success",
+  "message": "Tokens refreshed successfully",
+  "data": {
+    "access_token": "eyJhbGciOiJIUzI1Ni...",
+    "refresh_token": "eyJhbGciOiJIUzI1Ni...",
+    "id": "usr-895659",
+    "role": "vendor"
+  }
 }
+
 ```
 
-#### Errors
+#### Error Responses
 
-| Status Code | Description |
-|:---|:---|
-| `400 Bad Request` | The `X-Refresh-Token` header was not provided. |
-| `401 Unauthorized` | The refresh token is invalid (e.g., expired, malformed) or has already been used. |
-| `500 Internal Server Error` | An unexpected server error occurred (e.g., a database connection failed). |
+| HTTP Status | Error `code` | Default Message | Scenario |
+| --- | --- | --- | --- |
+| `400 Bad Request` | `BAD_REQUEST` | Invalid request payload. Please check your input. | Missing `X-Refresh-Token` header. |
+| `401 Unauthorized` | `UNAUTHORIZED` | Unauthorized access. Please log in again. | Invalid signature, expired refresh token, or blacklisted token reuse attempt. |
+| `500 Internal Server Error` | `SERVER_ERROR` | An unexpected error occurred. Please try again. | Token validation failure, Redis blacklist check error, token generation failure, or revocation error. |
 
 -----
-
 
 ## DELETE ACCOUNT API
 ### DELETE `/auth/account/delete`
@@ -528,113 +590,196 @@ A generic success message is returned whether the email is found or not for secu
 
 -----
 
-### Reset Password API
+## Reset Password API
 
-This endpoint finalizes the password reset process using the secure token received via email and updates the user's password.
+### POST `[BASE_URL]/auth/reset-pwd`
 
-#### POST `[BASE_URL]/auth/reset-pwd`
+This endpoint allows a user to reset their account password using a valid password reset token. It verifies the token's existence and expiration, hashes the new password securely using bcrypt, deletes the used token to prevent reuse, and updates the user's record in the database.
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `[BASE_URL]/auth/reset-pwd` | Accepts a reset token and a new password to update the user's credentials. |
+---
 
-#### Request Body
-
-The request body must be a JSON object containing the secure token and the new password.
-
-```json
-{
-  "token": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
-  "new_password": "YourStrongNewPassword123!"
-}
-```
-
-#### Workflow
-
-1.  **Validation**: The endpoint validates the request body for the presence of the token and a password.
-2.  **Token Lookup**: It attempts to find the record associated with the submitted token in the database.
-3.  **Token Validation**: The system verifies that the token has **not expired** and immediately deletes the token from database.
-4.  **Password Hashing**: The `new_password` is securely hashed using `bcrypt`.
-5.  **User Update**: The user's database record is updated with the new hashed password.
-6.  **Token Deletion**: The used token record is immediately deleted from the database to prevent replay attacks.
-
-#### Responses
-
-| Status Code | Description |
-| :--- | :--- |
-| `200 OK` | The password was successfully updated, and the token was invalidated. |
-| `400 Bad Request` | The request body is invalid or malformed. |
-| `403 Unauthorized` | The token has expired. |
-| `404 Not Found` | The submitted token is invalid, expired, or was already used. |
-| `500 Internal Server Error` | An unexpected server error occurred (e.g., failed database operation, failed password hashing). |
-
-**Success Body**
-
-```json
-{
-  "message": "password updated successfully"
-}
-```
-
-------
-
-### Change Password API
-
-This endpoint allows an authenticated user to update their existing password. It includes security checks to prevent "no-op" updates (same password) and restricts access to users who manage their credentials locally.
-
-#### POST `[BASE_URL]/auth/change-pwd`
+### Request
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
-| `POST` | `[BASE_URL]/auth/change-pwd` | Updates the password for the currently logged-in local user. |
+| `POST` | `[BASE_URL]/auth/reset-pwd` | Resets a user's password using a reset token. |
 
-#### Request Body
-
-The request body must be a JSON object containing the new password.
+#### Body
 
 ```json
 {
-  "new_password": "YourStrongNewPassword123!"
+  "token": "reset_token_string_here",
+  "new_password": "NewSecurePassword123!"
 }
 
 ```
 
-#### Workflow
+#### Headers
 
-1. **Authentication Check**: Verifies that a valid user session exists in the request context.
-2. **Provider Validation**: Checks if the user's `Provider` is `local`. If the user signed up via OAuth (Google, Apple, etc.), the request is rejected as they do not have a local password to change.
-3. **Identity Match**: Retrieval of the current user's hashed password from the database.
-4. **Same-Password Check**: Uses `bcrypt.CompareHashAndPassword` to check if the `new_password` matches the current password. If they are identical, the request returns an error to enforce credential rotation.
-5. **Security Hashing**: The `new_password` is securely hashed using `bcrypt` with a default cost.
-6. **Database Update**: The user's record is updated with the new hash.
-7. **Audit Logging**: Any internal failures (hashing or DB errors) are logged for security auditing.
+* `Content-Type: application/json`
 
-#### Responses
+---
 
-| Status Code | Description |
-| --- | --- |
-| `200 OK` | The password was successfully updated. |
-| `400 Bad Request` | Malformed JSON **OR** the new password is the same as the current password. |
-| `401 Unauthorized` | No authenticated user was found in the session. |
-| `403 Forbidden` | The user is an OAuth user (Google/Apple) and cannot change a password they don't have. |
-| `500 Internal Server Error` | An unexpected server error occurred during hashing or database operations. |
+### Workflow
 
-**Success Body**
+1. **Input Validation**: The endpoint validates the JSON request body against the reset password schema. If validation fails, it returns a `BAD_REQUEST` error (`400`).
+2. **Token Lookup**: It queries the database for the provided reset token. If not found, it returns an invalid or expired token error (`410 Gone`).
+3. **Expiration Check**: It checks if the current time has passed the token's expiration timestamp. If expired, it deletes the token and returns an `OTP_EXPIRED` error (`401`).
+4. **Password Hashing**: It securely hashes the new password using bcrypt.
+5. **Token Deletion**: It deletes the used reset token to ensure single-use enforcement and security.
+6. **User Record Update**: It updates the user's profile with the new hashed password and returns a success response (`200 OK`).
+
+---
+
+### Responses
+
+All responses follow the unified envelope standard (See [RESPONSES.md](https://www.google.com/search?q=./RESPONSES.md)).
+
+#### Success (`200 OK`) — Password Updated Successfully
 
 ```json
 {
-  "message": "password updated successfully"
+  "status": "success",
+  "message": "Password updated successfully"
 }
 
 ```
 
-**Example Error (Same Password)**
+#### Error Responses
+
+| HTTP Status | Error `code` | Default Message | Scenario |
+| --- | --- | --- | --- |
+| `400 Bad Request` | `BAD_REQUEST` | Invalid request payload. Please check your input. | Malformed JSON structure or missing fields. |
+| `401 Unauthorized` | `OTP_EXPIRED` | Your OTP has expired. Please request a new code. | Reset token has passed its expiration time. |
+| `410 Gone` | `BAD_REQUEST` | Token is invalid or expired | Reset token does not exist in the database. |
+| `500 Internal Server Error` | `SERVER_ERROR` | An unexpected error occurred. Please try again. | Database retrieval error, bcrypt hashing failure, or user update error. |
+
+----
+
+## Forgot Password API
+
+### POST `[BASE_URL]/auth/forget-pwd`
+
+This endpoint initiates a password recovery flow by generating a secure, time-limited reset token and dispatching a password reset link to the user's email address. To prevent user enumeration attacks, it returns a generic success response even if the provided email address does not exist in the system.
+
+---
+
+### Request
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `POST` | `[BASE_URL]/auth/forget-pwd` | Requests a password reset link for account recovery. |
+
+#### Body
 
 ```json
 {
-  "error": "new password must be different from your current password"
+  "email": "user@example.com"
+}
+
+```
+
+#### Headers
+
+* `Content-Type: application/json`
+
+---
+
+### Workflow
+
+1. **Input Validation**: The endpoint binds and validates the JSON request body against the forgot password schema. If validation fails, it returns a `BAD_REQUEST` error (`400`).
+2. **User Lookup**: It queries the database for an active user account matching the email address.
+* **If Not Found**: It deliberately returns a generic success message (`200 OK`) to prevent email harvesting/enumeration attacks.
+
+
+3. **Secure Token Generation**: It generates a cryptographically secure random token.
+4. **Token Storage & Expiration**: It persists the reset token linked to the user ID with an expiration time set to 15 minutes in the future.
+5. **Email Dispatch**: It sends the password reset link via email to the user and returns a success response (`200 OK`).
+
+---
+
+### Responses
+
+All responses follow the unified envelope standard (See [RESPONSES.md](https://www.google.com/search?q=./RESPONSES.md)).
+
+#### Success (`200 OK`) — Reset Link Sent (or Non-existent Email Handled)
+
+```json
+{
+  "status": "success",
+  "message": "A password reset link has been sent to your email address.",
+}
+
+```
+
+#### Error Responses
+
+| HTTP Status | Error `code` | Default Message | Scenario |
+| --- | --- | --- | --- |
+| `400 Bad Request` | `BAD_REQUEST` | Invalid request payload. Please check your input. | Malformed JSON structure or missing email field. |
+| `500 Internal Server Error` | `SERVER_ERROR` | An unexpected error occurred. Please try again. | Database retrieval failure, token generation error, database save failure, or email dispatch error. |
+
+----
+
+## Change Password API
+
+### POST `[BASE_URL]/auth/change-pwd`
+
+This endpoint allows an authenticated user to update their account password. It extracts the user ID from the request context (supplied by the authentication middleware), validates that the user's authentication provider is custom (preventing password changes for OAuth/social logins), ensures the new password differs from the current one, and securely hashes and updates the password in the database.
+
+---
+
+### Request
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `POST` | `[BASE_URL]/auth/change-pwd` | Updates the password for an authenticated user. |
+
+#### Headers
+
+* `Authorization: Bearer <access_token>` *(Required)*
+* `Content-Type: application/json`
+
+#### Body
+
+```json
+{
+  "new_password": "NewSecurePassword456!"
 }
 
 ```
 
 ---
+
+### Workflow
+
+1. **Context Extraction**: The endpoint extracts the authenticated user's ID from the Gin context.
+2. **User Lookup**: It retrieves the user record from the database by ID. If retrieval fails, it returns a `SERVER_ERROR` (`500`).
+3. **Input Validation**: It binds and validates the JSON body containing the new password. If validation fails, it returns a `BAD_REQUEST` (`400`).
+4. **Provider Verification**: It checks if the user's authentication provider (`AuthProvider`) is set to `"custom"`. If not (e.g., social login accounts), it rejects the action with a `403 Forbidden` response (`"Action not allowed"`).
+5. **Password Uniqueness Check**: It compares the new password against the existing hashed password using bcrypt. If they match, it returns a `BAD_REQUEST` (`400`) indicating that the new password must be different.
+6. **Password Hashing & Update**: It securely hashes the new password with bcrypt, updates the user's record in the database, and returns a success response (`200 OK`).
+
+---
+
+### Responses
+
+All responses follow the unified envelope standard (See [RESPONSES.md](https://www.google.com/search?q=./RESPONSES.md)).
+
+#### Success (`200 OK`) — Password Updated Successfully
+
+```json
+{
+  "status": "success",
+  "message": "Password updated successfully"
+}
+
+```
+
+#### Error Responses
+
+| HTTP Status | Error `code` | Default Message | Scenario |
+| --- | --- | --- | --- |
+| `400 Bad Request` | `BAD_REQUEST` | Invalid request payload. Please check your input. | Malformed JSON body or new password matches current password. |
+| `403 Forbidden` | `BAD_REQUEST` | Action not allowed | User signed up via an external provider (not custom auth). |
+| `500 Internal Server Error` | `SERVER_ERROR` | An unexpected error occurred. Please try again. | Database retrieval error, bcrypt hashing failure, or database update error. |

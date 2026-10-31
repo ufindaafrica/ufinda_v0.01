@@ -6,7 +6,7 @@ test/
 *.so
 *.dll
 bin/
-
+landingpage/
 *.rdb
 # Temporary files
 *.tmp

@@ -18,63 +18,68 @@ import (
 	"github.com/oladev/ufinda_v0.01/internal/token"
 	"github.com/oladev/ufinda_v0.01/internal/logs/auth"
 	"github.com/oladev/ufinda_v0.01/internal/db/auth"
+	"github.com/oladev/ufinda_v0.01/internal/db/payment"
+	"github.com/oladev/ufinda_v0.01/internal/response"
 )
 
-
+// email signup
 func EmailSignUpHandler(c *gin.Context) {
 	var req SignupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": InvalidRequest})
+		response.Error(c, http.StatusBadRequest, response.ErrCodeBadRequest)
 		return
 	}
 
 	// check if user is already created and email already verified
 	isCreatedUser, err := authdb.FindCreatedUserByEmail(req.Email)
 	if err != nil && errors.Is(err, ErrGettingUser) {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR_CHECKING_CREATED_USER] %v", err)
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		return
 	}
 
 	if isCreatedUser != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "user already created, please login"})
-		return		
+		response.Error(c, http.StatusConflict, response.ErrCodeAccountExists, "User already created, please login.")
+		return      
 	}
 
 	// check if the user exists as a pending user
 	isPendingUser, err := authdb.FindPendingUser(req.Email)
 	if err != nil && errors.Is(err, ErrGettingUser) {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR_CHECKING_PENDING_USER] %v", err)
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		return
 	}
 
 	if isPendingUser != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": MsgAccountExists})
+		response.Error(c, http.StatusConflict, response.ErrCodeAccountExists)
 		return
 	}
 
 	// hash the user password
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Printf("[ERROR] failed to hash password")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		log.Printf("[ERROR] failed to hash password: %v", err)
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		return
 	}
 
 	// generate otp
 	otp, err := token.GenerateOTP()
 	if err != nil {
-		log.Printf("[CRITICAL] error generating otp: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		log.Printf("[CRITICAL_OTP_GEN_ERR] error generating otp for user %s: %v", req.Email, err)
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		return
 	}
 
 	var pendingUserName *string
 	if req.UserName != nil && strings.TrimSpace(*req.UserName) != "" {
-    cleanName := strings.ToLower(strings.TrimSpace(*req.UserName))
-    pendingUserName = &cleanName
+		cleanName := strings.ToLower(strings.TrimSpace(*req.UserName))
+		pendingUserName = &cleanName
 	} else {
 		pendingUserName = nil
 	}
+	
 	pendinguser := db.PendingUser {
 		Email: req.Email,
 		Password: string(hashedPwd),
@@ -89,7 +94,7 @@ func EmailSignUpHandler(c *gin.Context) {
 
 	// create a pending user
 	if err := authdb.InsertPendingUser(&pendinguser); err != nil {
-		// List of friendly errors we defined above
+		// List of friendly errors we check for
 		userFriendlyErrors := []string{
 			"vendors must provide a valid username",
 			"this email is already registered",
@@ -98,246 +103,298 @@ func EmailSignUpHandler(c *gin.Context) {
 
 		for _, msg := range userFriendlyErrors {
 			if strings.Contains(err.Error(), msg) {
-				c.JSON(http.StatusBadRequest, gin.H{"error": msg})
+				response.Error(c, http.StatusBadRequest, response.ErrCodeBadRequest, msg)
 				return
 			}
 		}
 
 		// If it's not a known user error, send a 500
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "An unexpected error occurred"})
+		log.Printf("[CRITICAL_INSERT_PENDING_USER] error inserting pending user: %v", err)
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		return
 	}
 
 	if err := token.SendOTP(req.Email, otp); err != nil {
-		log.Printf("[CRITICAL] failed to send otp for user: %s: %v", req.Email, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		log.Printf("[CRITICAL_OTP_EMAIL_SEND_ERR] failed to send otp for user: %s: %v", req.Email, err)
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "OTP sent to your email, please verify."})
+	response.Success(c, http.StatusCreated, "OTP sent to your email, please verify.", gin.H{
+		"email": req.Email,
+	})
 }
 
 // verify otp
 func VerifyOtpHandler(c *gin.Context) {
 	var req VerifyOtp
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": InvalidRequest})
+		response.Error(c, http.StatusBadRequest, response.ErrCodeBadRequest)
 		return
 	}
 
-	// check if user is already created and verified
+	// 1. Check if user is already created and verified
 	isCreatedUser, err := authdb.FindCreatedUserByEmail(req.Email)
-	if err != nil && errors.Is(err, ErrGettingUser){
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err != nil && errors.Is(err, ErrGettingUser) {
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		return
 	}
 
 	if isCreatedUser != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": MsgAccountCreated})
-		return		
+		response.Error(c, http.StatusConflict, response.ErrCodeAccountExists)
+		return
 	}
 
-	// check if the user exists as a pending user
+	// 2. Check if the user exists as a pending user
 	pendinguser, err := authdb.FindPendingUser(req.Email)
 	if err != nil {
 		if errors.Is(err, ErrUserNotFound) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		}else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+			response.Error(c, http.StatusNotFound, response.ErrCodeUserNotFound)
+		} else {
+			log.Printf("[ERROR_CHECKING_PENDING_USR] error checking if user exists as a pending user for email %s: %v", pendinguser.Email, err)
+			response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		}
 		return
 	}
 
-
+	// 3. Validate OTP mismatch
 	if pendinguser.OTP != req.OTP {
-		c.JSON(http.StatusForbidden, gin.H{"error": "invalid otp"})
+		response.Error(c, http.StatusBadRequest, response.ErrCodeInvalidOTP)
 		return
 	}
 
-	// check if otp is expired
+	// 4. Validate OTP expiration
 	if time.Now().After(pendinguser.ExpiresAt) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "otp has expired"})
+		response.Error(c, http.StatusBadRequest, response.ErrCodeOTPExpired)
 		return
+	}
+
+	// 5. Determine user type and paid status
+	userType := "vendor"
+	var isPaid *bool
+
+	if pendinguser.Role == "user" {
+		userType = "user"
+		paidStatus, err := paymentdb.IsPaidBookingFee(pendinguser.Email)
+		if err != nil {
+			log.Printf("[ERROR_GETTING_BOOKING_FEE] error checking for the booking fee status for user %s: %v", pendinguser.Email ,err)
+			response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
+		}
+		isPaid = &paidStatus // Assign directly to outer pointer
+	}
+
+	prefix := "vendor"
+	if userType == "user" {
+		prefix = "user"
 	}
 
 	checkUniqueness := func(id string) (bool, error) {
 		return token.IsIDUnique(id, "/rest/v1/users")
 	}
 
-	var prefix string
-
-	if pendinguser.Role == "user" {
-		prefix = "user"
-	} else { prefix = "vendor" }
-
 	userID, err := token.GenerateRandomID(prefix, checkUniqueness)
 	if err != nil {
-		log.Printf("[CRITICAL] Failed to generate ID for user '%s': %w", req.Email, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		log.Printf("[CRITICAL_ID_GEN_FAILED] Failed to generate ID for user '%s': %v", req.Email, err)
+		response.Error(c, http.StatusInternalServerError, "SERVER_ERROR", MsgServerError)
 		return
 	}
 
-	user := db.User {
-		ID: userID,
-		Email: pendinguser.Email,
-		Password: pendinguser.Password,
-		Role: pendinguser.Role,
-		UserName: pendinguser.UserName,
-		FirstName: pendinguser.FirstName,
-		LastName: pendinguser.LastName,
-		Phone: pendinguser.Phone,
+	user := db.User{
+		ID:           userID,
+		Email:        pendinguser.Email,
+		Password:     pendinguser.Password,
+		Role:         pendinguser.Role,
+		UserName:     pendinguser.UserName,
+		FirstName:    pendinguser.FirstName,
+		LastName:     pendinguser.LastName,
+		Phone:        pendinguser.Phone,
 		AuthProvider: "custom",
 	}
 
-	// create user after verifying their email
+	// 6. Create verified user record
 	if err := authdb.CreateUser(user); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		return
 	}
-	
-	// delete pending user record
+
+	// 7. Clean up pending user record
 	if err := authdb.DeletePendingUser(req.Email); err != nil {
-		log.Printf("[ERROR] Failed to delete pending user for %s: %v", req.Email, err)
+		log.Printf("[ERROR_PENDING_USR_DELETE_FAILED] Failed to delete pending user for %s: %v", req.Email, err)
 	}
 
-    accessToken, refreshToken, err := token.GenerateTokens(user.ID, user.Email, user.Role)
-    if err != nil {
-		log.Printf("[CRITICAL] failed to generate token for user: %s: %v", user.Email, err)
-        c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
-        return
-    }
+	// 8. Trigger Welcome Email asynchronously (don't block HTTP thread)
+	go func() {
+		if err := token.SendWelcomeEmail(user.Email, user.FirstName); err != nil {
+			authlog.LogAuth(user.ID, err)
+		}
+	}()
 
-	if err := token.SendWelcomeEmail(user.Email, user.FirstName); err != nil {
-		authlog.LogAuth(user.ID, err)
+	// 9. Respond based on payment state
+	// Vendors/Agents (isPaid == nil) or Paid Students (isPaid == true) get full tokens
+	if isPaid == nil || *isPaid {
+		accessToken, refreshToken, err := token.GenerateTokens(user.ID, user.Email, user.Role)
+		if err != nil {
+			log.Printf("[CRITICAL] Failed to generate token for user %s: %v", user.Email, err)
+			response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
+			return
+		}
+		response.Success(c, http.StatusOK, "Verification successful", gin.H{
+			"is_paid":       true,
+			"access_token":  accessToken,
+			"refresh_token": refreshToken,
+			"id":   user.ID,
+			"role": user.Role,
+		})
+		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"message": "verification successful",
-		"access_token": accessToken,
-		"refresh_token": refreshToken,
-		"id": user.ID,
+
+	// Unpaid Students return is_paid: false (Mobile App navigates to Paystack onboarding prompt)
+	response.Error(c, http.StatusPaymentRequired, response.ErrCodePaymentRequired, gin.H{
+		"is_paid": false,
+		"id":   user.ID,
 		"role": user.Role,
 	})
 }
 
 func EmailLoginHandler(c *gin.Context) {
-    var loginObj LoginRequest
-    if err := c.ShouldBindJSON(&loginObj); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": InvalidRequest})
-        return
-    }
+	var loginObj LoginRequest
+	if err := c.ShouldBindJSON(&loginObj); err != nil {
+		response.Error(c, http.StatusBadRequest, response.ErrCodeBadRequest)
+		return
+	}
 
-    user, err := authdb.FindCreatedUserByEmail(loginObj.Email)
+	user, err := authdb.FindCreatedUserByEmail(loginObj.Email)
 	if err != nil {
 		if errors.Is(err, authdb.ErrUserNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		}else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+			response.Error(c, http.StatusNotFound, response.ErrCodeUserNotFound)
+		} else {
+			log.Printf("[ERROR_FINDING_USR_BY_EMAIL] error getting user record by email for user %s: %v", loginObj.Email, err)
+			response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		}
 		return
 	}
 
-    // New Redis-based Rate Limiting Logic
-    loginKey := "login_attempts:" + loginObj.Email
-    ctx := c.Request.Context()
+	// New Redis-based Rate Limiting Logic
+	loginKey := "login_attempts:" + loginObj.Email
+	ctx := c.Request.Context()
 
-    // Get the current login attempts and TTL
-    attempts, err := db.RedisClient.Get(ctx, loginKey).Int()
-    if err != nil && err != redis.Nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
-        return
-    }
+	// Get current login attempts
+	attempts, err := db.RedisClient.Get(ctx, loginKey).Int()
+	if err != nil && err != redis.Nil {
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
+		return
+	}
 
-    // Check if the user is locked out
-    if attempts >= 5 {
-        ttl := db.RedisClient.TTL(ctx, loginKey).Val()
-		log := authlog.Logs["3"]
-		fmtMessage := fmt.Sprintf(log.Message, "login attempt exceeded")
+	// Check if the user is locked out
+	if attempts >= 5 {
+		ttl := db.RedisClient.TTL(ctx, loginKey).Val()
+		logEntry := authlog.Logs["3"]
+		fmtMessage := fmt.Sprintf(logEntry.Message, "login attempt exceeded")
 		userID := user.ID
-		newLog := db.SecurityLog {
+		newLog := db.SecurityLog{
 			UserID: &userID,
-			Log: fmtMessage,
-			Level: log.Level,
+			Log:    fmtMessage,
+			Level:  logEntry.Level,
 		}
 		authlog.SecurityLog(newLog)
 
-        c.JSON(http.StatusTooManyRequests, gin.H{
-            "error": fmt.Sprintf("Too many login attempts. Please try again in %d minutes", int(ttl.Minutes())),
-        })
-        return
-    }
+		response.Error(c, http.StatusTooManyRequests, response.ErrCodeTooManyRequests, fmt.Sprintf("Too many login attempts. Please try again in %d minutes", int(ttl.Minutes())))
+		return
+	}
 
-    isMatch, err := CheckPasswordMatch(loginObj.Password, user.Password)
-    if err != nil {
-		log.Printf("[CRITICAL] error checking password: %v", err)
-        c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
-        return
-    }
+	isMatch, err := CheckPasswordMatch(loginObj.Password, user.Password)
+	if err != nil {
+		log.Printf("[CRITICAL_CHECKING_PWD_MATCH] error checking password for user %s: %v", loginObj.Email, err)
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
+		return
+	}
 
-    if !isMatch {
-        db.RedisClient.Incr(ctx, loginKey)
-        if attempts == 0 {
-            db.RedisClient.Expire(ctx, loginKey, 30*time.Minute)
-        }
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid password"})
-        return
-    }
+	if !isMatch {
+		db.RedisClient.Incr(ctx, loginKey)
+		if attempts == 0 {
+			db.RedisClient.Expire(ctx, loginKey, 15*time.Minute)
+		}
+		// Use standardized response envelope for unauthorized errors
+		response.Error(c, http.StatusUnauthorized, response.ErrCodeUnauthorized)
+		return
+	}
 
-    // If password matches, clear the login attempts counter
-    db.RedisClient.Del(ctx, loginKey)
+	// If password matches, clear the login attempts counter
+	db.RedisClient.Del(ctx, loginKey)
 
-    accessToken, refreshToken, err := token.GenerateTokens(user.ID, user.Email, user.Role)
-    if err != nil {
-		log.Printf("[CRITICAL] failed to generate token for user: %s: %w", user.ID, err)
-        c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
-        return
-    }
+	// Check if user has paid booking fee
+	isPaid, err := paymentdb.IsPaidBookingFee(loginObj.Email)
+	if err != nil {
+		log.Printf("[ERROR_GETTING_BOOKING_FEE] error checking booking fee status for user %s: %v", loginObj.Email, err)
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
+		return 
+	}
 
-    c.JSON(http.StatusOK, gin.H{
-        "access_token": accessToken,
-        "refresh_token": refreshToken,
-		"role": user.Role,
-		"id": user.ID,
-    })
+	if user.IsBetaUser || isPaid || user.Role == "vendor" {
+		accessToken, refreshToken, err := token.GenerateTokens(user.ID, user.Email, user.Role)
+		if err != nil {
+			log.Printf("[CRITICAL_ACCESS_TOKEN_GEN_FAILED] failed to generate token for user: %s: %v", user.ID, err)
+			response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
+			return
+		}
+
+		response.Success(c, http.StatusOK, "Login successful", gin.H{
+			"is_paid":       true,
+			"access_token":  accessToken,
+			"refresh_token": refreshToken,
+			"role":          user.Role,
+			"id":            user.ID,
+		})
+		return
+	}
+
+	// Gated: Student has verified and authenticated, but onboarding fee is required
+	response.Error(c, http.StatusPaymentRequired, response.ErrCodePaymentRequired, gin.H{
+		"is_paid": false,
+		"id":      user.ID,
+		"role":    user.Role,
+	})
 }
+
 // <---------------------> End Login <---------------------->
 
 // <---------------------> Begin Resend OTP <---------------------->
 func ResendOTPHandler(c *gin.Context) {
 	var otpRequest ResendOTP
 	if err := c.ShouldBindJSON(&otpRequest); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": InvalidRequest})
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		return
 	}
 
 	// check if user is already created and verified
 	createduser, err := authdb.FindCreatedUserByEmail(otpRequest.Email)
 	if err != nil && errors.Is(err, ErrGettingUser) {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR_FINDING_USR_BY_EMAIL] error getting user record by email for user %s: %v", otpRequest.Email, err)
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		return
 	}
 
 	if createduser != nil  {
-		c.JSON(http.StatusBadRequest, gin.H{"error": MsgAccountCreated})
+		response.Error(c, http.StatusConflict, response.ErrCodeAccountExists)
 		return		
 	}
 
 	// check if the user exists as a pending user
 	pendinguser, err := authdb.FindPendingUser(otpRequest.Email)
-	if err != nil && errors.Is(err, authdb.ErrGettingUser) {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err != nil {
+		if errors.Is(err, ErrUserNotFound) {
+			response.Error(c, http.StatusNotFound, response.ErrCodeUserNotFound)
+		} else {
+			log.Printf("[ERROR_CHECKING_PENDING_USR] error checking if user exists as a pending user for email %s: %v", pendinguser.Email, err)
+			response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
+		}
 		return
 	}
-
-	if errors.Is(err, ErrUserNotFound) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
 	// generate the new otp
 	otp, err := token.GenerateOTP()
 	if err != nil {
-		log.Printf("[CRITICAL] error generating otp: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		log.Printf("[CRITICAL_OTP_GEN_ERR] error generating otp for user %s: %v",  pendinguser.Email, err)
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		return
 	}
 
@@ -349,14 +406,14 @@ func ResendOTPHandler(c *gin.Context) {
 
 	// update the pending data with the new otp
 	if err := authdb.UpdatePendingUser(pendinguser.Email, data); err != nil {
-		log.Printf("[CRITICAL] failed to update pending user record: %w", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		log.Printf("[CRITICAL_PENDING_USR_UPD_ERR] failed to update pending user record for %s: %w", pendinguser.Email, err)
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		return
 	}
 
 	// send the new otp
 	if err := token.SendOTP(pendinguser.Email, otp); err != nil {
-		log.Printf("[CRITICAL] failed to send otp for user: %s: %v", pendinguser.Email, err)
+		log.Printf("[CRITICAL_OTP_EMAIL_SEND_ERR] failed to send otp for user: %s: %v", pendinguser.Email, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
 		return
 	}
@@ -370,7 +427,7 @@ func LogoutHandler(c *gin.Context) {
 	refreshtoken := c.GetHeader("X-Refresh-Token")
 
 	if refreshtoken == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "refresh token header not provided"})
+		response.Error(c, http.StatusBadRequest, response.ErrCodeBadRequest, "Refresh token header not provided")
 		return
 	}
 
@@ -391,11 +448,11 @@ func LogoutHandler(c *gin.Context) {
 	if err != nil {
 		// If the refresh token is also expired or invalid, the session is already effectively dead.
 		if errors.Is(err, token.ErrInvalidToken) {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid refresh token"})
+			response.Error(c, http.StatusUnauthorized, response.ErrCodeUnauthorized, "Invalid refresh token")
 			return
 		}
-		log.Printf("[ERROR] Refresh token validation error: %v", err)
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "session already expired"})
+		log.Printf("[ERROR_REFRESH_TOKEN_VALIDATION_ERR] Refresh token validation error: %v", err)
+		response.Error(c, http.StatusUnauthorized, response.ErrCodeUnauthorized, "Session already expired")
 		return
 	}
 
@@ -405,8 +462,8 @@ func LogoutHandler(c *gin.Context) {
 	// 4. Check if token is already blacklisted
 	isblacklisted, err := token.IsTokenBlacklisted(c.Request.Context(), refreshjti)
 	if err != nil {
-		log.Printf("[ERROR] Blacklist check failed: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		log.Printf("[ERROR_BLACKLIST_CHECK_ERR] Blacklist check failed: %v", err)
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		return
 	}
 
@@ -419,7 +476,7 @@ func LogoutHandler(c *gin.Context) {
 		}
 		authlog.SecurityLog(secLog)
 		
-		c.JSON(http.StatusOK, gin.H{"message": "already logged out"})
+		response.Success(c, http.StatusOK, "Already logged out")
 		return
 	}
 
@@ -442,30 +499,30 @@ func LogoutHandler(c *gin.Context) {
 
 	// 6. Revoke Tokens
 	if err := token.RevokeTokens(c.Request.Context(), accessjti, refreshjti, accessduration, refreshduration); err != nil {
-		log.Printf("[CRITICAL] failed to revoke tokens: %v", err) // Fixed: use %v not %w
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		log.Printf("[CRITICAL_TOKEN_REVOKE_ERR] failed to revoke tokens: %v", err)
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
+	response.Success(c, http.StatusOK, "Logged out successfully")
 }
 
 func RefreshTokenHandler(c *gin.Context) {
 	refreshToken := c.GetHeader("X-Refresh-Token")
 	if refreshToken == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "refresh token header not provided"})
-		return		
+		response.Error(c, http.StatusBadRequest, response.ErrCodeBadRequest, "Refresh token header not provided")
+		return      
 	}
 
 	refreshToken = strings.TrimPrefix(refreshToken, "Refresh ")
 	refreshClaims, err := token.ValidateToken(refreshToken)
 	if err != nil {
 		if errors.Is(err, token.ErrInvalidToken){
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			response.Error(c, http.StatusUnauthorized, response.ErrCodeUnauthorized, err.Error())
 			return
 		}
-		log.Printf("[CRITCAL] error validating token: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		log.Printf("[CRITICAL_TOKEN_VALIDATION_ERR] error validating token: %v", err)
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		return
 	}
 
@@ -473,51 +530,50 @@ func RefreshTokenHandler(c *gin.Context) {
 	// check if token has been used and blacklisted
 	isblacklisted, err := token.IsTokenBlacklisted(c.Request.Context(), refreshjti)
 	if err != nil {
-		log.Printf("[CRITICAL] error checking token for blacklist: %w", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		log.Printf("[CRITICAL_TOKEN_BLACKLIST_CHECK_ERR] error checking token for blacklist: %v", err)
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		return
 	}
 
 	if isblacklisted {
 		// create a log
-		log  := authlog.Logs["1"]
-		fmtMessage := fmt.Sprintf(log.Message, refreshToken)
+		logEntry := authlog.Logs["1"]
+		fmtMessage := fmt.Sprintf(logEntry.Message, refreshToken)
 		userID := refreshClaims.UserID
 		newLog := db.SecurityLog{
 			UserID: &userID,
 			Log: fmtMessage,
-			Level: log.Level,
+			Level: logEntry.Level,
 		}
 
 		authlog.SecurityLog(newLog)
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "expired token"})
+		response.Error(c, http.StatusUnauthorized, response.ErrCodeUnauthorized, "Token has already been used or expired")
 		return
 	}
 
-	// first generate token
+	// generate new token pair
 	access_token, refresh_token, err := token.RefreshToken(refreshClaims.UserID, refreshClaims.Email, refreshClaims.Role)
 	if err != nil {
-		log.Print("[CRITICAL] failed to generate refresh token for user: %s: %w", refreshClaims.UserID, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		log.Printf("[CRITICAL_REFRESH_TOKEN_GEN_ERR] failed to generate refresh token for user: %s: %v", refreshClaims.UserID, err)
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		return
 	}
 
-	// then revoke token
+	// revoke old token
 	refreshexp := refreshClaims.ExpiresAt.Time
 	refreshduration := time.Until(refreshexp)
 	if err := token.RevokeTokens(c.Request.Context(), "", refreshjti, 0, refreshduration); err != nil {
-		log.Printf("[CRITICAL] failed to revoke token: %w", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		log.Printf("[CRITICAL_TOKEN_REVOKE_ERR] failed to revoke token: %v", err)
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"access_token": access_token,
+	response.Success(c, http.StatusOK, "Tokens refreshed successfully", gin.H{
+		"access_token":  access_token,
 		"refresh_token": refresh_token,
-		"id": refreshClaims.UserID,
-		"role": refreshClaims.Role,
+		"id":            refreshClaims.UserID,
+		"role":          refreshClaims.Role,
 	})
-
 }
 // <---------------------> End Refresh Token <---------------------->
 
@@ -599,7 +655,7 @@ func DeleteCreatedUser(cld *cloudinary.Cloudinary) gin.HandlerFunc {
 func ForgetPwd(c *gin.Context) {
 	var forgetPwdData ForgetPwdData
 	if err := c.ShouldBindJSON(&forgetPwdData); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": InvalidRequest})
+		response.Error(c, http.StatusBadRequest, response.ErrCodeBadRequest)
 		return
 	}
 
@@ -607,9 +663,12 @@ func ForgetPwd(c *gin.Context) {
 	user, err := authdb.FindCreatedUserByEmail(forgetPwdData.Email)
 	if err != nil {
 		if errors.Is(err, authdb.ErrUserNotFound) {
-			c.JSON(http.StatusOK, gin.H{"message": "A password reset link has been sent to your email address."})
-		}else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+			// Security Best Practice: Return a generic success message even if the 
+			// email does not exist to prevent user enumeration attacks.
+			response.Success(c, http.StatusOK, "A password reset link has been sent to your email address.")
+		} else {
+			log.Printf("[ERROR_FINDING_USER_FOR_RESET] %v", err)
+			response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		}
 		return
 	}
@@ -618,109 +677,117 @@ func ForgetPwd(c *gin.Context) {
 	newToken, err := token.GenerateSecureToken()
 	if err != nil {
 		authlog.LogAuth(user.ID, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		log.Printf("[CRITICAL_GENERATE_RESET_TOKEN] %v", err)
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		return
 	}
-	expiresAt := time.Now().Add(15*time.Minute)
+
+	expiresAt := time.Now().Add(15 * time.Minute)
 	resetData := db.ResetPwdData{
-		UserID: user.ID,
-		Token: newToken,
+		UserID:    user.ID,
+		Token:     newToken,
 		ExpiresAt: expiresAt,
 	}
 
 	if err := authdb.CreateResetToken(resetData); err != nil {
 		authlog.LogAuth(user.ID, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		log.Printf("[CRITICAL_CREATE_RESET_TOKEN_DB] %v", err)
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		return
 	}
 
 	if err := token.SendPasswordResetLink(user.Email, newToken); err != nil {
 		authlog.LogAuth(user.ID, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		log.Printf("[CRITICAL_SEND_RESET_EMAIL] %v", err)
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "A password reset link has been sent to your email address."})
+	response.Success(c, http.StatusOK, "A password reset link has been sent to your email address.")
 }
 
 func ResetPwd(c *gin.Context) {
-    var req ResetPwdData
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": InvalidRequest}) 
-        return
-    }
+	var req ResetPwdData
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, response.ErrCodeBadRequest)
+		return
+	}
 
-    // 1. Check if token exists
-    getToken, err := authdb.FindResetToken(req.Token)
-    if err != nil {
-        if errors.Is(err, authdb.ErrResetTokenNotFound) {
-            c.JSON(http.StatusGone, gin.H{"error": "token is invalid or expired"}) 
-        } else {
-			log.Printf("[CRITICAL] failed to retrieve reset token: %w", err)
-            c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
-        }
-        return
-    }
+	// 1. Check if token exists
+	getToken, err := authdb.FindResetToken(req.Token)
+	if err != nil {
+		if errors.Is(err, authdb.ErrResetTokenNotFound) {
+			response.Error(c, http.StatusGone, response.ErrCodeBadRequest, "Token is invalid or expired")
+		} else {
+			log.Printf("[CRITICAL_GET_RESET_TOKEN_ERR] failed to retrieve reset token: %v", err)
+			response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
+		}
+		return
+	}
 
-    if time.Now().After(getToken.ExpiresAt) {
-        authdb.DeleteResetToken(getToken.Token) 
-        
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "The reset link has expired. Please request a new one."})
-        return
-    }
+	if time.Now().After(getToken.ExpiresAt) {
+		authdb.DeleteResetToken(getToken.Token) 
+		
+		response.Error(c, http.StatusUnauthorized, response.ErrCodeOTPExpired)
+		return
+	}
 
-    // 3. Hash New Password
-    var updateData = make(map[string]interface{})
-    hashedPwd, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
-    if err != nil {
-        authlog.LogAuth(getToken.UserID, err)
-        c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
-        return
-    }
-    updateData["password"] = string(hashedPwd)
-
-    // 4. Delete token record
-    if err := authdb.DeleteResetToken(getToken.Token); err != nil {
-        log.Printf("[CRITICAL] failed to delete reset token for user: %s: %w", getToken.UserID, err)
-    }
-
-    // 5. Update user with new password
-    if err := authdb.UpdateCreatedUser(getToken.UserID, updateData); err != nil {
+	// 3. Hash New Password
+	var updateData = make(map[string]interface{})
+	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
 		authlog.LogAuth(getToken.UserID, err)
-        c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
-        return
-    }
+		log.Printf("[CRITICAL_HASH_PASSWORD] %v", err)
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
+		return
+	}
+	updateData["password"] = string(hashedPwd)
 
-    c.JSON(http.StatusOK, gin.H{"message": "password updated successfully"})
+	// 4. Delete token record
+	if err := authdb.DeleteResetToken(getToken.Token); err != nil {
+		log.Printf("[CRITICAL_TOKEN_DELETE_ERR] failed to delete reset token for user: %s: %v", getToken.UserID, err)
+	}
+
+	// 5. Update user with new password
+	if err := authdb.UpdateCreatedUser(getToken.UserID, updateData); err != nil {
+		authlog.LogAuth(getToken.UserID, err)
+		log.Printf("[CRITICAL_UPDATE_USER_PASSWORD] %v", err)
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
+		return
+	}
+
+	response.Success(c, http.StatusOK, "Password updated successfully")
 }
 
 func ChangePassword(c *gin.Context) {
-	userID:= c.GetString("id")
+	userID := c.GetString("id")
 
 	getUser, err := authdb.FindCreatedUserByID(userID)
 	if err != nil {
 		authlog.LogAuth(userID, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+		log.Printf("[ERROR_FINDING_USER_BY_ID] %v", err)
+		response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 		return
 	}
 
 	var req ChangePwd
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		response.Error(c, http.StatusBadRequest, response.ErrCodeBadRequest)
 		return
 	}
 
-	if getUser.AuthProvider == "custom"{
+	if getUser.AuthProvider == "custom" {
 		err := bcrypt.CompareHashAndPassword([]byte(getUser.Password), []byte(req.NewPassword))
 		if err == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "new password must be different from your current password"})
+			response.Error(c, http.StatusBadRequest, response.ErrCodeBadRequest, "New password must be different from your current password")
 			return
 		}
 
 		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
 		if err != nil {
 			authlog.LogAuth(getUser.ID, err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+			log.Printf("[CRITICAL_HASH_PASSWORD] %v", err)
+			response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 			return
 		}
 
@@ -729,13 +796,14 @@ func ChangePassword(c *gin.Context) {
 
 		if err := authdb.UpdateCreatedUser(getUser.ID, updateData); err != nil {
 			authlog.LogAuth(getUser.ID, err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": MsgServerError})
+			log.Printf("[CRITICAL_UPDATE_USER_PASSWORD] %v", err)
+			response.Error(c, http.StatusInternalServerError, response.ErrCodeServerError)
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"message": "password updated successfully"})
+		response.Success(c, http.StatusOK, "Password updated successfully")
 		return
 	}
 
-	c.JSON(http.StatusForbidden, gin.H{"error": "action not allowed"})
+	response.Error(c, http.StatusForbidden, response.ErrCodeBadRequest, "Action not allowed")
 }
