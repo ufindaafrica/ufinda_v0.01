@@ -83,6 +83,8 @@ func PaystackWebhookHandler(c *gin.Context) {
 		user, err := authdb.FindCreatedUserByID(userID)
 		if err != nil {
 			log.Printf("[ERROR_GET_USR_BY_ID_IN_PAYSTACK] failed to get user by user id for user %s: %v", userID, err)
+			response.Success(c, http.StatusOK, "webhook received but user not found")
+			return
 		}
 
 		userRole := "user"
