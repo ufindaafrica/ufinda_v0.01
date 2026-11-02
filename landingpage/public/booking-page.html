@@ -686,8 +686,8 @@
         lucide.createIcons();
 
         const TARGET_EMAIL = "lekanmojibola@gmail.com";
-        const PAYSTACK_PUBLIC_KEY = "pk_live_c5182719cab22270aee41021a0184459fb0fdac9";
-        // const PAYSTACK_PUBLIC_KEY= "pk_test_35831baa8c2be53173e10f06580cf6910d92ec75";
+        // const PAYSTACK_PUBLIC_KEY = "pk_live_c5182719cab22270aee41021a0184459fb0fdac9";
+        const PAYSTACK_PUBLIC_KEY= "pk_test_35831baa8c2be53173e10f06580cf6910d92ec75";
 
         // Replace with your actual WhatsApp group/community links
         const FREE_WHATSAPP_GROUP = "https://chat.whatsapp.com/GrimbmqFMmv11apzizEYon?s=cl&p=a&mlu=4&ilr=4";
@@ -745,6 +745,7 @@
                 amount: 1000 * 100, // ₦1,000 in kobo
                 currency: 'NGN',
                 metadata: {
+                    user_id: "vnd-613797",
                     custom_fields: [
                         {
                             display_name: "Full Name",
