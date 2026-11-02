@@ -114,7 +114,7 @@ func PaystackWebhookHandler(c *gin.Context) {
 
 		} else if userRole == "vendor" {
 			data := db.ListingFee{
-				UserID: userID,
+				VendorID: userID,
 				Email:  email,
 				Amount: amount,
 				Ref:    ref,

@@ -380,7 +380,7 @@ type BookingFee struct {
 
 type ListingFee struct {
 	ID *uuid.UUID `json:"id,omitempty"`
-	UserID string    `json:"user_id"`
+	VendorID string    `json:"vendor_id"`
 	Email string `json:"email"`
 	Amount int64  `json:"amount"`
 	IsUsed *bool `json:"is_used,omitempty"`

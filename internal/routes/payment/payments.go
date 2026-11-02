@@ -211,7 +211,7 @@ func ConfirmAgentListingFee(c *gin.Context) {
 	}
 
 	listingData := db.ListingFee{
-		UserID: getUser.ID,
+		VendorID: getUser.ID,
 		Email:  getUser.Email,
 		Amount: paystackResp.Data.Amount,
 		Ref:    paystackResp.Data.Reference, 
