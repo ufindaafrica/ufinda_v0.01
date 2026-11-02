@@ -82,7 +82,7 @@ func MakeAuthRequest(method, endpoint string, data interface{}) (*http.Response,
 }
 
 // Regular database operations (uses anon key)
-func MakeDBRequest(method, endpoint string, data interface{}, headers map[string]string) (*http.Response, error) {
+func MakeDBRequest(method string, endpoint string, data interface{}, headers map[string]string) (*http.Response, error) {
 	var body io.Reader
 	if data != nil {
 		jsonData, err := json.Marshal(data)

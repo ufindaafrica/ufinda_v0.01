@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"github.com/oladev/ufinda_v0.01/internal/db/payment"
 	"github.com/oladev/ufinda_v0.01/internal/db"
+	"github.com/oladev/ufinda_v0.01/internal/db/auth"
 	"github.com/oladev/ufinda_v0.01/internal/response"
 )
 
@@ -22,11 +23,14 @@ type PaystackWebhookPayload struct {
 	Event string `json:"event"`
 	Data struct {
 		Reference string `json:"reference"`
-		Amount int `json:"amount"`
+		Amount int64 `json:"amount"`
 		Status string `json:"status"`
 		Customer struct {
 			Email string `json:"email"`
 		}`json:"customer"`
+		Metadata struct {
+			UserID string `json:"user_id"`
+		}`json:"metadata"`
 	}`json:"data"`
 }
 
@@ -56,10 +60,6 @@ func PaystackWebhookHandler(c *gin.Context) {
 	mac.Write(body)
 	expectedSignature := hex.EncodeToString(mac.Sum(nil))
 
-	// log.Printf("[DEBUG] Header Signature: %s", paystackSignature)
-	// log.Printf("[DEBUG] Computed Signature: %s", expectedSignature)
-	// log.Printf("[DEBUG] Secret Key Used: %s (Length: %d)", paystackSecret[:10], len(paystackSecret))
-	// log.Printf("[DEBUG] Raw Body String: %s", string(body))
 	if !hmac.Equal([]byte(paystackSignature), []byte(expectedSignature)) {
 		log.Println("[ERROR_WEBHOOK_SIG_ERR]: Invalid webhook signature attempt")
 		response.Error(c, http.StatusUnauthorized, "Invalid signature")
@@ -75,29 +75,61 @@ func PaystackWebhookHandler(c *gin.Context) {
 
 	// Process only successful charges
 	if payload.Event == "charge.success" && payload.Data.Status == "success" {
-    	email := strings.ToLower(strings.TrimSpace(payload.Data.Customer.Email))
+		email := strings.ToLower(strings.TrimSpace(payload.Data.Customer.Email))
 		ref := payload.Data.Reference
 		amount := payload.Data.Amount
+		userID := payload.Data.Metadata.UserID
 
-		isPaidVal := true
-		data := db.BookingFee{
-			Email:  email,
-			Amount: int64(amount),
-			Ref:    ref,
-			IsPaid: &isPaidVal,
+		user, err := authdb.FindCreatedUserByID(userID)
+		if err != nil {
+			log.Printf("[ERROR_GET_USR_BY_ID_IN_PAYSTACK] failed to get user by user id for user %s: %v", userID, err)
 		}
 
-		if email != "" && ref != "" {
-			if err := paymentdb.ActivateBookingFee(data); err != nil {
-				log.Printf("[ERROR_PAYSTACK_ACTIVATE_BOOKING_FEE]: Failed to activate booking fee for %s: %v", email, err)
-				response.Success(c, http.StatusOK, "received with db processing warning")
-				return
+		userRole := "user"
+		if user.Role != "" {
+			userRole = user.Role
+		}
+
+		if userRole == "user" {
+			isPaidVal := true
+			data := db.BookingFee{
+				Email:  email,
+				UserID: userID,
+				Amount: int64(amount),
+				Ref:    ref,
+				IsPaid: &isPaidVal,
 			}
+
+			if email != "" && ref != "" && userID != "" {
+				if err := paymentdb.ActivateBookingFee(data); err != nil {
+					log.Printf("[ERROR_PAYSTACK_ACTIVATE_BOOKING_FEE]: Failed to activate booking fee for %s: %v", email, err)
+					response.Success(c, http.StatusOK, "received with db processing warning")
+					return
+				}
+			}
+
+			log.Printf("[Paystack Webhook Success]: Successfully activated booking fee for email: %s\n", email)
+
+		} else if userRole == "vendor" {
+			data := db.ListingFee{
+				UserID: userID,
+				Email:  email,
+				Amount: amount,
+				Ref:    ref,
+			}
+
+			if email != "" && ref != "" && userID != "" {
+				if err := paymentdb.CreateListingFeeRecord(data); err != nil {
+					log.Printf("[ERROR_PAYSTACK_ACTIVATE_LISTING_FEE]: Failed to activate listing fee for %s: %v", email, err)
+					response.Success(c, http.StatusOK, "received with db processing warning")
+					return
+				}
+			}
+
+			log.Printf("[Paystack Webhook Success]: Successfully activated listing fee for email: %s\n", email)
 		}
 
-		log.Printf("[Paystack Webhook Success]: Successfully activated booking fee for email: %s\n", email)
-
-		// Trigger team email notification asynchronously
+		// Trigger team email notification asynchronously with dynamic content based on user role
 		go func() {
 			apiKey := os.Getenv("POSTMARK_SERVER_KEY")
 			if apiKey == "" {
@@ -107,23 +139,32 @@ func PaystackWebhookHandler(c *gin.Context) {
 
 			client := postmark.NewClient(apiKey, "")
 			
-			// Replace these placeholder emails with your team's actual email addresses
 			teamEmails := []string{
 				"ella.appdev@gmail.com",
 				"sarobaridoo@gmail.com",
 			}
 
 			amountNaira := float64(amount) / 100
-			subject := "🔔 New Booking Fee Paid on uFinda!"
+
+			var subject, roleLabel, feeType string
+			if userRole == "vendor" {
+				subject = "🔔 New Vendor Listing Fee Paid on uFinda!"
+				roleLabel = "Agent/Vendor"
+				feeType = "listing"
+			} else {
+				subject = "🔔 New Booking Fee Paid on uFinda!"
+				roleLabel = "User"
+				feeType = "booking"
+			}
 
 			plainTextContent := fmt.Sprintf(
-				"A user has successfully paid their booking fee.\n\nuser Email: %s\nAmount: ₦%.2f\nReference: %s", 
-				email, amountNaira, ref,
+				"A %s has successfully paid their %s fee.\n\nEmail: %s\nAmount: ₦%.2f\nReference: %s", 
+				strings.ToLower(roleLabel), strings.ToLower(feeType), email, amountNaira, ref,
 			)
 
 			htmlContent := fmt.Sprintf(
-				"<h3>New Payment Received!</h3><p>A user has successfully paid their booking fee.</p><ul><li><strong>user Email:</strong> %s</li><li><strong>Amount:</strong> ₦%.2f</li><li><strong>Reference:</strong> %s</li></ul>", 
-				email, amountNaira, ref,
+				"<h3>New Payment Received!</h3><p>A <strong>%s</strong> has successfully paid their %s fee.</p><ul><li><strong>Email:</strong> %s</li><li><strong>Amount:</strong> ₦%.2f</li><li><strong>Reference:</strong> %s</li></ul>", 
+				roleLabel, feeType, email, amountNaira, ref,
 			)
 
 			for _, teamEmail := range teamEmails {
@@ -139,7 +180,7 @@ func PaystackWebhookHandler(c *gin.Context) {
 
 				_, err := client.SendEmail(emailMessage)
 				if err != nil {
-					log.Printf("[ERROR_PAYSTACK_SEND_EMAIL]]: Failed to send notification email to %s: %v", teamEmail, err)
+					log.Printf("[ERROR_PAYSTACK_SEND_EMAIL]: Failed to send notification email to %s: %v", teamEmail, err)
 				}
 			}
 		}()

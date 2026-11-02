@@ -369,8 +369,22 @@ type MetricLog struct {
 
 type BookingFee struct {
 	ID *uuid.UUID `json:"id,omitempty"`
+	UserID string    `json:"user_id"`
 	Email string `json:"email"`
 	Amount int64  `json:"amount"`
 	IsPaid *bool `json:"is_paid,omitempty"`
+	Ref string `json:"reference"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
+}
+
+type ListingFee struct {
+	ID *uuid.UUID `json:"id,omitempty"`
+	UserID string    `json:"user_id"`
+	Email string `json:"email"`
+	Amount int64  `json:"amount"`
+	IsUsed *bool `json:"is_used,omitempty"`
 	Ref string `json:"payment_ref"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
 }

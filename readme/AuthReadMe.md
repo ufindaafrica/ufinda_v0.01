@@ -122,7 +122,7 @@ This endpoint generates and dispatches a fresh one-time password (OTP) to a pend
 
 ### Responses
 
-All responses follow the unified envelope standard (See [RESPONSES.md](https://www.google.com/search?q=./RESPONSES.md)).
+All responses follow the unified envelope standard (See [RESPONSES.md](https://github.com/ufindaafrica/ufinda_v0.01/blob/backend-devt/readme/RESPONSES.md)).
 
 #### Success (`200 OK`)
 
@@ -194,7 +194,7 @@ If the user is a student who has not yet paid their onboarding fee, the endpoint
 
 ### Responses
 
-All responses follow the unified envelope standard (See [RESPONSES.md](https://www.google.com/search?q=./RESPONSES.md)).
+All responses follow the unified envelope standard (See [RESPONSES.md](https://github.com/ufindaafrica/ufinda_v0.01/blob/backend-devt/readme/RESPONSES.md)).
 
 #### Success (`200 OK`) — Fully Authenticated Users (Agents & Paid Students)
 
@@ -295,7 +295,7 @@ Upon successful authentication, the endpoint checks the user's payment status, b
 
 ### Responses
 
-All responses follow the unified envelope standard (See [RESPONSES.md](https://www.google.com/search?q=./RESPONSES.md)).
+All responses follow the unified envelope standard (See [RESPONSES.md](https://github.com/ufindaafrica/ufinda_v0.01/blob/backend-devt/readme/RESPONSES.md)).
 
 #### Success (`200 OK`) — Authenticated Users (Vendors, Beta, & Paid Students)
 
@@ -380,7 +380,7 @@ This endpoint terminates the user's current active session by invalidating and b
 
 ### Responses
 
-All responses follow the unified envelope standard (See [RESPONSES.md](https://www.google.com/search?q=./RESPONSES.md)).
+All responses follow the unified envelope standard (See [RESPONSES.md](https://github.com/ufindaafrica/ufinda_v0.01/blob/backend-devt/readme/RESPONSES.md)).
 
 #### Success (`200 OK`) — Logged Out Successfully
 
@@ -448,7 +448,7 @@ This endpoint issues a fresh pair of access and refresh tokens using a valid, no
 
 ### Responses
 
-All responses follow the unified envelope standard (See [RESPONSES.md](https://www.google.com/search?q=./RESPONSES.md)).
+All responses follow the unified envelope standard (See [RESPONSES.md](https://github.com/ufindaafrica/ufinda_v0.01/blob/backend-devt/readme/RESPONSES.md)).
 
 #### Success (`200 OK`) — Tokens Refreshed Successfully
 
@@ -633,7 +633,7 @@ This endpoint allows a user to reset their account password using a valid passwo
 
 ### Responses
 
-All responses follow the unified envelope standard (See [RESPONSES.md](https://www.google.com/search?q=./RESPONSES.md)).
+All responses follow the unified envelope standard (See [RESPONSES.md](https://github.com/ufindaafrica/ufinda_v0.01/blob/backend-devt/readme/RESPONSES.md)).
 
 #### Success (`200 OK`) — Password Updated Successfully
 
@@ -700,7 +700,7 @@ This endpoint initiates a password recovery flow by generating a secure, time-li
 
 ### Responses
 
-All responses follow the unified envelope standard (See [RESPONSES.md](https://www.google.com/search?q=./RESPONSES.md)).
+All responses follow the unified envelope standard (See [RESPONSES.md](https://github.com/ufindaafrica/ufinda_v0.01/blob/backend-devt/readme/RESPONSES.md)).
 
 #### Success (`200 OK`) — Reset Link Sent (or Non-existent Email Handled)
 
@@ -764,7 +764,7 @@ This endpoint allows an authenticated user to update their account password. It 
 
 ### Responses
 
-All responses follow the unified envelope standard (See [RESPONSES.md](https://www.google.com/search?q=./RESPONSES.md)).
+All responses follow the unified envelope standard (See [RESPONSES.md](https://github.com/ufindaafrica/ufinda_v0.01/blob/backend-devt/readme/RESPONSES.md)).
 
 #### Success (`200 OK`) — Password Updated Successfully
 

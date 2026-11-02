@@ -315,7 +315,7 @@ func EmailLoginHandler(c *gin.Context) {
 			db.RedisClient.Expire(ctx, loginKey, 15*time.Minute)
 		}
 		// Use standardized response envelope for unauthorized errors
-		response.Error(c, http.StatusUnauthorized, response.ErrCodeUnauthorized)
+		response.Error(c, http.StatusUnauthorized, "INVALID_PWD")
 		return
 	}
 
@@ -476,7 +476,7 @@ func LogoutHandler(c *gin.Context) {
 		}
 		authlog.SecurityLog(secLog)
 		
-		response.Success(c, http.StatusOK, "Already logged out")
+		response.Success(c, http.StatusOK, "Already logged out" )
 		return
 	}
 

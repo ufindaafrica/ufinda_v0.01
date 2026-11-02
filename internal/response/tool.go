@@ -21,6 +21,7 @@ const (
 	ErrCodeUserNotFound    = "USER_NOT_FOUND"
 	ErrCodeAccountExists   = "ACCOUNT_ALREADY_EXISTS"
 	ErrCodeInvalidOTP      = "INVALID_OTP"
+	ErrCodeInvalidPWD	   = "INVALID_PWD"
 	ErrCodeOTPExpired      = "OTP_EXPIRED"
 	ErrCodePaymentRequired = "PAYMENT_REQUIRED"
 	ErrCodeServerError     = "SERVER_ERROR"
@@ -33,6 +34,7 @@ var ErrorMessages = map[string]string{
 	ErrCodeBadRequest:      "Invalid request payload. Please check your input.",
 	ErrCodeUserNotFound:    "No account found with this email. Please sign up to continue.",
 	ErrCodeAccountExists:   "An account with this email already exists. Please log in.",
+	ErrCodeInvalidPWD:		"Invalid Password",
 	ErrCodeInvalidOTP:      "The OTP entered is incorrect. Please check and try again.",
 	ErrCodeOTPExpired:      "Your OTP has expired. Please request a new code.",
 	ErrCodePaymentRequired: "An onboarding fee is required to activate your account.",
