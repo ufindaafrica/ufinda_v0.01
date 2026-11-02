@@ -72,7 +72,7 @@ func GetAgentFreeQuotaLeft(user db.User) (int, error) {
 	var hostelEndpoint string
 	if user.IsBetaUser {
 		// Beta user: count only hostels created from the hardcoded date of today onwards
-		const todayStart = "2026-11-01T00:00:00Z"
+		const todayStart = "2026-01-01T00:00:00Z"
 		hostelEndpoint = fmt.Sprintf("/rest/v1/hostels?vendor_id=eq.%s&created_at=gte.%s&select=id", user.ID, todayStart)
 	} else {
 		// Non-beta user: count total hostels for that user

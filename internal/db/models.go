@@ -384,7 +384,7 @@ type ListingFee struct {
 	Email string `json:"email"`
 	Amount int64  `json:"amount"`
 	IsUsed *bool `json:"is_used,omitempty"`
-	Ref string `json:"payment_ref"`
+	Ref string `json:"reference"`
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 	UpdatedAt *time.Time `json:"updated_at,omitempty"`
 }
